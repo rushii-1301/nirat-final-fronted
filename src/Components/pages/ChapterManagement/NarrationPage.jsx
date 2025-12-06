@@ -1,0 +1,463 @@
+import React, { useState, useEffect, useRef } from "react";
+import Sidebar from "../../Tools/Sidebar";
+import Header from "../../Tools/Header";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Pencil, Mic, Paperclip, Camera, Send, PencilOff, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import axios from "axios";
+import { BACKEND_API_URL } from "../../../utils/assets";
+
+function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter" }) {
+    const isDark = typeof isDarkProp === 'boolean' ? isDarkProp : theme === 'dark';
+
+    const location = useLocation();
+    const navigate = useNavigate();
+    const navState = location.state || {};
+    const lectureId = navState.lectureId || null;
+
+    const [slides, setSlides] = useState([]);
+    const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+    const [isLoadingSlides, setIsLoadingSlides] = useState(false);
+    const [narration, setNarration] = useState("");
+    const [originalNarration, setOriginalNarration] = useState("");
+    const [isManualEdit, setIsManualEdit] = useState(false);
+    const [showPromptBar, setShowPromptBar] = useState(false);
+    const [prompt, setPrompt] = useState("");
+    const [messages, setMessages] = useState([]);
+
+    const messagesEndRef = useRef(null);
+    const messagesStartRef = useRef(null);
+    const messagesContainerRef = useRef(null);
+    const mainScrollRef = useRef(null); // main scrollable area
+    const [isAtTop, setIsAtTop] = useState(true);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+
+    const handlePromptSubmit = (e) => {
+        e.preventDefault();
+        if (!prompt.trim()) return;
+
+        const next = { id: Date.now(), text: prompt.trim() };
+        setMessages((prev) => [...prev, next]);
+        setPrompt("");
+    };
+
+    useEffect(() => {
+        // After new message, scroll main content to bottom smoothly
+        const el = mainScrollRef.current;
+        if (!el) return;
+
+        const handleScroll = () => {
+            const { scrollTop, scrollHeight, clientHeight } = el;
+            setIsAtTop(scrollTop <= 2);
+            setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 2);
+        };
+
+        // scroll to bottom on new message
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+        handleScroll();
+    }, [messages]);
+
+    useEffect(() => {
+        const el = mainScrollRef.current;
+        if (!el) return;
+
+        const handleScroll = () => {
+            const { scrollTop, scrollHeight, clientHeight } = el;
+            setIsAtTop(scrollTop <= 2);
+            setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 2);
+        };
+
+        el.addEventListener("scroll", handleScroll);
+        // Initialize once
+        handleScroll();
+
+        return () => {
+            el.removeEventListener("scroll", handleScroll);
+        };
+    }, []);
+
+    const scrollMessagesToTop = () => {
+        const el = mainScrollRef.current;
+        if (el) {
+            el.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const scrollMessagesToBottom = () => {
+        const el = mainScrollRef.current;
+        if (el) {
+            el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+        }
+    };
+
+    const cardCls = `${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-2xl p-4 sm:p-5 shadow-sm transition-colors duration-200`;
+
+    const lastFetchedLectureId = useRef(null);
+
+    useEffect(() => {
+        const fetchSlides = async () => {
+            if (!lectureId) return;
+
+            if (lastFetchedLectureId.current === lectureId) return;
+            lastFetchedLectureId.current = lectureId;
+            setIsLoadingSlides(true);
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await axios.post(
+                    `${BACKEND_API_URL}/chapter-materials/chapter_lecture/generate/${lectureId}`,
+                    {},
+                    {
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        },
+                    }
+                );
+
+                const lecture = response?.data?.data?.lecture;
+                if (lecture && Array.isArray(lecture.slides)) {
+                    setSlides(lecture.slides);
+                    setCurrentSlideIndex(0);
+                    const firstNarration = lecture.slides[0]?.narration || "";
+                    setNarration(firstNarration);
+                    setOriginalNarration(firstNarration);
+                }
+            } catch (error) {
+                console.error('Error generating lecture slides:', error);
+            } finally {
+                setIsLoadingSlides(false);
+            }
+        };
+
+        fetchSlides();
+    }, [lectureId]);
+
+    const currentSlide = slides.length > 0 ? slides[currentSlideIndex] : null;
+
+    const handlePrevSlide = () => {
+        if (currentSlideIndex > 0) {
+            const nextIndex = currentSlideIndex - 1;
+            setCurrentSlideIndex(nextIndex);
+            const nextNarration = slides[nextIndex]?.narration || "";
+            setNarration(nextNarration);
+            setOriginalNarration(nextNarration);
+        }
+    };
+
+    const handleNextSlide = () => {
+        if (currentSlideIndex < slides.length - 1) {
+            const nextIndex = currentSlideIndex + 1;
+            setCurrentSlideIndex(nextIndex);
+            const nextNarration = slides[nextIndex]?.narration || "";
+            setNarration(nextNarration);
+            setOriginalNarration(nextNarration);
+        }
+    };
+
+    return (
+        <div className={`relative flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-zinc-50 text-zinc-900'} min-h-screen overflow-y-hidden transition-colors duration-300`}>
+            {/* Full-page loading overlay while slides are generating */}
+            {isLoadingSlides && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="h-8 w-8 border-2 border-t-transparent border-blue-500 rounded-full animate-spin" />
+                        <p className="text-xs text-gray-200 tracking-wide uppercase">Generating lecture narration...</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Sidebar */}
+            <Sidebar isDark={isDark} sidebardata={sidebardata} />
+
+            {/* Main Section */}
+            <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-6 pb-0 transition-all duration-300`}>
+                {/* Header */}
+                <div className="sticky top-0 z-20">
+                    <Header title="Add Chapter Management" isDark={isDark} toggleTheme={toggleTheme} />
+                </div>
+
+                {/* Scrollable content */}
+                <main ref={mainScrollRef} className="mt-4 sm:mt-6 flex-1 overflow-y-auto no-scrollbar">
+                    <div className="w-full mx-auto space-y-4">
+                        {/* Toolbar row (sticky) */}
+                        <div className={`${isDark ? 'bg-linear-to-r from-zinc-900/95 via-zinc-900/90 to-zinc-900/95 border-zinc-800' : 'bg-linear-to-r from-white/95 via-[#f5f5ff]/95 to-white/95 border-zinc-200'} sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90 shadow-sm`}
+                        >
+                            <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-semibold tracking-wide`}>Narration</div>
+                            <div className="flex gap-2 w-[200px] justify-center items-center">
+                                <button
+                                    onClick={() => navigate(backto, {
+                                        state: {
+                                            lectureId
+                                        }
+                                    })}
+                                    className={`${isDark ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700 border border-zinc-700' : 'bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-300'} w-full flex justify-center items-center cursor-pointer px-4 py-1.5 rounded-md text-sm transition-colors duration-200`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => navigate("/chapter/CoverPage")}
+                                    className={`${isDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'} w-full flex justify-center items-center cursor-pointer px-4 py-1.5 rounded-md text-sm shadow-sm hover:shadow transition-all duration-200`}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Narration card */}
+                        <div className={`${cardCls} flex flex-col relative overflow-hidden`}>
+                            <div className="flex flex-col items-center text-center mb-4">
+                                <div className={`${isDark ? 'text-white' : 'text-gray-900'} text-lg sm:text-xl font-semibold`}
+                                >
+                                    {currentSlide ? currentSlide.title : 'Lecture Narration'}
+                                </div>
+                                <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-[11px] mt-1`}
+                                >
+                                    {slides.length > 0
+                                        ? `Slide ${currentSlideIndex + 1} of ${slides.length}`
+                                        : 'Browse narration from your lecture once generated'}
+                                </p>
+                            </div>
+
+                            <div className="absolute top-4 right-4 flex items-center gap-2">
+                                {showPromptBar && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsManualEdit((prev) => !prev)}
+                                        className={`p-2 rounded-md border-none ${isDark ? 'border-zinc-700' : 'border-zinc-300'} cursor-pointer transition-colors duration-200`}
+                                        aria-label="Enable manual edit"
+                                    >
+                                        {isManualEdit ? <PencilOff size={14} /> : <Pencil size={14} />}
+                                    </button>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setNarration(originalNarration);
+                                        setIsManualEdit(false);
+                                    }}
+                                    className={`${isDark
+                                        ? 'bg-white text-zinc-800 hover:bg-[#f2f3ff] border border-zinc-700'
+                                        : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'
+                                        } px-3 py-1.5 rounded-md text-[11px] sm:text-xs border ${isDark ? 'border-zinc-700' : 'border-zinc-300'} cursor-pointer inline-flex items-center gap-1 transition-all duration-200`}
+                                >
+                                    Restore <RotateCcw size={14} />
+                                </button>
+                            </div>
+
+                            {/* Slide narration content */}
+                            <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} mt-2 space-y-3`}>
+                                {!isLoadingSlides && slides.length === 0 && (
+                                    <div className="text-xs text-gray-400 text-center py-6">
+                                        No lecture narration available yet.
+                                    </div>
+                                )}
+
+                                {!isLoadingSlides && currentSlide && (
+                                    <div className="flex items-stretch gap-3 sm:gap-4">
+                                        {/* Left arrow */}
+                                        <button
+                                            type="button"
+                                            onClick={handlePrevSlide}
+                                            disabled={currentSlideIndex === 0}
+                                            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105`}
+                                        >
+                                            <ChevronLeft size={18} />
+                                        </button>
+
+                                        {/* Slide box */}
+                                        <div
+                                            key={currentSlideIndex}
+                                            className={`flex-1 rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950/40' : 'border-zinc-200 bg-white'} px-4 sm:px-5 py-3 sm:py-4 shadow-sm transition-all duration-300 ease-out`}
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                    Slide Narration
+                                                </div>
+                                                <span className="text-[11px] text-gray-400">
+                                                    {currentSlideIndex + 1} / {slides.length}
+                                                </span>
+                                            </div>
+
+                                            {isManualEdit ? (
+                                                <textarea
+                                                    value={narration}
+                                                    onChange={(e) => setNarration(e.target.value)}
+                                                    className={`${isDark ? 'bg-zinc-900 text-gray-100 border-zinc-700' : 'bg-white text-zinc-900 border-zinc-300'} text-sm leading-relaxed text-justify w-full rounded-lg border px-3 py-2 h-[37vh] md:h-[40vh] lg:h-[40vh] xl:h-[40vh] overflow-y-auto no-scrollbar resize-none`}
+                                                    placeholder="Edit narration manually here"
+                                                />
+                                            ) : (
+                                                <div className="text-sm leading-relaxed text-justify max-h-[27vh] md:max-h-[30vh] lg:max-h-[30vh] xl:max-h-[30vh] overflow-y-auto pr-1 no-scrollbar">
+                                                    <p>{narration || 'No narration available for this slide.'}</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Right arrow */}
+                                        <button
+                                            type="button"
+                                            onClick={handleNextSlide}
+                                            disabled={currentSlideIndex >= slides.length - 1}
+                                            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105`}
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Mobile arrows below card */}
+                                {!isLoadingSlides && currentSlide && (
+                                    <div className="flex sm:hidden items-center justify-center gap-4 mt-3">
+                                        <button
+                                            type="button"
+                                            onClick={handlePrevSlide}
+                                            disabled={currentSlideIndex === 0}
+                                            className={`flex items-center justify-center h-9 w-9 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105`}
+                                        >
+                                            <ChevronLeft size={16} />
+                                        </button>
+                                        <span className="text-[11px] text-gray-400">
+                                            {currentSlideIndex + 1} / {slides.length}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleNextSlide}
+                                            disabled={currentSlideIndex >= slides.length - 1}
+                                            className={`flex items-center justify-center h-9 w-9 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105`}
+                                        >
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                        {/* Action buttons - stay attached to the bottom of the card (hidden once edit/chat is enabled) */}
+                        {!showPromptBar && (
+                            <div className="mt-4 pt-2 flex flex-row gap-4 sm:gap-4">
+                                <button
+                                    onClick={() => navigate("/chapter/CoverPage")}
+                                    className={`${isDark
+                                        ? 'bg-white text-zinc-800 hover:bg-[#f2f3ff] border border-zinc-700'
+                                        : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'
+                                        } w-full sm:w-28 md:w-32 px-4 py-2 rounded-md text-xs sm:text-sm cursor-pointer flex justify-center items-center transition-all duration-200 shadow-sm hover:shadow`}
+                                >
+                                    Generate
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowPromptBar(true);
+                                        setIsManualEdit(false);
+                                    }}
+                                    className={`${isDark ? 'bg-zinc-800 text-gray-100 hover:bg-zinc-700' : 'bg-white text-[#696CFF] hover:bg-[#f9faff] border border-[#696CFF]/40'} w-full sm:w-28 md:w-32 px-4 py-2 rounded-md text-xs sm:text-sm cursor-pointer shadow-md hover:shadow-lg transition-all duration-200`}
+                                >
+                                    Edit
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Prompt bar for AI-based edits */}
+                        {showPromptBar && (
+                            <div className="mt-4 space-y-3">
+                                {/* Simple chat-like history (right aligned bubbles) */}
+                                {messages.length > 0 && (
+                                    <div className="rounded-2xl p-3 py-3 border-none transparent transition-colors duration-200">
+                                        <div
+                                            ref={messagesContainerRef}
+                                            className="space-y-2 no-scrollbar pr-1"
+                                        >
+                                            <div ref={messagesStartRef} />
+                                            {messages.map((m) => (
+                                                <div key={m.id} className="flex justify-end">
+                                                    <div
+                                                        className={`inline-block max-w-full rounded-2xl px-3 py-2 text-xs sm:text-sm shadow-sm ${isDark ? 'bg-white text-zinc-900' : 'bg-white border border-zinc-200 text-zinc-900'}`}
+                                                    >
+                                                        {m.text}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div ref={messagesEndRef} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Prompt input row with icons, fixed at bottom like chat */}
+                                <form onSubmit={handlePromptSubmit}>
+                                    <div
+                                        style={{ position: "fixed", bottom: 18, width: "-webkit-fill-available" }}
+                                        className="md:left-5 md:right-5 lg:left-28 lg:right-28 px-4 md:pl-24 lg:pl-80 md:pr-6 flex items-center gap-3 relative"
+                                    >
+                                        {/* Center floating scroll arrow like ChatGPT */}
+                                        {messages.length > 1 && !(isAtTop && isAtBottom) && (
+                                            <button
+                                                type="button"
+                                                onClick={isAtBottom ? scrollMessagesToTop : scrollMessagesToBottom}
+                                                className={`${isDark
+                                                    ? 'bg-zinc-900 text-gray-200 hover:bg-zinc-800'
+                                                    : 'bg-white text-zinc-800 border border-zinc-200 hover:bg-zinc-100'
+                                                    } flex items-center justify-center w-8 h-8 rounded-full cursor-pointer shadow-sm transition-colors duration-200 absolute -top-[50px] left-1/2 lg:left-[60%] -translate-x-1/2`}
+                                                aria-label={isAtBottom ? 'Scroll to first message' : 'Scroll to last message'}
+                                            >
+                                                {isAtBottom ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            </button>
+                                        )}
+                                        {/* Grey pill textbox that auto-fills width */}
+                                        <div
+                                            className={`${isDark
+                                                ? 'bg-zinc-900/95 text-gray-200 border-zinc-700'
+                                                : 'bg-white/95 text-zinc-900 border-zinc-200'
+                                                } flex-1 rounded-full px-4 sm:px-6 py-3 flex items-center gap-3 border shadow-sm`}
+                                        >
+                                            <input
+                                                type="text"
+                                                value={prompt}
+                                                onChange={(e) => setPrompt(e.target.value)}
+                                                placeholder="Any Specification say it"
+                                                className={`${isDark ? 'bg-transparent text-gray-200 placeholder-gray-500' : 'bg-transparent text-zinc-900 placeholder-zinc-400'} flex-1 text-xs sm:text-sm outline-none`}
+                                            />
+
+                                            <div className="flex items-center gap-2 text-zinc-400">
+                                                <button type="button" className="p-1 rounded-full hover:bg-zinc-800/60 cursor-pointer transition-colors duration-200">
+                                                    <Paperclip size={16} />
+                                                </button>
+                                                <button type="button" className="p-1 rounded-full hover:bg-zinc-800/60 cursor-pointer transition-colors duration-200">
+                                                    <Camera size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {/* Mic/Send circle to the right of textbox */}
+                                        {prompt.trim() ? (
+                                            <button
+                                                type="submit"
+                                                className={`${isDark
+                                                    ? 'bg-linear-to-br from-[#696CFF] to-[#9C6BFF] text-white hover:from-[#5a5dff] hover:to-[#8b5fff]'
+                                                    : 'bg-linear-to-br from-[#696CFF] to-[#9C6BFF] text-white hover:from-[#5a5dff] hover:to-[#8b5fff]'
+                                                    } flex items-center justify-center w-9 h-9 rounded-full text-xs sm:text-sm cursor-pointer shadow-md hover:shadow-lg transition-all duration-200`}
+                                            >
+                                                <Send size={16} />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                className={`${isDark
+                                                    ? 'bg-white text-zinc-900'
+                                                    : 'bg-zinc-900 text-white'
+                                                    } flex items-center justify-center w-9 h-9 rounded-full cursor-pointer shadow-md hover:shadow-lg transition-all duration-200`}
+                                            >
+                                                <Mic size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                </main>
+            </div>
+        </div>
+    );
+}
+
+export default NarrationPage;

@@ -1,0 +1,278 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { BookOpen, ImageOff } from "lucide-react";
+import Sidebar from "../../Tools/Sidebar.jsx";
+import Header from "../../Tools/Header.jsx";
+import { getAsset, BACKEND_API_URL } from "../../../utils/assets.js";
+import axios from "axios";
+
+function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
+    const navigate = useNavigate();
+    const [subjects, setSubjects] = useState([
+        { key: "all", label: "All subject" },
+    ]);
+
+    const [active, setActive] = useState("all");
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [videos, setVideos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const tabsWrapRef = useRef(null);
+    const tabRefs = useRef([]);
+    const [indicator, setIndicator] = useState({ left: 0, width: 0, top: 0, height: 0, ready: false });
+    const maxPerRow = 6;
+    const [imageErrors, setImageErrors] = useState({});
+
+    const handleImageError = (videoId) => {
+        setImageErrors(prev => ({ ...prev, [videoId]: true }));
+    };
+
+    const updateIndicatorTo = (indexOrKey) => {
+        const idx = typeof indexOrKey === 'number' ? indexOrKey : subjects.findIndex(s => s.key === indexOrKey);
+        const el = tabRefs.current[idx];
+        const wrap = tabsWrapRef.current;
+        if (el && wrap) {
+            const wrapRect = wrap.getBoundingClientRect();
+            const rect = el.getBoundingClientRect();
+            setIndicator({
+                left: rect.left - wrapRect.left,
+                width: rect.width,
+                top: rect.top - wrapRect.top,
+                height: rect.height,
+                ready: true,
+            });
+        }
+    };
+
+    // Fetch videos from API
+    useEffect(() => {
+        const fetchVideos = async () => {
+            try {
+                setLoading(true);
+                const token = localStorage.getItem('token');
+                
+                if (!token) {
+                    setError('No authentication token found');
+                    setLoading(false);
+                    return;
+                }
+
+                const response = await axios.get(
+                    `${BACKEND_API_URL}/school-portal/dashboard/videos`,
+                    {
+                        headers: {
+                            'accept': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.data?.status && response.data?.data?.videos) {
+                    const videosData = response.data.data.videos;
+                    
+                    // Generate subjects dynamically from video data
+                    const uniqueSubjects = new Map();
+                    videosData.forEach((video) => {
+                        if (!video.subject) return;
+                        const raw = String(video.subject);
+                        const key = raw.toLowerCase();
+                        if (!uniqueSubjects.has(key)) {
+                            uniqueSubjects.set(key, { key: key, label: raw });
+                        }
+                    });
+
+                    setSubjects([
+                        { key: "all", label: "All subject" },
+                        ...Array.from(uniqueSubjects.values()),
+                    ]);
+                    
+                    console.log('Generated subjects from videos:', Array.from(uniqueSubjects.values()));
+
+                    const formattedVideos = videosData.map(video => ({
+                        id: video.id,
+                        subject: video.subject.toLowerCase(),
+                        title: video.subject,
+                        subtitle: video.title,
+                        topics: [video.chapter_name, video.description?.substring(0, 50) + '...' || ''],
+                        duration: formatDuration(video.duration_seconds),
+                        thumb: video.thumbnail_url,
+                        videoUrl: video.video_url,
+                        chapter_name: video.chapter_name,
+                        description: video.description,
+                    }));
+                    setVideos(formattedVideos);
+                } else {
+                    setError('Invalid response format');
+                }
+            } catch (err) {
+                console.error('Failed to fetch videos:', err);
+                setError(err.response?.data?.message || 'Failed to fetch videos');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchVideos();
+    }, []);
+
+    // Format duration from seconds to MM:SS
+    const formatDuration = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    useEffect(() => {
+        // Initialize to active tab after first render/layout
+        updateIndicatorTo(activeIndex);
+
+        // Recompute on resize
+        const onResize = () => updateIndicatorTo(activeIndex);
+        window.addEventListener('resize', onResize);
+
+        // Keep indicator aligned when user scrolls horizontally
+        const wrap = tabsWrapRef.current;
+        const onScroll = () => updateIndicatorTo(activeIndex);
+        if (wrap) wrap.addEventListener('scroll', onScroll);
+
+        return () => {
+            window.removeEventListener('resize', onResize);
+            if (wrap) wrap.removeEventListener('scroll', onScroll);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeIndex, subjects.length]);
+
+    const filtered = useMemo(() => {
+        console.log('Current active filter:', active);
+        console.log('Total videos:', videos.length);
+        
+        if (active === "all") {
+            console.log('Showing all videos:', videos.length);
+            return videos;
+        }
+        
+        const filteredVideos = videos.filter(v => v.subject === active.toLowerCase());
+        
+        console.log('Filtering for subject:', active);
+        console.log('Filtered videos count:', filteredVideos.length);
+        console.log('Filtered videos:', filteredVideos.map(v => ({ title: v.title, subject: v.subject })));
+        
+        return filteredVideos;
+    }, [active, videos]);
+    return (
+        <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-100 text-zinc-900"} h-screen transition-colors duration-300`}>
+            {/* Sidebar */}
+            <Sidebar isDark={isDark} sidebardata={sidebardata} />
+
+            {/* Main Content (offset for fixed sidebar) */}
+            <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+                {/* ===== Sticky Header ===== */}
+                <div className="sticky top-0 z-20">
+                    <Header title="Home" isDark={isDark} toggleTheme={toggleTheme} />
+                </div>
+
+                {/* ===== Main Section ===== */}
+                <main className="mt-6 flex-1 flex flex-col min-h-0">
+                    <div className="flex flex-col min-h-0 h-full">
+                        <h2 className="text-xl font-semibold">Select Subject</h2>
+
+                        <div className="mt-4 w-full">
+                            <div
+                                ref={tabsWrapRef}
+                                className={`${
+                                    isDark ? "bg-zinc-800" : "bg-white ring-1 ring-zinc-200"
+                                } relative flex w-full rounded-full px-2 py-2 gap-2 overflow-x-auto no-scrollbar scroll-smooth`}
+                            >
+                                {subjects.map((s, i) => (
+                                    <button
+                                        key={`${s.key}-${i}`}
+                                        ref={el => (tabRefs.current[i] = el)}
+                                        onClick={() => { setActive(s.key); setActiveIndex(i); updateIndicatorTo(i); }}
+                                        className={`relative z-10 rounded-full flex-none w-1/3 sm:w-1/4 lg:w-1/6 px-4 py-2 text-xs sm:text-sm whitespace-nowrap select-none cursor-pointer flex items-center justify-center text-center snap-center transition-colors duration-150 ${
+                                            isDark
+                                                ? activeIndex === i
+                                                    ? "bg-zinc-700 text-white"
+                                                    : "text-white/80"
+                                                : activeIndex === i
+                                                    ? "bg-indigo-500 text-white"
+                                                    : "text-zinc-800"
+                                        }`}
+                                    >
+                                        {s.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <h3 className="mt-6 mb-3 text-base font-medium">Video</h3>
+
+                        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pr-1">
+                            {loading ? (
+                                <div className="flex items-center justify-center h-32">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="w-10 h-10 border-3 border-gray-300 border-t-indigo-500 rounded-full animate-spin"></div>
+                                        <div className="text-sm opacity-60">Loading videos...</div>
+                                    </div>
+                                </div>
+                            ) : error ? (
+                                <div className="flex items-center justify-center h-32">
+                                    <div className="text-sm text-red-500">{error}</div>
+                                </div>
+                            ) : filtered.length === 0 ? (
+                                <div className="flex items-center justify-center h-32">
+                                    <div className="text-sm opacity-60">No videos found for this subject</div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                                    {filtered.map((item) => (
+                                        <div key={item.id} className={`${isDark ? "bg-zinc-900" : "bg-white"} rounded-xl overflow-hidden border ${isDark ? "border-zinc-800" : "border-zinc-200"}`}>
+                                            <div className="relative aspect-16/10 overflow-hidden cursor-pointer" onClick={() => navigate('/StudentPortel/Videos', { state: { video: item } })}>
+                                                {imageErrors[item.id] || !item.thumb ? (
+                                                    <div className={`h-full w-full flex flex-col items-center justify-center ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
+                                                        <ImageOff className={`w-8 h-8 ${isDark ? 'text-zinc-600' : 'text-zinc-400'} mb-2`} />
+                                                        <span className={`text-sm ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>No Image</span>
+                                                    </div>
+                                                ) : (
+                                                    <img 
+                                                        src={item.thumb} 
+                                                        alt={item.title} 
+                                                        className="h-full w-full object-cover"
+                                                        onError={() => handleImageError(item.id)}
+                                                    />
+                                                )}
+                                                <div className="absolute inset-0 bg-black/30" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <button
+                                                        type="button"
+                                                        className="h-14 w-14 rounded-full bg-zinc-600 backdrop-blur flex cursor-pointer items-center justify-center ring-1 ring-white/40"
+                                                    >
+                                                        <img src={getAsset('video_light')} alt="play" className="h-6 w-6 invert pointer-events-none" />
+                                                    </button>
+                                                </div>
+                                                <div className="absolute bottom-2 right-2 text-[11px] px-2 py-1 rounded-md bg-black/60 text-white">
+                                                    {item.duration}
+                                                </div>
+                                                <div className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-2 py-1 rounded-md">
+                                                    <BookOpen className="w-3 h-3 text-white" />
+                                                    <span className="text-[11px] text-white">{item.title}</span>
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <div className="text-sm font-semibold">{item.title}</div>
+                                                <div className="mt-1 text-sm">{item.subtitle}</div>
+                                                <div className="mt-2 text-xs opacity-80">{item.topics[0]}</div>
+                                                <div className="text-xs opacity-80">{item.topics[1]?.substring(0, 30)}...</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </main>
+            </div >
+        </div >
+    );
+}
+
+export default SelectSubject;

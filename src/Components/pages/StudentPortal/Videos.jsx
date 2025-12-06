@@ -1,0 +1,1062 @@
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
+import Sidebar from "../../Tools/Sidebar.jsx";
+import Header from "../../Tools/Header.jsx";
+import { ThumbsUp, MessageSquare, Share2, Bookmark, Flag, Send, X, Reply, Info, Settings, RotateCcw, RotateCw, Volume, Gauge, Monitor, Volume2, VolumeX, Maximize, Play, RefreshCw, RefreshCcw } from "lucide-react";
+import axios from "axios";
+import { BACKEND_API_URL, getAsset } from "../../../utils/assets.js";
+
+function Videos({ isDark, toggleTheme, sidebardata }) {
+    const location = useLocation();
+    const params = useParams();
+    const navigate = useNavigate();
+    const passedVideo = location.state?.video;
+    const shellBg = isDark ? "bg-black text-[#E5E7EB]" : "bg-[#F5F7FB] text-[#0F172A]";
+    const panelBg = isDark ? "bg-zinc-900 border-[#1F2430]" : "bg-white border-[#E5E7EB]";
+    const subText = isDark ? "text-[#9CA3AF]" : "text-[#6B7280]";
+
+    // API states
+    const [videoData, setVideoData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [totalLikes, setTotalLikes] = useState(0);
+
+    // Video control states
+    const [showSettings, setShowSettings] = useState(false);
+    const [currentSettingsView, setCurrentSettingsView] = useState('main'); // 'main', 'speed', 'quality'
+    const [isLoop, setIsLoop] = useState(false);
+    const [isStableVolume, setIsStableVolume] = useState(false);
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
+    const [quality, setQuality] = useState('auto');
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const videoRef = useRef(null);
+
+    // Format duration from seconds to MM:SS
+    const formatDuration = (seconds) => {
+        if (!seconds) return "0:00";
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${minutes}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    // Fetch video details from API (same as Trash/Videos.jsx)
+    useEffect(() => {
+        const fetchVideoDetails = async () => {
+            try {
+                setLoading(true);
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    setError("No authentication token found");
+                    setLoading(false);
+                    return;
+                }
+
+                const videoId = params.id || passedVideo?.id || "2";
+
+                const response = await axios.get(
+                    `${BACKEND_API_URL}/school-portal/videos/${videoId}`,
+                    {
+                        headers: {
+                            Accept: "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.data?.status && response.data?.data?.video) {
+                    const apiVideo = response.data.data.video;
+                    setVideoData(apiVideo);
+
+                    if (apiVideo.user_liked !== undefined) {
+                        setLiked(apiVideo.user_liked);
+                    }
+
+                    if (apiVideo.total_likes !== undefined) {
+                        setTotalLikes(apiVideo.total_likes);
+                    }
+
+                    if (response.data.data.comments) {
+                        const formattedComments = response.data.data.comments.map((comment) => ({
+                            id: comment.id,
+                            name: comment.student_name || comment.enrollment_number,
+                            time: new Date(comment.created_at).toLocaleDateString(),
+                            text: comment.comment,
+                            likes: comment.like_count || 0,
+                        }));
+                        setComments(formattedComments);
+                    }
+                } else {
+                    setError("Invalid response format");
+                }
+            } catch (err) {
+                console.error("Failed to fetch video details:", err);
+                setError(err.response?.data?.message || "Failed to fetch video details");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchVideoDetails();
+    }, [params.id, passedVideo?.id]);
+
+    // Fetch comments from API (same as Trash/Videos.jsx)
+    useEffect(() => {
+        const fetchComments = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    console.error("No authentication token found");
+                    return;
+                }
+
+                const videoId = params.id || passedVideo?.id || "2";
+
+                const response = await axios.get(
+                    `${BACKEND_API_URL}/school-portal/videos/${videoId}/comments`,
+                    {
+                        headers: {
+                            accept: "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.data?.status && response.data?.data?.comments) {
+                    const formattedComments = response.data.data.comments.map((comment) => ({
+                        id: comment.id,
+                        name: comment.student_name || comment.enrollment_number,
+                        time: new Date(comment.created_at).toLocaleDateString(),
+                        text: comment.comment,
+                        likes: comment.like_count || 0,
+                    }));
+                    setComments(formattedComments);
+                } else {
+                    console.error("Invalid response format from comments API");
+                }
+            } catch (err) {
+                console.error("Failed to fetch comments:", err);
+            }
+        };
+
+        fetchComments();
+    }, [params.id, passedVideo?.id]);
+
+    // Build page data from API response with graceful fallback
+    const pageData = useMemo(() => {
+        const defaultVideoUrl = "/lecture-1764833360871.webm";
+
+        if (!videoData) {
+            return {
+                subjectLabel: "Music",
+                title: "Namo Namo - Lyrical Video",
+                chapter: "Devotional Songs",
+                bookName: "Devotional Songs Collection",
+                duration: "4:30",
+                description:
+                    "A beautiful devotional song with meaningful lyrics and soothing music.",
+                highlights: ["Devotional Music", "Spiritual Content", "Peaceful Melody"],
+                videoUrl: defaultVideoUrl,
+                thumb:
+                    "https://images.unsplash.com/photo-1493225457124-a3eb161ffa27?q=80&w=400&auto=format&fit=crop",
+                relatedVideos: [],
+            };
+        }
+
+        return {
+            subjectLabel: videoData.subject || "Unknown Subject",
+            title: videoData.title || "Unknown Title",
+            chapter: videoData.chapter_name || "Unknown Chapter",
+            bookName: videoData.chapter_name || "Unknown Chapter",
+            duration: formatDuration(videoData.duration_seconds) || "0:00",
+            description: videoData.description || "No description available",
+            highlights: videoData.topics || [],
+            videoUrl: videoData.video_url || defaultVideoUrl,
+            thumb: videoData.thumbnail_url || null,
+            relatedVideos:
+                videoData.related_videos?.map((rv) => ({
+                    id: rv.id,
+                    title: rv.title || "Unknown Title",
+                    duration: formatDuration(rv.duration_seconds) || "0:00",
+                    thumb: rv.thumbnail_url || null,
+                    subject: rv.subject || "Unknown Subject",
+                    chapter_name: rv.chapter_name || "Unknown Chapter",
+                    videoUrl: rv.video_url || defaultVideoUrl,
+                    user_liked: rv.user_liked || false,
+                })) || [],
+        };
+    }, [videoData]);
+
+    // Video control functions
+    const toggleLoop = () => {
+        if (videoRef.current) {
+            videoRef.current.loop = !isLoop;
+            setIsLoop(!isLoop);
+        }
+    };
+
+    const toggleStableVolume = () => {
+        setIsStableVolume(!isStableVolume);
+        // Implement stable volume logic here
+    };
+
+    const changePlaybackSpeed = (speed) => {
+        if (videoRef.current) {
+            videoRef.current.playbackRate = speed;
+            setPlaybackSpeed(speed);
+        }
+    };
+
+    const changeQuality = (newQuality) => {
+        setQuality(newQuality);
+        // Implement quality change logic here
+    };
+
+    const toggleMute = () => {
+        if (videoRef.current) {
+            videoRef.current.muted = !isMuted;
+            setIsMuted(!isMuted);
+        }
+    };
+
+    const toggleFullscreen = () => {
+        if (videoRef.current) {
+            if (!isFullscreen) {
+                if (videoRef.current.requestFullscreen) {
+                    videoRef.current.requestFullscreen();
+                } else if (videoRef.current.webkitRequestFullscreen) {
+                    videoRef.current.webkitRequestFullscreen();
+                } else if (videoRef.current.msRequestFullscreen) {
+                    videoRef.current.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+            setIsFullscreen(!isFullscreen);
+        }
+    };
+
+    const handleVideoKeyPress = (e) => {
+        if (e.key === 'f' || e.key === 'F') {
+            toggleFullscreen();
+        }
+    };
+
+    const skipForward = () => {
+        if (videoRef.current) {
+            videoRef.current.currentTime = Math.min(videoRef.current.currentTime + 10, duration);
+        }
+    };
+
+    const skipBackward = () => {
+        if (videoRef.current) {
+            videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
+        }
+    };
+
+    const togglePlayPause = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+            } else {
+                videoRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    const handleSeek = (e) => {
+        const newTime = parseFloat(e.target.value);
+        if (videoRef.current) {
+            videoRef.current.currentTime = newTime;
+            setCurrentTime(newTime);
+        }
+    };
+
+    const formatTime = (seconds) => {
+        if (isNaN(seconds)) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const updateTime = () => setCurrentTime(video.currentTime);
+        const updateDuration = () => setDuration(video.duration);
+        const handlePlay = () => setIsPlaying(true);
+        const handlePause = () => setIsPlaying(false);
+
+        video.addEventListener('timeupdate', updateTime);
+        video.addEventListener('loadedmetadata', updateDuration);
+        video.addEventListener('play', handlePlay);
+        video.addEventListener('pause', handlePause);
+
+        return () => {
+            video.removeEventListener('timeupdate', updateTime);
+            video.removeEventListener('loadedmetadata', updateDuration);
+            video.removeEventListener('play', handlePlay);
+            video.removeEventListener('pause', handlePause);
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            handleVideoKeyPress(e);
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isFullscreen]);
+
+    const toggleFullscreenAndCloseSettings = () => {
+        const wasSettingsOpen = showSettings;
+        if (wasSettingsOpen) {
+            setShowSettings(false);
+            setCurrentSettingsView('main');
+        }
+        toggleFullscreen();
+    };
+
+    const closeSettings = () => {
+        setShowSettings(false);
+        setCurrentSettingsView('main');
+    };
+    const [showComments, setShowComments] = useState(false);
+    const [showDescription, setShowDescription] = useState(false);
+    const [liked, setLiked] = useState(false);
+    const [bookmarked, setBookmarked] = useState(false);
+    const [notInterested, setNotInterested] = useState(false);
+    const [likedComments, setLikedComments] = useState({});
+    const [likedReplies, setLikedReplies] = useState({});
+    const [commentInput, setCommentInput] = useState("");
+    const descRef = useRef(null);
+    const [comments, setComments] = useState([]);
+
+    const formatCount = (n) => {
+        if (n >= 1000000) return (n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1) + "M";
+        if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + "k";
+        return String(n);
+    };
+
+    useEffect(() => {
+        if (showDescription && descRef.current) {
+            try {
+                descRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+            } catch (_) { }
+        }
+    }, [showDescription]);
+
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            postComment();
+        }
+    };
+
+    const postComment = async () => {
+        const text = commentInput.trim();
+        if (!text) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.error("No authentication token found");
+                return;
+            }
+
+            const videoId = params.id || passedVideo?.id || "2";
+
+            const response = await axios.post(
+                `${BACKEND_API_URL}/school-portal/videos/${videoId}/comments`,
+                {
+                    comment: text,
+                },
+                {
+                    headers: {
+                        accept: "application/json",
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.data?.status && response.data?.data?.comment) {
+                const newComment = {
+                    id: response.data.data.comment.id,
+                    name:
+                        response.data.data.comment.student_name ||
+                        response.data.data.comment.enrollment_number,
+                    time: "Just now",
+                    text: response.data.data.comment.comment,
+                    likes: response.data.data.comment.like_count || 0,
+                };
+                setComments([newComment, ...comments]);
+                setCommentInput("");
+            } else {
+                console.error("Invalid response format from comment API");
+            }
+        } catch (err) {
+            console.error("Failed to post comment:", err);
+            const newComment = {
+                id: Date.now(),
+                name: "You",
+                time: "Just now",
+                text,
+                likes: 0,
+            };
+            setComments([newComment, ...comments]);
+            setCommentInput("");
+        }
+    };
+
+    const toggleCommentLike = (id) => {
+        setLikedComments((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
+
+    const handleVideoLike = async () => {
+        const newLikedState = !liked;
+        setLiked(newLikedState);
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.error("No authentication token found");
+                setLiked(!newLikedState);
+                return;
+            }
+
+            const videoId = params.id || passedVideo?.id || "2";
+
+            const response = await axios.post(
+                `${BACKEND_API_URL}/school-portal/videos/${videoId}/like`,
+                {
+                    liked: newLikedState,
+                },
+                {
+                    headers: {
+                        accept: "application/json",
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.data?.status) {
+                if (response.data.data?.total_likes !== undefined) {
+                    setTotalLikes(response.data.data.total_likes);
+                } else {
+                    setTotalLikes((prev) =>
+                        newLikedState ? prev + 1 : Math.max(0, prev - 1)
+                    );
+                }
+            } else {
+                setLiked(!newLikedState);
+                console.error("Failed to like video");
+            }
+        } catch (err) {
+            console.error("Failed to like video:", err);
+            setLiked(!newLikedState);
+        }
+    };
+
+    const toggleReplyLike = (id) => {
+        setLikedReplies((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
+
+    return (
+        <div className={`flex ${shellBg} h-screen transition-colors duration-300`}>
+            {/* Sidebar */}
+            <Sidebar isDark={isDark} sidebardata={sidebardata} />
+
+            {/* Main Content (offset for fixed sidebar) */}
+            <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+                {/* ===== Sticky Header ===== */}
+                <div className="sticky top-0 z-20">
+                    <Header title="Lecture Management" isDark={isDark} toggleTheme={toggleTheme} />
+                </div>
+
+                {/* ===== Main Section ===== */}
+                <main className="mt-4 md:mt-6 flex-1 flex flex-col min-h-0">
+                    {loading ? (
+                        <div className="flex items-center justify-center h-32">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-10 h-10 border-3 border-gray-300 border-t-indigo-500 rounded-full animate-spin"></div>
+                                <div className="text-sm opacity-60">Loading video details...</div>
+                            </div>
+                        </div>
+                    ) : error ? (
+                        <div className="flex items-center justify-center h-32">
+                            <div className="text-sm text-red-500">{error}</div>
+                        </div>
+                    ) : (
+                        <div className="relative flex-1 min-h-0">
+                            <div className={`w-full max-w-7xl mx-auto no-scrollbar grid gap-4 md:gap-6 lg:grid-cols-3 h-full overflow-y-auto ${showDescription ? 'blur-sm pointer-events-none' : ''}`}>
+
+                                {/* Left: Main Video and Meta */}
+                                <div className="lg:col-span-2 space-y-3 md:space-y-4">
+                                    {/* Video Player - Modified for local video with custom controls */}
+                                    <div className="rounded-xl overflow-hidden bg-black/90">
+                                        <div className="relative aspect-video lg:aspect-2/1 group">
+                                            <video
+                                                ref={videoRef}
+                                                className="absolute inset-0 w-full h-full"
+                                                autoPlay
+                                                controls={false}
+                                                controlsList="nodownload noplaybackrate noremoteplayback"
+                                                disablePictureInPicture
+                                            >
+                                                <source src={pageData.videoUrl} type="video/mp4" />
+                                                Your browser does not support the video tag.
+                                            </video>
+
+                                            {/* Center Controls - YouTube Style: Skip Back, Play/Pause, Skip Forward */}
+                                            <div className={`absolute inset-0 flex items-center justify-center z-10 pointer-events-none transition-opacity duration-200 ${
+                                                isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                                            }`}>
+                                                <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-12 max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] w-full px-4">
+                                                    {/* Skip Backward Button */}
+                                                    <div
+                                                        className="cursor-pointer hover:scale-110 transition-transform flex items-center justify-center pointer-events-auto shrink-0"
+                                                        title="Skip backward 10 seconds"
+                                                        onClick={() => { skipBackward(); closeSettings(); }}
+                                                    >
+                                                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center">
+                                                            <RotateCcw className="w-full h-full text-white" />
+                                                            <span className="text-white text-[8px] sm:text-[10px] md:text-xs font-bold absolute">10</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Play/Pause Button */}
+                                                    <div
+                                                        className="bg-zinc-800/70 rounded-full p-2 sm:p-3 md:p-4 cursor-pointer pointer-events-auto hover:bg-zinc-700/80 transition-colors shrink-0"
+                                                        onClick={() => { togglePlayPause(); closeSettings(); }}
+                                                    >
+                                                        {isPlaying ? (
+                                                            <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <rect x="6" y="4" width="3" height="12" />
+                                                                <rect x="11" y="4" width="3" height="12" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path d="M5 4v12l10-6z" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Skip Forward Button */}
+                                                    <div
+                                                        className="cursor-pointer hover:scale-110 transition-transform flex items-center justify-center pointer-events-auto shrink-0"
+                                                        title="Skip forward 10 seconds"
+                                                        onClick={() => { skipForward(); closeSettings(); }}
+                                                    >
+                                                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center">
+                                                            <RotateCw className="w-full h-full text-white" />
+                                                            <span className="text-white text-[8px] sm:text-[10px] md:text-xs font-bold absolute">10</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Custom Controls Overlay */}
+                                            <div className={`absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/90 to-transparent px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 transition-opacity duration-200 ${
+                                                isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                                            }`}>
+                                                {/* Progress Bar */}
+                                                <div className="mb-2 sm:mb-3">
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max={duration || 100}
+                                                        value={currentTime}
+                                                        onChange={(e) => { handleSeek(e); closeSettings(); }}
+                                                        className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer slider"
+                                                        style={{
+                                                            background: `linear-gradient(to right, white ${(currentTime / (duration || 1)) * 100}%, #525252 ${(currentTime / (duration || 1)) * 100}%)`
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="flex items-center justify-between gap-1 sm:gap-2">
+                                                    {/* Left controls */}
+                                                    <div className="flex items-center gap-1 sm:gap-2 md:gap-3 min-w-0">
+                                                        <button
+                                                            onClick={() => { toggleMute(); closeSettings(); }}
+                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition shrink-0"
+                                                            title={isMuted ? 'Unmute' : 'Mute'}
+                                                        >
+                                                            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { togglePlayPause(); closeSettings(); }}
+                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition relative z-30 shrink-0"
+                                                        >
+                                                            {isPlaying ? (
+                                                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <rect x="6" y="4" width="3" height="12" />
+                                                                    <rect x="11" y="4" width="3" height="12" />
+                                                                </svg>
+                                                            ) : (
+                                                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path d="M5 4v12l10-6z" />
+                                                                </svg>
+                                                            )}
+                                                        </button>
+                                                        <span className="text-xs sm:text-sm text-white whitespace-nowrap">{formatTime(currentTime)} / {formatTime(duration)}</span>
+                                                    </div>
+
+                                                    {/* Right controls */}
+                                                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                                                        <div className="relative">
+                                                            <button
+                                                                onClick={() => setShowSettings(!showSettings)}
+                                                                className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition"
+                                                                title="Settings"
+                                                            >
+                                                                <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                            </button>
+
+                                                            {/* Settings Menu */}
+                                                            {showSettings && (
+                                                                <div className="absolute bottom-full right-0 mb-2 w-56 rounded-xl border border-zinc-700 bg-zinc-800 shadow-lg z-50">
+                                                                    {currentSettingsView === 'main' && (
+                                                                        <>
+                                                                            {/* Loop Video Toggle */}
+                                                                            <div className="flex items-center justify-between p-3">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <RotateCcw className="w-4 h-4 text-zinc-400" />
+                                                                                    <span className="text-sm font-medium text-zinc-200">Loop Video</span>
+                                                                                </div>
+                                                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        value=""
+                                                                                        className="sr-only peer"
+                                                                                        checked={isLoop}
+                                                                                        onChange={toggleLoop}
+                                                                                    />
+                                                                                    <div className="w-11 h-6 bg-zinc-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-zinc-400 peer-checked:bg-blue-500"></div>
+                                                                                </label>
+                                                                            </div>
+
+                                                                            {/* Stable Volume Toggle */}
+                                                                            <div className="flex items-center justify-between p-3">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <Volume className="w-4 h-4 text-zinc-400" />
+                                                                                    <span className="text-sm font-medium text-zinc-200">Stable Volume</span>
+                                                                                </div>
+                                                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        value=""
+                                                                                        className="sr-only peer"
+                                                                                        checked={isStableVolume}
+                                                                                        onChange={toggleStableVolume}
+                                                                                    />
+                                                                                    <div className="w-11 h-6 bg-zinc-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border-zinc-400 peer-checked:bg-blue-500"></div>
+                                                                                </label>
+                                                                            </div>
+
+                                                                            <div className="border-t border-zinc-700"></div>
+
+                                                                            {/* Playback Speed Option */}
+                                                                            <button
+                                                                                onClick={() => setCurrentSettingsView('speed')}
+                                                                                className="flex items-center justify-between w-full p-3 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
+                                                                            >
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <img src={getAsset('video_dark')} alt="Playback Speed" className="w-4 h-4" />
+                                                                                    <span>Playback Speed</span>
+                                                                                </div>
+                                                                                <span className="text-zinc-400">{playbackSpeed}x</span>
+                                                                            </button>
+
+                                                                            <div className="border-t border-zinc-700"></div>
+
+                                                                            {/* Quality Option */}
+                                                                            <button
+                                                                                onClick={() => setCurrentSettingsView('quality')}
+                                                                                className="flex items-center justify-between w-full p-3 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
+                                                                            >
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <img src={getAsset('video_dark')} alt="Quality" className="w-4 h-4" />
+                                                                                    <span>Quality</span>
+                                                                                </div>
+                                                                                <span className="text-zinc-400 capitalize">{quality}</span>
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+
+                                                                    {currentSettingsView === 'speed' && (
+                                                                        <div className="p-3">
+                                                                            <button
+                                                                                onClick={() => setCurrentSettingsView('main')}
+                                                                                className="flex items-center gap-2 mb-2 text-sm text-zinc-400 hover:text-zinc-200"
+                                                                            >
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                                                                </svg>
+                                                                                Playback Speed
+                                                                            </button>
+                                                                            <div className="space-y-1">
+                                                                                {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                                                                                    <button
+                                                                                        key={speed}
+                                                                                        onClick={() => {
+                                                                                            changePlaybackSpeed(speed);
+                                                                                            setShowSettings(false);
+                                                                                            setCurrentSettingsView('main');
+                                                                                        }}
+                                                                                        className={`w-full text-left px-3 py-2 rounded text-sm ${playbackSpeed === speed ? 'bg-zinc-600 text-white' : 'text-zinc-300 hover:bg-zinc-600'}`}
+                                                                                    >
+                                                                                        {speed}x
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {currentSettingsView === 'quality' && (
+                                                                        <div className="p-3">
+                                                                            <button
+                                                                                onClick={() => setCurrentSettingsView('main')}
+                                                                                className="flex items-center gap-2 mb-2 text-sm text-zinc-400 hover:text-zinc-200"
+                                                                            >
+                                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                                                                </svg>
+                                                                                Quality
+                                                                            </button>
+                                                                            <div className="space-y-1">
+                                                                                {['auto', '1080p', '720p', '480p', '360p'].map(q => (
+                                                                                    <button
+                                                                                        key={q}
+                                                                                        onClick={() => {
+                                                                                            changeQuality(q);
+                                                                                            setShowSettings(false);
+                                                                                            setCurrentSettingsView('main');
+                                                                                        }}
+                                                                                        className={`w-full text-left px-3 py-2 rounded text-sm capitalize ${quality === q ? 'bg-zinc-600 text-white' : 'text-zinc-300 hover:bg-zinc-600'}`}
+                                                                                    >
+                                                                                        {q}
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={toggleFullscreenAndCloseSettings}
+                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition"
+                                                            title="Fullscreen"
+                                                        >
+                                                            <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Meta Card */}
+                                    <div className={`border ${panelBg} rounded-xl px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-2`}>
+                                        <span className={`inline-block text-xs px-2 py-1 rounded ${isDark ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-200 text-zinc-700'} mb-2`}>{pageData.subjectLabel}</span>
+                                        <h2 className="text-2xl font-bold">{pageData.title}</h2>
+                                        <p className={`text-base ${subText} mb-4`}>{pageData.description}</p>
+
+                                        {/* Actions */}
+                                        <div className="flex flex-wrap gap-2 mb-4">
+                                            <button
+                                                onClick={handleVideoLike}
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer transition ${isDark
+                                                    ? 'border-zinc-700 hover:bg-zinc-800'
+                                                    : 'border-zinc-300 hover:bg-zinc-100'
+                                                    }`}
+                                            >
+                                                <ThumbsUp
+                                                    className={`w-4 h-4 transition-transform duration-150 group-active:scale-90 ${liked
+                                                        ? (isDark ? 'text-white scale-110' : 'text-blue-600 scale-110')
+                                                        : (isDark ? subText : 'text-zinc-900')
+                                                        }`}
+                                                    fill={liked ? 'currentColor' : 'none'}
+                                                />
+                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>
+                                                    Like {totalLikes > 0 && `(${formatCount(totalLikes)})`}
+                                                </span>
+                                            </button>
+                                            <button className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition`}>
+                                                <Share2 className={`w-4 h-4 ${isDark ? subText : 'text-zinc-900'}`} />
+                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>Share</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { setShowComments(true); setShowDescription(false); }}
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer transition ${showComments
+                                                    ? (isDark ? 'bg-zinc-200 text-zinc-900 border-transparent' : 'bg-zinc-900 text-white border-transparent')
+                                                    : (isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100')
+                                                    }`}
+                                            >
+                                                <MessageSquare className={`w-4 h-4 ${showComments ? '' : (isDark ? subText : 'text-zinc-900')}`} />
+                                                <span className={`hidden sm:inline text-sm ${showComments ? '' : (isDark ? '' : 'text-zinc-900')}`}>Comments</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { setShowDescription(true); setShowComments(false); }}
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer transition ${showDescription
+                                                    ? (isDark ? 'bg-zinc-200 text-zinc-900 border-transparent' : 'bg-zinc-900 text-white border-transparent')
+                                                    : (isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100')
+                                                    }`}
+                                            >
+                                                <Info className={`w-4 h-4 ${showDescription ? '' : (isDark ? subText : 'text-zinc-900')}`} />
+                                                <span className={`hidden sm:inline text-sm ${showDescription ? '' : (isDark ? '' : 'text-zinc-900')}`}>Description</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setNotInterested((prev) => !prev)}
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition ml-auto`}
+                                            >
+                                                <Flag
+                                                    className={`w-4 h-4 transition-transform duration-150 group-active:scale-90 ${notInterested
+                                                        ? (isDark ? 'text-red-500 scale-110' : 'text-red-600 scale-110')
+                                                        : (isDark ? subText : 'text-zinc-900')
+                                                        }`}
+                                                    fill={notInterested ? 'currentColor' : 'none'}
+                                                />
+                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>
+                                                    Not Interested
+                                                </span>
+                                            </button>
+                                            <button
+                                                onClick={() => setBookmarked((prev) => !prev)}
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition`}
+                                            >
+                                                <Bookmark
+                                                    className={`w-4 h-4 transition-transform duration-150 group-active:scale-90 ${bookmarked
+                                                        ? (isDark ? 'text-white scale-110' : 'text-blue-600 scale-110')
+                                                        : (isDark ? subText : 'text-zinc-900')
+                                                        }`}
+                                                    fill={bookmarked ? 'currentColor' : 'none'}
+                                                />
+                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>
+                                                    Bookmark
+                                                </span>
+                                            </button>
+                                        </div>
+
+                                        <div className={`border-t ${isDark ? 'border-zinc-800' : 'border-zinc-200'} my-3 md:my-4`} />
+
+                                        {/* Info rows */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                            <div>
+                                                <div className={`text-xs ${subText} mb-1`}>Chapter Name</div>
+                                                <div className="text-sm font-medium">{pageData.bookName}</div>
+                                            </div>
+                                            <div>
+                                                <div className={`text-xs ${subText} mb-1`}>Duration</div>
+                                                <div className="text-sm font-medium">{pageData.duration}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+
+                                {/* Right: Related / Comments */}
+                                <aside className="lg:col-span-1 mb-3 md:mb-4 lg:mb-0">
+                                    {showComments ? (
+                                        <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5 flex flex-col min-h-0 max-h-[85vh] md:max-h-[88vh] lg:max-h-[83vh]`}>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="text-sm font-semibold">Comment</h3>
+                                                <button onClick={() => setShowComments(false)} className={`h-8 w-8 inline-flex items-center justify-center rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition`} aria-label="Close comments">
+                                                    <X className={`w-4 h-4 ${subText}`} />
+                                                </button>
+                                            </div>
+                                            <div className={`text-xs ${subText} mb-2`}>Join The Discussion About This Video</div>
+                                            <div className="flex items-start gap-2 mb-2">
+                                                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs font-semibold`}>U</div>
+                                                <div className="flex-1">
+                                                    <textarea
+                                                        value={commentInput}
+                                                        onChange={(e) => setCommentInput(e.target.value)}
+                                                        onKeyDown={handleKeyPress}
+                                                        placeholder="Add a comment...."
+                                                        rows={3}
+                                                        className={`w-full resize-none rounded-md border px-3 py-2 outline-none ${isDark ? 'bg-zinc-900 border-zinc-800 placeholder-zinc-500 focus:ring-2 focus:ring-[#2563EB] focus:border-transparent' : 'bg-white border-zinc-300 placeholder-zinc-400 focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent'}`}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end mb-3">
+                                                <button onClick={postComment} className={`h-9 px-3 inline-flex items-center gap-2 rounded-md transition ${isDark ? 'bg-white text-zinc-900 border-2 border-zinc-800 hover:bg-zinc-900 hover:text-white' : 'bg-[#2563EB] text-white hover:bg-[#1D4ED8]'}`}>
+                                                    <Send className={`w-4 h-4`} />
+                                                    <span className="text-sm">Post Comment</span>
+                                                </button>
+                                            </div>
+                                            <div className={`text-xs ${subText} mb-2`}>{comments.length} Comment</div>
+                                            <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pr-1 no-scrollbar">
+                                                {comments.map((c, idx) => (
+                                                    <div key={c.id}>
+                                                        <div className="flex items-start gap-3">
+                                                            <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs font-semibold`}>
+                                                                {c.name.split(' ').map(p => p[0]).slice(0, 2).join('')}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center">
+                                                                    <div className="text-sm font-medium truncate">{c.name}</div>
+                                                                    <span className={`px-2 ${subText}`}>•</span>
+                                                                    <div className={`text-xs ${subText}`}>{c.time}</div>
+                                                                </div>
+                                                                <div className={`text-sm mt-1`}>{c.text}</div>
+                                                                <div className="flex items-center mt-2 text-xs">
+                                                                    <button
+                                                                        onClick={() => toggleCommentLike(c.id)}
+                                                                        className={`group text-xs inline-flex items-center gap-1 transition cursor-pointer`}
+                                                                    >
+                                                                        <ThumbsUp
+                                                                            className={`w-3.5 h-3.5 transition-transform duration-150 group-active:scale-90 ${likedComments[c.id]
+                                                                                ? 'text-[#2563EB] scale-110'
+                                                                                : subText
+                                                                                }`}
+                                                                            fill={likedComments[c.id] ? 'currentColor' : 'none'}
+                                                                        />
+                                                                        <span className={`${likedComments[c.id] ? 'text-[#2563EB]' : subText}`}>
+                                                                            {formatCount(c.likes)}
+                                                                        </span>
+                                                                    </button>
+                                                                    <span className={`px-3 ${subText}`}>•</span>
+                                                                    <button className={`group text-xs inline-flex items-center gap-1`}>
+                                                                        <Reply className={`w-3.5 h-3.5 ${subText} group-hover:text-[#2563EB]`} />
+                                                                        <span className={`${subText} group-hover:text-[#2563EB]`}>Reply</span>
+                                                                    </button>
+                                                                </div>
+                                                                {c.replies && c.replies.length > 0 && (
+                                                                    <div className="mt-4 pl-10 space-y-4">
+                                                                        {c.replies.map((r) => (
+                                                                            <div key={r.id} className="flex items-start gap-3">
+                                                                                <div className={`h-7 w-7 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-[10px] font-semibold`}>
+                                                                                    {r.name.split(' ').map(p => p[0]).slice(0, 2).join('')}
+                                                                                </div>
+                                                                                <div className="min-w-0 flex-1">
+                                                                                    <div className="flex items-center">
+                                                                                        <div className="text-sm font-medium truncate">{r.name}</div>
+                                                                                        <span className={`px-2 ${subText}`}>•</span>
+                                                                                        <div className={`text-xs ${subText}`}>{r.time}</div>
+                                                                                    </div>
+                                                                                    <div className={`text-sm mt-1`}>{r.text}</div>
+                                                                                    <div className="flex items-center mt-2 text-xs">
+                                                                                        <button
+                                                                                            onClick={() => toggleReplyLike(r.id)}
+                                                                                            className={`group text-xs inline-flex items-center gap-1 transition cursor-pointer`}
+                                                                                        >
+                                                                                            <ThumbsUp
+                                                                                                className={`w-3.5 h-3.5 transition-transform duration-150 group-active:scale-90 ${likedReplies[r.id]
+                                                                                                    ? 'text-[#2563EB] scale-110'
+                                                                                                    : subText
+                                                                                                    }`}
+                                                                                                fill={likedReplies[r.id] ? 'currentColor' : 'none'}
+                                                                                            />
+                                                                                            <span className={`${likedReplies[r.id] ? 'text-[#2563EB]' : subText}`}>
+                                                                                                {formatCount(r.likes)}
+                                                                                            </span>
+                                                                                        </button>
+                                                                                        <span className={`px-3 ${subText}`}>•</span>
+                                                                                        <button className={`group text-xs inline-flex items-center gap-1`}>
+                                                                                            <Reply className={`w-3.5 h-3.5 ${subText} group-hover:text-[#2563EB]`} />
+                                                                                            <span className={`${subText} group-hover:text-[#2563EB]`}>Reply</span>
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {idx < comments.length - 1 && <div className={`mt-6 border-t ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}></div>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5`}>
+                                            <h3 className="text-sm font-semibold mb-3">Related Video</h3>
+                                            <div className="space-y-2 md:space-y-3">
+                                                {pageData.relatedVideos.map((rv) => (
+                                                    <div
+                                                        key={rv.id}
+                                                        onClick={() => navigate(`/StudentPortel/Videos/${rv.id}`, { state: { video: rv }, replace: true })}
+                                                        className={`flex gap-2 md:gap-3 items-center rounded-lg border ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'} p-2 cursor-pointer hover:opacity-80 transition-opacity`}
+                                                    >
+                                                        <div className="w-24 h-16 rounded-md overflow-hidden bg-zinc-800/60">
+                                                            <div className={`w-full h-full bg-cover bg-center`} style={{ backgroundImage: `url('${rv.thumb}')` }} />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="text-sm font-medium truncate">{rv.title}</div>
+                                                            <div className={`text-xs ${subText}`}>{rv.duration}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </aside>
+                            </div>
+                            {/* Description Bottom Sheet Modal (scoped to main content) */}
+                            {showDescription && (
+                                <>
+                                    <div
+                                        className={`absolute inset-0 z-40 ${isDark ? 'bg-black/50' : 'bg-black/40'} backdrop-blur-[3px]`}
+                                        onClick={() => setShowDescription(false)}
+                                    />
+                                    <div className="absolute inset-x-0 bottom-0 z-50 flex justify-center p-4">
+                                        <div
+                                            ref={descRef}
+                                            className={`w-full max-w-7xl mx-auto border ${isDark ? 'border-[#1F2430] bg-zinc-900' : 'border-[#3B82F6] bg-white'} rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transform transition-transform duration-300 translate-y-0`}
+                                        >
+                                            <div className="flex items-center justify-between mb-4 md:mb-6">
+                                                <h3 className={`text-lg md:text-xl lg:text-2xl font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Video Description</h3>
+                                                <button onClick={() => setShowDescription(false)} className={`h-8 w-8 inline-flex items-center justify-center rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-200'} transition`} aria-label="Close description">
+                                                    <X className={`w-4 h-4 ${subText}`} />
+                                                </button>
+                                            </div>
+                                            <div className={`text-xs uppercase tracking-wide ${subText} mb-3`}>About This Video</div>
+                                            <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-200' : 'text-zinc-800'} mb-4 md:mb-6`}>
+                                                {pageData.description}
+                                            </p>
+                                            <div className={`text-xs uppercase tracking-wide ${subText} mb-3`}>Main Highlights</div>
+                                            <ul className={`list-disc pl-6 space-y-2 ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
+                                                {pageData.highlights.map((h, idx) => (
+                                                    <li key={idx}>{h}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </main>
+            </div >
+        </div >
+    );
+}
+
+export default Videos;

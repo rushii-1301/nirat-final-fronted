@@ -1,0 +1,342 @@
+import React, { useEffect, useState, useMemo } from "react";
+import Sidebar from "../../Tools/Sidebar.jsx";
+import Header from "../../Tools/Header.jsx";
+import { getAsset, BACKEND_API_URL } from "../../../utils/assets.js";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { Loader2 } from "lucide-react";
+
+function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
+
+    const navigate = useNavigate();
+    const location = useLocation();
+    const pathname = location.pathname || "";
+    const isAdminPath = /^\/admin\//i.test(pathname);
+
+    // State for dashboard data
+    const [dashboardData, setDashboardData] = useState({
+        total_lectures: 10,
+        played_lectures: 10,
+        shared_lectures: 10,
+        pending_lectures: 10,
+        qa_sessions: 10
+    });
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch dashboard data
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const token = localStorage.getItem('access_token') || '';
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.get(`${BACKEND_API_URL}/dashboard/lecture`, { headers });
+
+                if (response.data?.status && response.data?.data) {
+                    setDashboardData(response.data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching lecture dashboard:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    // Color palette
+    const palette = isDark
+        ? {
+            all: '#F7D64A',      // Yellow for All Lecture (outer)
+            pending: '#9BDCF2',  // Blue for Pending Lecture (inner)
+            track: '#3f3f46'
+        }
+        : {
+            all: '#FEE55A',
+            pending: '#C3EBFA',
+            track: '#e4e4e7'
+        };
+
+    // Calculate total lectures from played + shared
+    const calculatedTotal = (dashboardData.played_lectures || 0) + (dashboardData.shared_lectures || 0);
+    const totalLectures = calculatedTotal > 0 ? calculatedTotal : (dashboardData.total_lectures || 0);
+
+    // Chart segments - All Lecture and Pending Lecture
+    const chartSegments = useMemo(() => ([
+        {
+            key: 'all',
+            label: 'All Lecture',
+            value: totalLectures,
+            color: palette.all
+        },
+        {
+            key: 'pending',
+            label: 'Pending Lecture',
+            value: dashboardData.pending_lectures || 0,
+            color: palette.pending
+        },
+    ]), [totalLectures, dashboardData.pending_lectures, palette.all, palette.pending]);
+
+    // Circle math
+    const baseRadius = 100;
+    const ringSpacing = 30;
+    const chartTotalRaw = chartSegments.reduce((acc, seg) => acc + (Number.isFinite(seg.value) ? seg.value : 0), 0);
+    const chartTotal = chartTotalRaw > 0 ? chartTotalRaw : 1; // Use 1 instead of 0 to avoid division by zero
+
+    // Progress animation - Always animate
+    const [progressFactor, setProgressFactor] = useState(0);
+    useEffect(() => {
+        setProgressFactor(0);
+        const raf = requestAnimationFrame(() => {
+            const raf2 = requestAnimationFrame(() => setProgressFactor(1));
+            return () => cancelAnimationFrame(raf2);
+        });
+        return () => cancelAnimationFrame(raf);
+    }, [chartTotalRaw, dashboardData.played_lectures, dashboardData.shared_lectures]);
+
+    // Normalize segments with cumulative rotation
+    let cumulativePercent = 0;
+    const normalizedSegments = chartSegments.map((segment, idx) => {
+        const safeValue = Number.isFinite(segment.value) ? segment.value : 0;
+        const radius = baseRadius - idx * ringSpacing;
+        const circumference = 2 * Math.PI * radius;
+        const percent = chartTotalRaw > 0 ? (safeValue / chartTotalRaw) * 100 : 0;
+        const rotation = cumulativePercent * 3.6; // start where previous ended
+        cumulativePercent += percent;
+
+        return {
+            ...segment,
+            value: safeValue,
+            percent,
+            radius,
+            circumference,
+            rotation,
+        };
+    });
+
+    // Debug: Log chart data
+    console.log('LectureDashboard Chart Data:', {
+        dashboardData,
+        chartTotalRaw,
+        normalizedSegments,
+        progressFactor
+    });
+
+    const lectureCardClass = isDark
+        ? "bg-[#0F1014] border-[#1e1f25] text-white"
+        : "bg-white border-[#EAECF5] text-[#141522]";
+    const legendCardClass = isDark
+        ? "bg-[#1B1C22] border border-[#2A2B32] text-white"
+        : "bg-[#F6F7FC] border border-[#E4E7F2] text-[#141522]";
+    const legendDotColors = {
+        pending: 'bg-[#9BDCF2]',
+        all: 'bg-[#F6D96F]',
+    };
+
+    return (
+        <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900"} h-screen transition-colors duration-300`}>
+            {/* Sidebar */}
+            <Sidebar isDark={isDark} sidebardata={sidebardata} />
+
+            {/* Main Content (offset for fixed sidebar) */}
+            <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+                {/* ===== Sticky Header ===== */}
+                <div className="sticky top-0 z-20">
+                    <Header title="Lecture Management" isDark={isDark} toggleTheme={toggleTheme} />
+                </div>
+
+                {/* ===== Main Section (scrollable) ===== */}
+                <main className="mt-6 flex-1 overflow-y-auto no-scrollbar space-y-6">
+                    {/* ---- Stat Cards (Top Row) ---- */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-[minmax(90px,auto)]">
+                        {isLoading
+                            ? Array.from({ length: 3 }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-2xl shadow-sm p-5 flex flex-col justify-between min-h-[120px] animate-pulse`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} w-4 h-4 rounded-full`} />
+                                            <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} h-3 w-24 rounded-full`} />
+                                        </div>
+                                    </div>
+                                    <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} mt-4 h-6 w-16 rounded-full`} />
+                                </div>
+                            ))
+                            : [
+                                {
+                                    name: "Played Lectures",
+                                    value: dashboardData.played_lectures,
+                                    to: "/lecture/Playedlecture"
+                                },
+                                {
+                                    name: "Shared Lectures",
+                                    value: dashboardData.shared_lectures,
+                                    to: "/lecture/Sharedlecture"
+                                },
+                                {
+                                    name: "Q & A Section",
+                                    value: dashboardData.qa_sessions,
+                                    to: "/lecture/QandA"
+                                }
+                            ].map((items, i) => (
+                                <div
+                                    key={i}
+                                    onClick={() => {
+                                        if (!isAdminPath) {
+                                            navigate(items.to);
+                                        }
+                                    }}
+                                    className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-2xl shadow-sm p-5 flex flex-col justify-between min-h-[120px] ${isAdminPath ? 'cursor-default' : 'cursor-pointer'}`}>
+                                    <div
+                                        className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <img
+                                                src={isDark ? getAsset('Eyes_dark') : getAsset('Eyes_light')}
+                                                alt="Eyes"
+                                                className={"w-4 h-4"}
+                                            />
+                                            <div
+                                                className={`text-[12px] md:text-sm font-medium ${isDark ? 'text-white' : 'text-[#696CFF]'}`}
+                                            >{items.name}</div>
+                                        </div>
+                                    </div>
+                                    <h2 className={`mt-3 text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{items.value}</h2>
+                                </div>
+                            ))}
+                    </div>
+
+                    {/* ---- Total Lecture Chart (Second Row) ---- */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.1fr_0.6fr_0.5fr] gap-6">
+                        <div className={`${lectureCardClass} border p-6 pb-3 sm:p-8 sm:pb-4 rounded-[32px] shadow-xl flex flex-col gap-6 md:col-span-2 xl:col-span-1`}>
+                            <h3 className="text-xl font-semibold">Total Lecture</h3>
+
+                            {isLoading ? (
+                                <div className="grid place-items-center animate-pulse">
+                                    <div className="relative w-[220px] h-[220px] md:w-[260px] md:h-[260px] flex items-center justify-center">
+                                        <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} rounded-full w-40 h-40`} />
+                                    </div>
+                                    <div className="w-full mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        {Array.from({ length: 2 }).map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className={`flex items-center w-fit justify-between gap-4 rounded-2xl px-4 py-3 ${isDark ? 'bg-[#1B1C22] border border-[#2A2B32]' : 'bg-[#F6F7FC] border border-[#E4E7F2]'}`}
+                                            >
+                                                <div className="flex items-center gap-2 text-sm font-medium">
+                                                    <span className={`w-8 h-8 rounded-full grid place-items-center ${isDark ? 'bg-[#262732]' : 'bg-white'}`}>
+                                                        <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} w-4 h-4 rounded-full`} />
+                                                    </span>
+                                                    <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} h-3 w-20 rounded-full`} />
+                                                </div>
+                                                <div className={`${isDark ? 'text-white/50' : 'text-zinc-900'}`}>|</div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} h-3 w-6 rounded-full`} />
+                                                    <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} w-3.5 h-3.5 rounded-full`} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* SVG Rounded Rings (Admin style) */}
+                                    <div className="grid place-items-center">
+                                        <div className="relative w-[220px] h-[220px] md:w-[260px] md:h-[260px]">
+                                            <svg
+                                                className="w-full h-full transform -rotate-90"
+                                                viewBox="0 0 220 220"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                {normalizedSegments.map((segment) => {
+                                                    const animatedDashOffset = segment.circumference - (segment.circumference * segment.percent * progressFactor) / 100;
+
+                                                    return (
+                                                        <g key={segment.key}>
+                                                            <circle
+                                                                cx="110"
+                                                                cy="110"
+                                                                r={segment.radius}
+                                                                stroke={palette.track}
+                                                                strokeWidth="14"
+                                                                fill="none"
+                                                                opacity="1"
+                                                            />
+                                                            <circle
+                                                                cx="110"
+                                                                cy="110"
+                                                                r={segment.radius}
+                                                                stroke={segment.color}
+                                                                strokeWidth="14"
+                                                                strokeLinecap="round"
+                                                                fill="none"
+                                                                strokeDasharray={segment.circumference}
+                                                                strokeDashoffset={animatedDashOffset}
+                                                                transform={`rotate(${segment.rotation} 110 110)`}
+                                                                style={{
+                                                                    transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                                    opacity: 1
+                                                                }}
+                                                            />
+                                                        </g>
+                                                    );
+                                                })}
+                                            </svg>
+
+                                            {/* Center Text - Total Lectures */}
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                                <h2 className="text-3xl md:text-4xl font-semibold">
+                                                    {dashboardData.total_lectures || 0}
+                                                </h2>
+                                                <p className={`text-xs mt-1 uppercase tracking-wide ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                                    Total
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom Labels */}
+                                    <div className="w-full mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        {[{
+                                            key: 'pending',
+                                            label: 'Pending Lecture',
+                                            value: dashboardData.pending_lectures || 0,
+                                            icon: isDark ? getAsset('pending_lecture_dark') : getAsset('pending_lecture_light'),
+                                        }, {
+                                            key: 'all',
+                                            label: 'All Lecture',
+                                            value: dashboardData.total_lectures || 0,
+                                            icon: isDark ? getAsset('all_lecture_dark') : getAsset('all_lecture_light'),
+                                        }].map((chip) => (
+                                            <div
+                                                key={chip.key}
+                                                className={`${legendCardClass} flex items-center w-fit justify-between gap-4 rounded-2xl px-4 py-3 transition-colors`}
+                                            >
+                                                <div className="flex items-center gap-2 text-sm font-medium">
+                                                    <span className={`w-8 h-8 rounded-full grid place-items-center ${isDark ? 'bg-[#262732]' : 'bg-white'}`}>
+                                                        <img src={chip.icon} alt={chip.label} className="w-4 h-4" />
+                                                    </span>
+                                                    <span>{chip.label}</span>
+                                                </div>
+                                                <div className={`${isDark ? 'text-white/50' : 'text-zinc-900'}`}>|</div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-semibold">{chip.value}</span>
+                                                    <div className={`w-3.5 h-3.5 rounded-full ${legendDotColors[chip.key]}`}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        {/* placeholders to keep grid alignment on xl */}
+                        <div className="hidden xl:block"></div>
+                        <div className="hidden xl:block"></div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    );
+}
+
+export default LectureDashboard;

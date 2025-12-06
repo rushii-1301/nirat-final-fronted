@@ -1,0 +1,329 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import AddMembers from './Components/pages/Admin/AddMembers'
+import AllMembers from './Components/pages/Admin/AllMembers'
+import ChapterManagement from './Components/pages/ChapterManagement/ChapterManagement'
+import Notifications from './Components/pages/LecturesManagement/Notifications'
+import Login from './Components/pages/Startup/Login'
+import ChangePassword from './Components/pages/Startup/ChangePassword'
+import Profile from './Components/pages/Profiles/Profile'
+import EditProfile from './Components/pages/Profiles/EditProfile'
+import ManagementList from './Components/pages/Admin/ManagementList'
+import SignUp from './Components/pages/Startup/SignUp'
+import AdminDashboard from './Components/pages/Admin/AdminDashboard'
+import Playedleacher from './Components/pages/LecturesManagement/Playedleacher'
+import SharedLeacher from './Components/pages/LecturesManagement/SharedLeacher'
+import AutoGenratePassword from './Components/pages/StudentManagement/AutoGenratePassword'
+import StudentsList from './Components/pages/StudentManagement/StudentsList'
+import StudentDetails from './Components/pages/StudentManagement/StudentDetails'
+import StudentDashboard from './Components/pages/StudentManagement/StudentDashboard'
+import TotalLecture from './Components/pages/StudentManagement/TotalLecture'
+import TotalPaid from './Components/pages/StudentManagement/TotalPaid'
+import LectureHome from './Components/pages/LecturesManagement/LectureHome'
+import StartNewLecture from './Components/pages/LecturesManagement/StartNewLecture'
+import AddLecture from './Components/pages/LecturesManagement/AddLecture'
+import LectureVideo from './Components/pages/LecturesManagement/LectureVideo'
+import QwestionAndAnswer from './Components/pages/LecturesManagement/QwestionAndAnswer'
+import PortalDetails from './Components/pages/StudentPortal/PortalDetails'
+import PortalSignUp from './Components/pages/StudentPortal/PortalSignUp'
+import SelectSubject from './Components/pages/StudentPortal/SelectSubject'
+import OpenChart from './Components/pages/StudentPortal/OpenChart'
+import ChapterTitle from './Components/Trash/ChapterTitle'
+import PersonalInformation from './Components/pages/StudentPortal/PersonalInformation'
+import Videos from './Components/pages/StudentPortal/Videos'
+import EditChapter from './Components/pages/ChapterManagement/EditChapter'
+import AddChapter from './Components/pages/ChapterManagement/AddChapter'
+import Suggestions from './Components/pages/ChapterManagement/Suggestions'
+import UploadBook from './Components/pages/ChapterManagement/UploadBook'
+import MergeChapter from './Components/pages/ChapterManagement/MergeChapter'
+import NarrationPage from './Components/pages/ChapterManagement/NarrationPage'
+import AddTopicNarration from './Components/pages/ChapterManagement/AddTopicNarration'
+import PuchaseHistory from './Components/pages/StudentPortal/PuchaseHistory'
+import WatchedLeachers from './Components/pages/StudentPortal/WatchedLeachers'
+import SavedVideos from './Components/pages/StudentPortal/SavedVideos'
+import Chapter from './Components/pages/StudentPortal/Chapter'
+import CoverPage from './Components/pages/ChapterManagement/CoverPage'
+import Languages from './Components/pages/ChapterManagement/Languages'
+import LectureDashboard from './Components/pages/LecturesManagement/LectureDashboard'
+import AllChapters from './Components/pages/ChapterManagement/AllChapters'
+import GenerateStudent from './Components/pages/StudentManagement/GenerateStudent'
+import Settings from './Components/pages/StudentPortal/Settings'
+import UpdateStudentDetails from './Components/pages/StudentManagement/UpdateStudentDetails'
+import ResetPassword from './Components/pages/Startup/ResetPassword'
+import RoleFeatures from './Components/pages/Startup/RoleFeatures'
+import PDFSlideViewer from './Components/pages/StudentPortal/pdfview'
+
+
+function App() {
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'light' || stored === 'dark') return stored
+    const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+    return prefersDark ? 'dark' : 'light'
+  })
+  const isDark = useMemo(() => theme === 'dark', [theme])
+
+  const lectureSidebar = [
+    {
+      label: "Dashboard",
+      to: "/lecture/Dashboard",
+      icon: ["home_tranperent_dark", "home_tranperent_light"]
+    },
+    {
+      label: "All Lectures",
+      to: "/lecture/Alllectures",
+      activePaths: [
+        "/lecture/LectureVideo",
+        "/lecture/addlecture",
+        "/lecture/newlecture",
+        "/lecture/LectureVideo",
+      ],
+      icon: ["Alllectures_dark", "Alllectures_light"]
+    },
+    {
+      label: "Played Lecture",
+      to: "/lecture/Playedlecture",
+      icon: ["playedleacher_dark", "playedleacher_light"]
+    },
+    {
+      label: "Shared Lecture",
+      to: "/lecture/Sharedlecture",
+      icon: ["share_trap_dark", "share_trap_light"]
+    },
+    // {
+    //   label: "Start New Lecture",
+    //   to: "/lecture/newlecture",
+    //   icon: ["addlecture_dark", "addlecture_light"]
+    // },
+    // {
+    //   label: "Q&A Section",
+    //   to: "/lecture/QandA",
+    //   icon: ["q_dark", "q_light"]
+    // }
+  ]
+
+  const adminSidebar = [
+    {
+      label: "Dashboard",
+      to: "/Admin/Dashboard",
+      icon: ["home_dark", "home_light"]
+    },
+    {
+      label: "All Members",
+      to: "/Admin/AllMembers",
+      activePaths: [
+        "/Admin/Managementlist",
+        "/Admin/AddMembers",
+        "/Admin/EditMembers",
+        "/Admin/Profile",
+        "/Admin/Profile/Edit/:id",
+        "/Admin/Notification",
+        "/Admin/chapter",
+        "/Admin/chapter/Dashboard",
+        "/Admin/student/Dashboard",
+        "/Admin/lecture/Dashboard",
+
+      ],
+      icon: ["filter_dark", "filter_light"]
+    }
+  ]
+
+  const studentSidebar = [
+    {
+      label: "Dashboard",
+      to: "/Student/Dashboard",
+      icon: ["home_dark", "home_light"]
+    },
+    {
+      label: "Generate Student List",
+      to: "/Student/Generatestudent",
+      icon: ["Generate_student_dark", "Generate_student_light"]
+    }
+  ]
+
+  const chapterSidebar = [
+    {
+      label: "Home",
+      to: "/chapter/Home",
+      icon: ["home_dark", "home_light"]
+    },
+    {
+      label: "Add",
+      to: "/chapter/AddChapter",
+      activePaths: [
+        "/chapter/AddChapter",
+        "/chapter/Suggestions",
+        "/chapter/UploadBook",
+        "/chapter/AddTopics",
+        "/chapter/MergeChapter",
+        "/chapter/SetChapter",
+        "/chapter/AllChapters",
+        "/chapter/Narration",
+        "/chapter/CoverPage",
+      ],
+      icon: ["add_student_dark", "add_student_light"]
+    }
+  ]
+  const StudentpoartalSidebar = [
+    {
+      label: "Home",
+      to: "/StudentPortel/home",
+      icon: ["home_tranperent_dark", "home_tranperent_light"]
+    },
+    {
+      label: "Chapter",
+      to: "/StudentPortel/chapter",
+      icon: ["book_dark", "book_light"]
+    },
+    {
+      label: "chat",
+      to: "/StudentPortel/OpenChart",
+      icon: ["chat_dark", "chat_light"]
+    },
+    {
+      label: "Watched Lecture",
+      to: "/StudentPortel/WatchedLeachers",
+      icon: ["video_dark", "video_light"]
+    },
+    {
+      label: "purchase History",
+      to: "/StudentPortel/PuchaseHistory",
+      icon: ["puchase_dark", "puchase_light"]
+    },
+    {
+      label: "Saved Videos",
+      to: "/StudentPortel/SavedVideos",
+      icon: ["saved_dark", "saved_light"]
+    },
+    {
+      label: "Setting",
+      to: "/StudentPortel/Settings",
+      icon: ["settings_dark", "settings_light"]
+    },
+    {
+      label: "profile",
+      to: "/StudentPortel/profile",
+      icon: ["profile_dark", "profile_light"]
+    },
+
+  ]
+  useEffect(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored !== 'light' && stored !== 'dark') {
+      const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+      if (!mql) return
+      const handler = (e) => setTheme(e.matches ? 'dark' : 'light')
+      try { mql.addEventListener('change', handler) } catch (_) { mql.addListener(handler) }
+      return () => {
+        try { mql.removeEventListener('change', handler) } catch (_) { mql.removeListener(handler) }
+      }
+    }
+  }, [])
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  return (
+    <>
+      <Routes>
+        {/* Login & Auth */}
+        <Route path="/login" element={<Login theme={theme} isDark={isDark} toggleTheme={toggleTheme} />} />
+        <Route path="/change-password" element={<ChangePassword theme={theme} isDark={isDark} />} />
+        <Route path="/signup" element={<SignUp theme={theme} isDark={isDark} />} />
+
+        {/* Landing */}
+        <Route path="/" element={<Navigate to="/Intro" />} />
+        <Route path="/Intro" element={<RoleFeatures theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin" element={<Navigate to="/Admin/dashboard" />} />
+        <Route path="/Admin/dashboard" element={<AdminDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/AllMembers" element={<AllMembers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+
+        {/* Admin All Member Pages connected */}
+        <Route path="/Admin/Managementlist" element={<ManagementList theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} title="All Member" filterLabel="Management" />} />
+        <Route path="/Admin/AddMembers" element={<AddMembers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/EditMembers" element={<AddMembers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/Profile" element={<Profile theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/Profile/Edit" element={<EditProfile theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/chapter/Dashboard" element={<ChapterManagement theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} addchapter="/Admin/chapter/AddChapter" />} />
+        <Route path="/Admin/student/Dashboard" element={<StudentDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/lecture/Dashboard" element={<LectureDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/reset-password" element={<ResetPassword theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+
+        {/* chapter Management */}
+        <Route path="/chapter" element={<Navigate to="/chapter/Home" />} />
+        <Route path="/chapter/Home" element={<ChapterManagement theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} addchapter="/chapter/AddChapter" />} />
+        {/* <Route path="/chapter/AddChapter" element={<AddChapter theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Home" />} /> */}
+        <Route path="/chapter/AddChapter" element={<AddChapter theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Home" />} />
+        <Route path="/chapter/EditChapter" element={<EditChapter theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Home" />} />
+        <Route path="/chapter/Suggestions" element={<Suggestions theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/AddChapter" />} />
+        <Route path="/chapter/UploadBook" element={<UploadBook theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/AddChapter" />} />
+        <Route path="/chapter/AddTopics" element={<AddTopicNarration theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto={"/chapter/UploadBook"} />} />
+        <Route path="/chapter/MergeChapter" element={<MergeChapter theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/AddTopics" />} />
+        <Route path="/chapter/AllChapters" element={<AllChapters theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/MergeChapter" />} />
+        <Route path="/chapter/SetChapter" element={<Languages theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/AllChapters" />} />
+        <Route path="/chapter/Narration" element={<NarrationPage theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/SetChapter" />} />
+        <Route path="/chapter/CoverPage" element={<CoverPage theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
+        <Route path="/chapter/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
+
+
+
+        {/* Lecture Management */}
+        <Route path="/lecture" element={<Navigate to="/lecture/Dashboard" />} />
+        <Route path="/lecture/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/Dashboard" element={<LectureDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/Alllectures" element={<LectureHome theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/Playedlecture" element={<Playedleacher theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/Sharedlecture" element={<SharedLeacher theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/newlecture" element={<StartNewLecture theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/addlecture" element={<AddLecture theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/LectureVideo" element={<LectureVideo theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        <Route path="/lecture/QandA" element={<QwestionAndAnswer theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+
+
+
+        {/* Student Management */}
+        <Route path="/Student" element={<Navigate to="/Student/Dashboard" />} />
+        <Route path="/Student/Dashboard" element={<StudentDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        <Route path="/Student/lectures" element={<TotalLecture theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        <Route path="/Student/paid" element={<TotalPaid theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        <Route path="/Student/list" element={<StudentsList theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        <Route path="/Student/getdetails" element={<StudentDetails theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        <Route path="/Student/Add" element={<AutoGenratePassword theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        <Route path="/Student/Generatestudent" element={<GenerateStudent theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        {/* <Route path="/Student/Edit/:id" element={<AddStudent theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} /> */}
+        <Route path="/Student/UpdateStudentDetails" element={<UpdateStudentDetails theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        <Route path="/student/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
+        
+
+        <Route path="/StudentPortel" element={<Navigate to="/StudentPortel/login" />} />
+        <Route path="/StudentPortel/login" element={<PortalSignUp theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/PortalDetails" element={<PortalDetails theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/home" element={<SelectSubject theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/Chapter" element={<Chapter theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/ChapterTitle" element={<ChapterTitle theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/OpenChart" element={<OpenChart theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/WatchedLeachers" element={<WatchedLeachers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/PuchaseHistory" element={<PuchaseHistory theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/SavedVideos" element={<SavedVideos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/profile" element={<PersonalInformation theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/Videos" element={<Videos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/Videos/:id" element={<Videos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/Settings" element={<Settings theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortel/desplaypdf" element={<PDFSlideViewer theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+
+
+
+      </Routes>
+      <ToastContainer position="top-center" autoClose={2000} limit={1} stacked theme="dark" />
+    </>
+  )
+}
+
+export default App

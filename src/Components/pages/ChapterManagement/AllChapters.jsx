@@ -1,0 +1,326 @@
+import React, { useState, useEffect, useRef } from "react";
+import Sidebar from "../../Tools/Sidebar";
+import Header from "../../Tools/Header";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronUp, Book, Layers, Sparkles } from "lucide-react";
+import axios from "axios";
+import { BACKEND_API_URL } from "../../../utils/assets";
+
+function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter" }) {
+  const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
+  const navigate = useNavigate();
+  const location = useLocation();
+  const navState = location.state || {};
+  const lectureId = navState.lectureId || null;
+
+  // Chapters data derived from merged-topics API
+  const [chaptersData, setChaptersData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // State for expanding/collapsing
+  const [expandedMaterials, setExpandedMaterials] = useState({});
+  const [expandedTopics, setExpandedTopics] = useState({});
+  const lastFetchedLectureId = useRef(null);
+
+  const themeClasses = {
+    shell: isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900",
+    panel: isDark ? "bg-zinc-900/50 border-zinc-800" : "bg-white/80 border-zinc-200",
+    headerCard: isDark ? "bg-zinc-900/80 border-zinc-800" : "bg-white/80 border-zinc-200",
+    subText: isDark ? "text-gray-400" : "text-gray-500",
+    card: isDark ? "bg-zinc-900 border-zinc-800 hover:border-zinc-700" : "bg-white border-zinc-200 hover:border-zinc-300",
+    cardActive: isDark ? "bg-zinc-800/50 border-zinc-700" : "bg-indigo-50/50 border-indigo-200",
+    badge: isDark ? "bg-zinc-800 text-zinc-300" : "bg-zinc-100 text-zinc-600",
+    accentText: isDark ? "text-indigo-400" : "text-indigo-600",
+    divider: isDark ? "border-zinc-800" : "border-zinc-200",
+  };
+
+  // Fetch merged topics based on lectureId from navigation state
+  useEffect(() => {
+    const fetchMergedTopics = async () => {
+      if (!lectureId) return;
+
+      if (lastFetchedLectureId.current === lectureId) return;
+      lastFetchedLectureId.current = lectureId;
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem("access_token");
+        const response = await axios.get(
+          `${BACKEND_API_URL}/chapter-materials/merged-topics/${lectureId}`,
+          {
+            headers: {
+              Accept: "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          }
+        );
+
+        const apiData = response?.data?.data;
+        if (!apiData || !Array.isArray(apiData.merged_topics)) {
+          setChaptersData([]);
+          return;
+        }
+
+        // Map merged_topics into books/chapters structure used by the UI
+        const mappedBooks = apiData.merged_topics.map((mt, idx) => {
+          const materialLabel = apiData?.chapter_title || `Material ${mt.material_id}`;
+          const topics = Array.isArray(mt.topics) ? mt.topics : [];
+
+          const chapters = topics.map((t, i) => {
+            const subtopics = Array.isArray(t.subtopics) ? t.subtopics : [];
+
+            const structuredSubtopics = subtopics.map((sub, sIdx) => ({
+              id: sub.subtopic_id || `${t.topic_id || `${mt.material_id}-${i + 1}`}-sub-${sIdx + 1}`,
+              index: sIdx + 1,
+              title: sub.title || "",
+              narration: sub.narration || "",
+            }));
+
+            return {
+              id: `${mt.material_id}-${t.topic_id || i + 1}`,
+              title: t.title || `Topic ${i + 1}`,
+              subtopics: structuredSubtopics,
+            };
+          });
+
+          return {
+            id: mt.material_id || idx + 1,
+            title: materialLabel,
+            author: `${topics.length} topics`,
+            chapters,
+          };
+        });
+
+        setChaptersData(mappedBooks);
+      } catch (error) {
+        console.error("Error fetching merged topics:", error);
+        setChaptersData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMergedTopics();
+  }, [lectureId]);
+
+  // Initialize expanded states when data loads - Only open the first material
+  useEffect(() => {
+    if (chaptersData.length > 0) {
+      setExpandedMaterials({ [chaptersData[0].id]: true });
+    }
+  }, [chaptersData]);
+
+  // Single expand for Materials
+  const toggleMaterial = (id) => {
+    setExpandedMaterials((prev) => {
+      // If currently open, close it (return empty). If closed, open it (and implicitly close others by returning new object)
+      return prev[id] ? {} : { [id]: true };
+    });
+  };
+
+  // Single expand for Topics
+  const toggleTopic = (id) => {
+    setExpandedTopics((prev) => {
+      return prev[id] ? {} : { [id]: true };
+    });
+  };
+
+  return (
+    <div className={`flex ${themeClasses.shell} h-screen overflow-hidden transition-colors duration-300 font-sans`}>
+      <Sidebar isDark={isDark} sidebardata={sidebardata} />
+
+      <div className="flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-6 pb-0 transition-all duration-300 relative">
+        {/* Background Gradients for Premium Feel */}
+        <div className={`absolute top-0 left-0 w-full h-64 opacity-20 pointer-events-none ${isDark ? 'bg-linear-to-b from-indigo-900/20 to-transparent' : 'bg-linear-to-b from-indigo-100 to-transparent'}`} />
+
+        <div className="sticky top-0 z-20">
+          <Header title="Chapter Management" isDark={isDark} toggleTheme={toggleTheme} />
+        </div>
+
+        <main className="mt-4 sm:mt-6 flex-1 flex flex-col min-h-0 z-10">
+          {/* Toolbar */}
+          <div
+            className={`${themeClasses.headerCard} sticky top-0 z-30 border rounded-2xl px-4 py-3 flex items-center justify-between backdrop-blur-md shadow-sm mb-6 transition-all duration-300`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className={`text-base sm:text-lg font-semibold tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}>
+                  Merged Content
+                </h1>
+                <p className={`text-xs ${themeClasses.subText} hidden sm:block`}>
+                  {lectureId ? "Review and manage your merged topics" : "Select a lecture to view content"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate(backto)}
+                className={`px-4 py-2 rounded-xl cursor-pointer  text-sm font-medium transition-all duration-200 ${isDark
+                  ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                  : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+                  }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => navigate("/chapter/SetChapter", { state: { lectureId } })}
+                className={`px-5 py-2 rounded-xl cursor-pointer text-sm font-medium shadow-lg shadow-indigo-500/20 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2 ${isDark
+                  ? "bg-white text-black hover:bg-zinc-100"
+                  : "bg-indigo-600 text-white hover:bg-indigo-700"
+                  }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Next Step</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Content Area - Hidden Scrollbar */}
+          <div className={`flex-1 overflow-y-auto pr-2 pb-6 ${themeClasses.panel} rounded-3xl border shadow-sm p-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']`}>
+            <div className="p-4 sm:p-6 space-y-8">
+
+              {isLoading && (
+                <div className="flex flex-col items-center justify-center h-64 space-y-4 animate-pulse">
+                  <div className={`w-12 h-12 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                  <div className={`h-4 w-48 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                </div>
+              )}
+
+              {!isLoading && chaptersData.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-64 text-center space-y-3">
+                  <div className={`p-4 rounded-full ${isDark ? 'bg-zinc-800/50' : 'bg-zinc-100'}`}>
+                    <Book className={`w-8 h-8 ${themeClasses.subText}`} />
+                  </div>
+                  <p className={`text-sm ${themeClasses.subText}`}>No chapters found for this lecture.</p>
+                </div>
+              )}
+
+              {chaptersData.map((book) => (
+                <div key={book.id} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {/* Material Header */}
+                  <div
+                    onClick={() => toggleMaterial(book.id)}
+                    className="flex items-center justify-between group cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`h-8 w-1 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-600'}`}></div>
+                      <h2 className={`text-lg font-bold tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-800'}`}>
+                        {book.title}
+                      </h2>
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${themeClasses.badge}`}>
+                        {book.chapters.length} Topics
+                      </span>
+                    </div>
+                    <div className={`p-1.5 rounded-full transition-colors ${isDark ? 'group-hover:bg-zinc-800' : 'group-hover:bg-zinc-100'}`}>
+                      {expandedMaterials[book.id] ? (
+                        <ChevronUp className={`w-5 h-5 ${themeClasses.subText}`} />
+                      ) : (
+                        <ChevronDown className={`w-5 h-5 ${themeClasses.subText}`} />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Topics List */}
+                  {expandedMaterials[book.id] && (
+                    <div className="grid grid-cols-1 gap-3 pl-0 sm:pl-4">
+                      {book.chapters.map((chapter, index) => {
+                        const isExpanded = expandedTopics[chapter.id];
+                        const hasSubtopics = chapter.subtopics && chapter.subtopics.length > 0;
+
+                        return (
+                          <div
+                            key={chapter.id}
+                            className={`group rounded-2xl border transition-all duration-300 overflow-hidden ${isExpanded ? themeClasses.cardActive : themeClasses.card
+                              }`}
+                          >
+                            {/* Topic Header (Clickable) */}
+                            <div
+                              onClick={() => toggleTopic(chapter.id)}
+                              className={`px-5 py-4 flex items-center gap-4 cursor-pointer select-none ${!hasSubtopics && 'cursor-default'}`}
+                            >
+                              <div
+                                className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${isExpanded
+                                  ? (isDark ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white")
+                                  : (isDark ? "bg-zinc-800 text-zinc-400 group-hover:bg-zinc-700" : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200")
+                                  }`}
+                              >
+                                {index + 1}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h3 className={`text-sm sm:text-base font-semibold truncate ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
+                                  {chapter.title}
+                                </h3>
+                                <p className={`text-xs mt-0.5 ${themeClasses.subText}`}>
+                                  {hasSubtopics ? `${chapter.subtopics.length} Subtopics` : 'No subtopics'}
+                                </p>
+                              </div>
+
+                              {hasSubtopics && (
+                                <div className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                                  <ChevronDown className={`w-5 h-5 ${themeClasses.subText}`} />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Subtopics Dropdown */}
+                            <div
+                              className={`grid transition-all duration-300 ease-in-out ${isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                                }`}
+                            >
+                              <div className="overflow-hidden">
+                                <div className={`px-5 pb-5 pt-0 space-y-3`}>
+                                  <div className={`h-px w-full mb-4 ${themeClasses.divider}`}></div>
+
+                                  {chapter.subtopics.map((sub, index) => (
+                                    <div
+                                      key={sub.id + "_" + index}
+                                      className={`relative pl-4 border-l-2 transition-colors ${isDark
+                                        ? "border-zinc-800 hover:border-indigo-500/50"
+                                        : "border-zinc-200 hover:border-indigo-300"
+                                        }`}
+                                    >
+                                      <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`text-xs font-medium ${themeClasses.accentText}`}>
+                                            {sub.index.toString().padStart(2, '0')}
+                                          </span>
+                                          <h4 className={`text-sm font-medium ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                                            {sub.title}
+                                          </h4>
+                                        </div>
+
+                                        {sub.narration ? (
+                                          <p className={`text-xs leading-relaxed ${themeClasses.subText} line-clamp-2 hover:line-clamp-none transition-all`}>
+                                            {sub.narration}
+                                          </p>
+                                        ) : (
+                                          <p className={`text-[10px] italic opacity-50 ${themeClasses.subText}`}>
+                                            No description available
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default AllChapters;
