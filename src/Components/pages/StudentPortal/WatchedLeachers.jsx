@@ -125,7 +125,7 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
             {/* Main Content (offset for fixed sidebar) */}
-            <div className={`flex flex-col min-w-0 min-h-0 h-screen w-full md:ml-20 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+            <div className={`flex flex-col min-w-0 min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
                 {/* ===== Sticky Header ===== */}
                 <div className="sticky top-0 z-20">
                     <Header title="Watched Leacher" isDark={isDark} toggleTheme={toggleTheme} />
@@ -137,7 +137,7 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
                         <h2 className="text-xl font-semibold">Watched lecture</h2>
 
                         {/* Stats row */}
-                        <div className="mt-4 grid grid-cols-3 md:grid-cols-3 gap-4">
+                        <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                             {stats.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -169,7 +169,7 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
 
                         {/* Error State */}
                         {error && (
-                            <div className={`${panelBg} rounded-2xl border p-6 flex items-center gap-3`}>
+                            <div className={`rounded-2xl border p-6 mt-5 flex items-center gap-3`}>
                                 <AlertCircle className="w-5 h-5 text-red-500" />
                                 <div>
                                     <div className="text-sm font-medium text-red-500">Error loading data</div>
@@ -182,7 +182,7 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
                         {!loading && !error && data && (
                             <div className="mt-6 flex-1 min-h-0 overflow-y-auto no-scrollbar pr-1 space-y-4">
                                 {data.lectures.length === 0 ? (
-                                    <div className={`${panelBg} rounded-2xl border p-8 text-center`}>
+                                    <div className={`p-8 text-center`}>
                                         <div className={`text-sm ${subText}`}>No watched lectures found</div>
                                     </div>
                                 ) : (

@@ -225,24 +225,54 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
 
     const toggleFullscreen = () => {
         if (videoRef.current) {
+            const video = videoRef.current;
+            
             if (!isFullscreen) {
-                if (videoRef.current.requestFullscreen) {
-                    videoRef.current.requestFullscreen();
-                } else if (videoRef.current.webkitRequestFullscreen) {
-                    videoRef.current.webkitRequestFullscreen();
-                } else if (videoRef.current.msRequestFullscreen) {
-                    videoRef.current.msRequestFullscreen();
+                // YouTube-style mobile fullscreen
+                if (video.webkitEnterFullscreen) {
+                    // iOS Safari - native video fullscreen
+                    video.webkitEnterFullscreen();
+                } else if (video.requestFullscreen) {
+                    // Standard fullscreen API
+                    video.requestFullscreen().then(() => {
+                        // Try to lock orientation to landscape on mobile
+                        if (screen.orientation && screen.orientation.lock) {
+                            screen.orientation.lock('landscape').catch(() => {});
+                        }
+                    }).catch(() => {
+                        // Fallback for mobile
+                        if (video.webkitEnterFullscreen) {
+                            video.webkitEnterFullscreen();
+                        }
+                    });
+                } else if (video.webkitRequestFullscreen) {
+                    video.webkitRequestFullscreen();
+                } else if (video.mozRequestFullScreen) {
+                    video.mozRequestFullScreen();
+                } else if (video.msRequestFullscreen) {
+                    video.msRequestFullscreen();
                 }
             } else {
-                if (document.exitFullscreen) {
+                // Exit fullscreen
+                if (video.webkitExitFullscreen) {
+                    video.webkitExitFullscreen();
+                } else if (document.exitFullscreen) {
                     document.exitFullscreen();
                 } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
+                } else if (document.webkitCancelFullScreen) {
+                    document.webkitCancelFullScreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
                 } else if (document.msExitFullscreen) {
                     document.msExitFullscreen();
                 }
+                
+                // Unlock orientation when exiting fullscreen
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock().catch(() => {});
+                }
             }
-            setIsFullscreen(!isFullscreen);
         }
     };
 
@@ -309,6 +339,56 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
             video.removeEventListener('loadedmetadata', updateDuration);
             video.removeEventListener('play', handlePlay);
             video.removeEventListener('pause', handlePause);
+        };
+    }, []);
+
+    // Fullscreen event listeners for YouTube-style behavior
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isCurrentlyFullscreen = !!(
+                document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement
+            );
+            setIsFullscreen(isCurrentlyFullscreen);
+        };
+
+        const handleWebkitFullscreenChange = () => {
+            setIsFullscreen(!!document.webkitFullscreenElement);
+        };
+
+        const handleVideoFullscreen = () => {
+            setIsFullscreen(true);
+        };
+
+        const handleVideoExitFullscreen = () => {
+            setIsFullscreen(false);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleWebkitFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+        // Video specific events for iOS Safari
+        if (videoRef.current) {
+            const video = videoRef.current;
+            video.addEventListener('webkitbeginfullscreen', handleVideoFullscreen);
+            video.addEventListener('webkitendfullscreen', handleVideoExitFullscreen);
+        }
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleWebkitFullscreenChange);
+            document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+            
+            if (videoRef.current) {
+                const video = videoRef.current;
+                video.removeEventListener('webkitbeginfullscreen', handleVideoFullscreen);
+                video.removeEventListener('webkitendfullscreen', handleVideoExitFullscreen);
+            }
         };
     }, []);
 
@@ -492,7 +572,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
             {/* Main Content (offset for fixed sidebar) */}
             <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
                 {/* ===== Sticky Header ===== */}
-                <div className="sticky top-0 z-20">
+                <div className="sticky top-0 z-20 transition-all duration-300">
                     <Header title="Lecture Management" isDark={isDark} toggleTheme={toggleTheme} />
                 </div>
 
@@ -511,7 +591,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                         </div>
                     ) : (
                         <div className="relative flex-1 min-h-0">
-                            <div className={`w-full max-w-7xl mx-auto no-scrollbar grid gap-4 md:gap-6 lg:grid-cols-3 h-full overflow-y-auto ${showDescription ? 'blur-sm pointer-events-none' : ''}`}>
+                            <div className={`w-full max-w-7xl mx-auto no-scrollbar grid gap-4 md:gap-6 lg:grid-cols-3 h-full overflow-y-auto ${showDescription ? 'pointer-events-none' : ''}`}>
 
                                 {/* Left: Main Video and Meta */}
                                 <div className="lg:col-span-2 space-y-3 md:space-y-4">
@@ -525,6 +605,9 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                 controls={false}
                                                 controlsList="nodownload noplaybackrate noremoteplayback"
                                                 disablePictureInPicture
+                                                playsInline
+                                                webkit-playsinline="true"
+                                                x-webkit-airplay="allow"
                                             >
                                                 <source src={pageData.videoUrl} type="video/mp4" />
                                                 Your browser does not support the video tag.
@@ -638,7 +721,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
 
                                                             {/* Settings Menu */}
                                                             {showSettings && (
-                                                                <div className="absolute bottom-full right-0 mb-2 w-56 rounded-xl border border-zinc-700 bg-zinc-800 shadow-lg z-50">
+                                                                <div className="absolute bottom-full right-0 mb-7 w-50 rounded-xl border border-zinc-700 bg-zinc-800 shadow-lg z-50">
                                                                     {currentSettingsView === 'main' && (
                                                                         <>
                                                                             {/* Loop Video Toggle */}
@@ -708,7 +791,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                                     )}
 
                                                                     {currentSettingsView === 'speed' && (
-                                                                        <div className="p-3">
+                                                                        <div className="p-3 max-h-[165px] overflow-y-auto no-scrollbar">
                                                                             <button
                                                                                 onClick={() => setCurrentSettingsView('main')}
                                                                                 className="flex items-center gap-2 mb-2 text-sm text-zinc-400 hover:text-zinc-200"
@@ -737,7 +820,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                                     )}
 
                                                                     {currentSettingsView === 'quality' && (
-                                                                        <div className="p-3">
+                                                                        <div className="p-3 max-h-[165px] overflow-y-auto no-scrollbar">
                                                                             <button
                                                                                 onClick={() => setCurrentSettingsView('main')}
                                                                                 className="flex items-center gap-2 mb-2 text-sm text-zinc-400 hover:text-zinc-200"
@@ -803,7 +886,8 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                     fill={liked ? 'currentColor' : 'none'}
                                                 />
                                                 <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>
-                                                    Like {totalLikes > 0 && `(${formatCount(totalLikes)})`}
+                                                    Like 
+                                                    {/* {totalLikes > 0 && `(${formatCount(totalLikes)})`} */}
                                                 </span>
                                             </button>
                                             <button className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition`}>
@@ -811,7 +895,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                 <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>Share</span>
                                             </button>
                                             <button
-                                                onClick={() => { setShowComments(true); setShowDescription(false); }}
+                                                onClick={() => { setShowComments(!showComments); if (!showComments) setShowDescription(false); }}
                                                 className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer transition ${showComments
                                                     ? (isDark ? 'bg-zinc-200 text-zinc-900 border-transparent' : 'bg-zinc-900 text-white border-transparent')
                                                     : (isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100')
@@ -862,19 +946,6 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                             </button>
                                         </div>
 
-                                        <div className={`border-t ${isDark ? 'border-zinc-800' : 'border-zinc-200'} my-3 md:my-4`} />
-
-                                        {/* Info rows */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                                            <div>
-                                                <div className={`text-xs ${subText} mb-1`}>Chapter Name</div>
-                                                <div className="text-sm font-medium">{pageData.bookName}</div>
-                                            </div>
-                                            <div>
-                                                <div className={`text-xs ${subText} mb-1`}>Duration</div>
-                                                <div className="text-sm font-medium">{pageData.duration}</div>
-                                            </div>
-                                        </div>
                                     </div>
 
 
@@ -1023,13 +1094,14 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                             {showDescription && (
                                 <>
                                     <div
-                                        className={`absolute inset-0 z-40 ${isDark ? 'bg-black/50' : 'bg-black/40'} backdrop-blur-[3px]`}
+                                        className={`fixed inset-0 z-40 ${isDark ? 'bg-black/10' : 'bg-black/5'}`}
                                         onClick={() => setShowDescription(false)}
                                     />
-                                    <div className="absolute inset-x-0 bottom-0 z-50 flex justify-center p-4">
+                                    <div className="fixed inset-0 z-50 flex items-end justify-center animate-in fade-in duration-300" onClick={() => setShowDescription(false)}>
                                         <div
                                             ref={descRef}
-                                            className={`w-full max-w-7xl mx-auto border ${isDark ? 'border-[#1F2430] bg-zinc-900' : 'border-[#3B82F6] bg-white'} rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transform transition-transform duration-300 translate-y-0`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className={`w-full border ${isDark ? 'border-[#1F2430] bg-zinc-900' : 'border-[#3B82F6] bg-white'} rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transform transition-transform duration-300 max-h-[50vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-300`}
                                         >
                                             <div className="flex items-center justify-between mb-4 md:mb-6">
                                                 <h3 className={`text-lg md:text-xl lg:text-2xl font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Video Description</h3>

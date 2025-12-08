@@ -288,7 +288,7 @@ function PortalDetails() {
   const inputCls = `w-full rounded-md px-3 py-2 text-sm border ${theme === 'dark' 
     ? 'bg-zinc-800 border-[#2A2A2A] text-white placeholder-gray-500 focus:border-[#3A3A3A]' 
     : 'bg-[#F5F5F5] border-[#E0E0E0] text-[#333333] placeholder-[#999999] focus:border-[#4A4AFF]'} focus:outline-none`;
-  const labelCls = `block mb-2 text-[14px] font-medium leading-[100%] capitalize mb-1 font-[Inter] ${theme === 'dark' ? 'text-white' : 'text-[#333333]'}`;
+  const labelCls = `block mb-2 text-[14px] font-medium leading-[100%] capitalize mb-1 font-[Inter] ${theme === 'dark' ? 'text-white' : 'text-black'}`;
   const headingCls = `text-[32px] font-bold leading-[100%] capitalize mb-4 font-[Inter] ${theme === 'dark' ? 'text-white' : 'text-[#333333]'}`;
 
   return (
@@ -347,8 +347,8 @@ function PortalDetails() {
                   type="text"
                   name="classStream"
                   value={formData.classStream}
-                  onChange={handleChange}
-                  placeholder="Enter Class | Stream"
+                  
+                  disabled
                   className={inputCls}
                 />
               </div>
@@ -358,8 +358,8 @@ function PortalDetails() {
                   type="text"
                   name="division"
                   value={formData.division}
-                  onChange={handleChange}
-                  placeholder="Enter Division"
+                  
+                  disabled
                   className={inputCls}
                 />
               </div>
@@ -383,8 +383,8 @@ function PortalDetails() {
                   type="text"
                   name="enrollmentNumber"
                   value={formData.enrollmentNumber}
-                  onChange={handleChange}
-                  placeholder="Enter Enrollment Number"
+                  
+                  disabled
                   className={inputCls}
                 />
               </div>
@@ -458,7 +458,7 @@ function PortalDetails() {
             <div className="flex justify-center pt-3">
               <button
                 onClick={handleSave}
-                className={`w-full py-3 px-6 rounded-md font-medium transition-colors ${theme === 'dark' ? 'bg-white hover:white text-black' : 'bg-[#6B46C1] hover:bg-[#5A3AA3] text-white'} `}
+                className={`cursor-pointer w-full py-3 px-6 rounded-md font-medium transition-colors ${theme === 'dark' ? 'bg-white hover:white text-black' : 'bg-[#6B46C1] hover:bg-[#5A3AA3] text-white'} `}
               >
                 Save
               </button>
