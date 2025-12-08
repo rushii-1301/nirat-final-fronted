@@ -60,8 +60,8 @@ function App() {
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('theme')
     if (stored === 'light' || stored === 'dark') return stored
-    const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
-    return prefersDark ? 'dark' : 'light'
+    // Default to dark theme when no preference is stored
+    return 'dark'
   })
   const isDark = useMemo(() => theme === 'dark', [theme])
 
@@ -209,18 +209,6 @@ function App() {
     },
 
   ]
-  useEffect(() => {
-    const stored = localStorage.getItem('theme')
-    if (stored !== 'light' && stored !== 'dark') {
-      const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
-      if (!mql) return
-      const handler = (e) => setTheme(e.matches ? 'dark' : 'light')
-      try { mql.addEventListener('change', handler) } catch (_) { mql.addListener(handler) }
-      return () => {
-        try { mql.removeEventListener('change', handler) } catch (_) { mql.removeListener(handler) }
-      }
-    }
-  }, [])
   const toggleTheme = useCallback(() => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))
   }, [])

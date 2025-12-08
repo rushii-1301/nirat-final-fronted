@@ -8,14 +8,10 @@ import { BACKEND_API_URL } from "../../../utils/assets";
 const getInitialTheme = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
     const storedTheme = localStorage.getItem('theme');
-    if (storedTheme) return storedTheme;
-    
-    // If no theme is set, check for system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
+    if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme;
   }
-  return 'light';
+  // Default to dark when no explicit preference is stored
+  return 'dark';
 };
 function PortalDetails() {
   const navigate = useNavigate();
