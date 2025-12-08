@@ -119,7 +119,6 @@ function App() {
         "/Admin/EditMembers",
         "/Admin/Profile",
         "/Admin/Profile/Edit/:id",
-        "/Admin/Notification",
         "/Admin/chapter",
         "/Admin/chapter/Dashboard",
         "/Admin/student/Dashboard",

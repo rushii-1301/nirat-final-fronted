@@ -290,6 +290,13 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         }
     };
 
+    // Called when UnrealVideo reports all slides have completed
+    const handleSlidesComplete = () => {
+        if (isRecording) {
+            stopRecording();
+        }
+    };
+
     // Control Handlers
     const handleMicrophone = () => {
         if (!isPlaying) return;
@@ -435,6 +442,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                     setIsPlaying={setIsPlaying}
                     recognizedText={recognizedText}
                     speechError={speechError}
+                    onSlidesComplete={handleSlidesComplete}
                 />
             </div>
 

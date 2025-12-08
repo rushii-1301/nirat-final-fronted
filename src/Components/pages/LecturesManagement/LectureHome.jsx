@@ -424,7 +424,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                                                 setSelectedClass(item);
                                                                 setOpenFilter(null);
                                                             }}
-                                                            className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedClass === item ? "bg-white text-black" : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
+                                                            className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedClass === item ? `${resolvedDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}` : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
                                                             {item}
                                                         </button>
                                                     ))
@@ -457,7 +457,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                                                 setSelectedSubject(item);
                                                                 setOpenFilter(null);
                                                             }}
-                                                            className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedSubject === item ? "bg-white text-black" : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
+                                                            className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedSubject === item ? `${resolvedDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}` : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
                                                             {item}
                                                         </button>
                                                     ))

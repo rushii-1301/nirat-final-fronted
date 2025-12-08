@@ -3,7 +3,7 @@ import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BACKEND_API_URL, handlesuccess } from "../../../utils/assets";
+import { BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets";
 
 function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter/Narration" }) {
   const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
@@ -20,8 +20,17 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
       const duration = Number(minutes);
       const mergedId = lectureId || navState.merged_id || null;
 
-      // Require all fields before calling API
-      if (!duration || !language || !mergedId) {
+      // Require valid duration (30, 45, 60) and language before calling API
+      if (!duration || ![30, 45, 60].includes(duration)) {
+        handleerror("Please select a valid duration (30, 45 or 60 minutes).");
+        return;
+      }
+      if (!language) {
+        handleerror("Please select a language.");
+        return;
+      }
+      if (!mergedId) {
+        handleerror("Missing lecture information. Please go back and try again.");
         return;
       }
 
@@ -93,10 +102,11 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                 </button>
                 <button
                   onClick={handleNext}
+                  disabled={!minutes || !["30", "45", "60"].includes(minutes) || !language}
                   className={`${isDark
-                      ? "bg-white text-black hover:bg-zinc-100"
-                      : "bg-[#696CFF] text-white hover:bg-[#696CFF]/90"
-                    } w-full cursor-pointer px-4 py-1.5 flex items-center justify-center rounded-md text-sm`}
+                      ? "bg-white text-black hover:bg-zinc-100 disabled:bg-zinc-300 disabled:text-zinc-600"
+                      : "bg-[#696CFF] text-white hover:bg-[#696CFF]/90 disabled:bg-zinc-300 disabled:text-zinc-500"
+                    } w-full cursor-pointer px-4 py-1.5 flex items-center justify-center rounded-md text-sm disabled:cursor-not-allowed disabled:opacity-70`}
                 >
                   Next
                 </button>
@@ -117,20 +127,19 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                 </div>
 
                 <div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
+                  <select
                     value={minutes}
-                    onChange={(e) => {
-                      const onlyDigits = e.target.value.replace(/[^0-9]/g, "");
-                      setMinutes(onlyDigits);
-                    }}
-                    placeholder="Enter Minute"
+                    onChange={(e) => setMinutes(e.target.value)}
                     className={`${isDark
-                        ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
-                        : "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
+                        ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
+                        : "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
                       }`}
-                  />
+                  >
+                    <option value="">Select Minute</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                    <option value="60">60</option>
+                  </select>
                 </div>
               </div>
             </div>

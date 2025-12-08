@@ -344,8 +344,15 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
   };
 
   // Auto-scroll chat area
+  // - Scroll when a new chat message (user/assistant) arrives
+  // - Do NOT scroll when only suggestions blocks are added
   useEffect(() => {
-    if (assistantExpanded && chatListRef.current) {
+    if (!assistantExpanded || !chatListRef.current) return;
+
+    const last = chatHistory[chatHistory.length - 1];
+    if (!last) return;
+
+    if (last.type === "user" || last.type === "assistant") {
       chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
     }
   }, [chatHistory, assistantExpanded]);

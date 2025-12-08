@@ -120,7 +120,7 @@ export default {
 }
 
 
-export const BACKEND_API_URL = import.meta.env.BACKEND_API_URL || 'http://192.168.7.21:1171';
+export const BACKEND_API_URL = import.meta.env.BACKEND_API_URL || 'https://api.edinai.inaiverse.com';
 
 // export const Roshni_URL = "http://192.168.7.21:1171" || "https://api.edinai.inaiverse.com";
 

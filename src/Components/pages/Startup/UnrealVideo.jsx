@@ -17,16 +17,19 @@ const Typewriter = ({ text, speed = 20, onComplete, isPlaying }) => {
     if (!isPlaying) return;
 
     setDisplayedText("");
-    let i = 0;
     if (!text) {
       if (onCompleteRef.current) onCompleteRef.current();
       return;
     }
+    const chars = Array.from(text);
+    const textLength = chars.length;
+    let i = 0;
     const timer = setInterval(() => {
-      if (i < text.length) {
-        setDisplayedText((prev) => prev + text.charAt(i));
+      if (i < textLength) {
+        setDisplayedText((prev) => prev + chars[i]);
         i++;
       } else {
+
         clearInterval(timer);
         if (onCompleteRef.current) {
           onCompleteRef.current();
@@ -56,16 +59,18 @@ const AudioSyncedTypewriter = ({ text, audioDuration, onComplete, isPlaying }) =
 
     setDisplayedText("");
 
-    // Calculate speed based on audio duration to sync text with audio
-    const textLength = text.length;
+    const chars = Array.from(text);
+    const textLength = chars.length;
+
     const speed = audioDuration ? (audioDuration * 1000) / textLength : 15;
 
     let i = 0;
     const timer = setInterval(() => {
       if (i < textLength) {
-        setDisplayedText((prev) => prev + text.charAt(i));
+        setDisplayedText((prev) => prev + chars[i]);
         i++;
       } else {
+
         clearInterval(timer);
         if (onCompleteRef.current) {
           onCompleteRef.current();
@@ -79,7 +84,7 @@ const AudioSyncedTypewriter = ({ text, audioDuration, onComplete, isPlaying }) =
   return <span>{displayedText}</span>;
 };
 
-export default function UnrealVideo({ fullScreen = true, lecturejson, handleStartClick, isRecording, setIsRecording, showControls, videoRef, isPlaying, setIsPlaying, recognizedText, speechError }) {
+export default function UnrealVideo({ fullScreen = true, lecturejson, handleStartClick, isRecording, setIsRecording, showControls, videoRef, isPlaying, setIsPlaying, recognizedText, speechError, onSlidesComplete }) {
 
   const recordingTimerRef = useRef(null);
   const transitionTimeoutRef = useRef(null);
@@ -155,30 +160,28 @@ export default function UnrealVideo({ fullScreen = true, lecturejson, handleStar
   const nextSlide = () => goToSlide(currentSlideIndex + 1);
   const prevSlide = () => goToSlide(currentSlideIndex - 1);
 
-  // Timer for slides animation (auto-advance after all animations complete)
+  // Fixed 7-second timer to auto-advance slides while playing.
+  // When the last slide finishes, notify parent so it can stop recording & show controls.
   useEffect(() => {
     if (!isPlaying || slidesData.length === 0) return;
 
-    const currentSlide = slidesData[currentSlideIndex];
-    if (!currentSlide) return;
+    const isLastSlide = currentSlideIndex === slidesData.length - 1;
 
-    // If slide has audio, we rely on audio 'ended' event to advance
-    if (currentSlide.audio_url) return;
-
-    let totalSteps = 1; // Title
-    totalSteps += currentSlide.bullets ? currentSlide.bullets.length : 0;
-    if (currentSlide.narration) totalSteps++;
-    if (currentSlide.question) totalSteps++;
-
-    if (animationStep >= totalSteps) {
-      const timer = setTimeout(() => {
-        if (currentSlideIndex < slidesData.length - 1) {
-          setCurrentSlideIndex(prev => prev + 1);
+    const timer = setTimeout(() => {
+      if (isLastSlide) {
+        if (isRecording && typeof onSlidesComplete === 'function') {
+          onSlidesComplete();
         }
-      }, 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [animationStep, currentSlideIndex, isPlaying, slidesData]);
+      } else {
+        setCurrentSlideIndex(prev => {
+          const next = prev + 1;
+          return next >= slidesData.length ? slidesData.length - 1 : next;
+        });
+      }
+    }, 7000);
+
+    return () => clearTimeout(timer);
+  }, [currentSlideIndex, isPlaying, slidesData.length, isRecording, onSlidesComplete]);
 
   // Whenever slide changes (manual or auto), ensure we start animation from 0
   useEffect(() => {
@@ -254,12 +257,6 @@ export default function UnrealVideo({ fullScreen = true, lecturejson, handleStar
       audio.onended = () => {
         console.log('Audio ended');
         setAudioPlaying(false);
-        transitionTimeoutRef.current = setTimeout(() => {
-          setCurrentSlideIndex(prev => {
-            if (prev < slidesData.length - 1) return prev + 1;
-            return prev;
-          });
-        }, 10000);
       };
 
       if (isPlaying) {

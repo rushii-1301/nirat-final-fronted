@@ -96,6 +96,11 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'phone_number') {
+      const numeric = value.replace(/\D/g, '').slice(0, 11);
+      setForm((prev) => ({ ...prev, phone_number: numeric }));
+      return;
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -147,8 +152,32 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
   }, [isEdit, editState?.id]);
 
   const handleSubmit = async () => {
-    if (!form.name || !form.designation || !form.work_type || !form.phone_number || !form.email || (!isEdit && !form.password)) {
-      handleerror('Please fill in all required fields.');
+    if (!form.name) {
+      handleerror('Please enter Name of Person.');
+      return;
+    }
+    if (!form.designation) {
+      handleerror('Please enter Designation.');
+      return;
+    }
+    if (!form.work_type) {
+      handleerror('Please select Work Type.');
+      return;
+    }
+    if (!form.phone_number) {
+      handleerror('Please enter Phone Number.');
+      return;
+    }
+    if (form.phone_number.length < 10 || form.phone_number.length > 11) {
+      handleerror('Phone Number must be 10 or 11 digits.');
+      return;
+    }
+    if (!form.email) {
+      handleerror('Please enter Email.');
+      return;
+    }
+    if (!isEdit && !form.password) {
+      handleerror('Please enter Password.');
       return;
     }
 
@@ -279,6 +308,10 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
                   placeholder="Enter phone number"
                   value={form.phone_number}
                   onChange={handleInputChange}
+                  pattern="[0-9]{10,11}"
+                  inputMode="numeric"
+                  minLength={10}
+                  maxLength={11}
                   className={`w-full rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 transition-colors duration-300 ${resolvedDark ? 'bg-[#FFFFFF0D] border-zinc-700 text-gray-200 placeholder:text-gray-400 focus:ring-zinc-600' : 'bg-zinc-100 border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:ring-zinc-300'} border`}
                 />
               </div>
@@ -290,6 +323,7 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
                   placeholder="Enter email"
                   value={form.email}
                   onChange={handleInputChange}
+                  required
                   className={`w-full rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 transition-colors duration-300 ${resolvedDark ? 'bg-[#FFFFFF0D] border-zinc-700 text-gray-200 placeholder:text-gray-400 focus:ring-zinc-600' : 'bg-zinc-100 border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:ring-zinc-300'} border`}
                 />
               </div>

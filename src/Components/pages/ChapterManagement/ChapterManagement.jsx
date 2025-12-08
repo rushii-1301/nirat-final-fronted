@@ -444,7 +444,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                                     setOpenFilter(null);
                                                                 }}
                                                                 className={`${selectedClass === item
-                                                                    ? "bg-white text-black"
+                                                                    ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
                                                                     : isDark
                                                                         ? "bg-zinc-800 text-gray-100"
                                                                         : "bg-zinc-100 text-zinc-800"
@@ -490,7 +490,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                                     setOpenFilter(null);
                                                                 }}
                                                                 className={`${selectedSubject === item
-                                                                    ? "bg-white text-black"
+                                                                    ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
                                                                     : isDark
                                                                         ? "bg-zinc-800 text-gray-100"
                                                                         : "bg-zinc-100 text-zinc-800"
@@ -536,7 +536,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                                     setOpenFilter(null);
                                                                 }}
                                                                 className={`${selectedChapter === item
-                                                                    ? "bg-white text-black"
+                                                                    ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
                                                                     : isDark
                                                                         ? "bg-zinc-800 text-gray-100"
                                                                         : "bg-zinc-100 text-zinc-800"
