@@ -23,11 +23,8 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
     mobileNumber: "",
     parentsNumber: "",
     emailAddress: "",
-    photoFile: "",
   });
 
-  const [imagePreview, setImagePreview] = useState("");
-  const [existingImage, setExistingImage] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -154,11 +151,6 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
           return updated;
         });
 
-        // Set existing image if available
-        if (found.photo_path) {
-          const imageUrl = `${BACKEND_API_URL}/${found.photo_path}`;
-          setExistingImage(imageUrl);
-        }
       } catch (error) {
         console.error("GET API Error:", error);
         console.error("Error response:", error.response?.data);
@@ -222,10 +214,6 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
         }
       });
 
-      // Add file if it exists
-      if (formData.photoFile) {
-        formDataToSend.append("photo_path", formData.photoFile);
-      }
 
       // Log the payload for debugging
       console.log("FormData entries:");
@@ -513,102 +501,6 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
               />
             </div>
 
-            {/* PHOTO FILE UPLOAD */}
-            <div>
-              <label
-                className={`block mb-2 text-[14px] font-medium capitalize ${
-                  isDark ? "text-white" : "text-zinc-700"
-                }`}
-              >
-                Upload Student Photo
-              </label>
-
-              <div className="space-y-4">
-                {/* Existing Image Display */}
-                {(existingImage || imagePreview) && (
-                  <div
-                    className={`relative border rounded-lg p-4 ${
-                      isDark ? "border-gray-600 bg-zinc-800" : "border-gray-300 bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="shrink-0">
-                        <img
-                          src={imagePreview || existingImage}
-                          alt="Student photo"
-                          className="w-24 h-24 rounded-lg object-cover"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <p className={`text-sm font-medium ${isDark ? "text-white" : "text-gray-900"}`}>
-                          Current Photo
-                        </p>
-                        <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                          {imagePreview ? "New photo selected" : "Existing photo from profile"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Choose File Button */}
-                <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                    isDark
-                      ? "border-gray-600 hover:border-gray-500 bg-zinc-800"
-                      : "border-gray-300 hover:border-gray-400 bg-gray-50"
-                  }`}
-                  onClick={() => document.getElementById('photoInput').click()}
-                >
-                  <div className="mx-auto mb-4">
-                    <svg
-                      className={`w-12 h-12 mx-auto ${
-                        isDark ? "text-gray-400" : "text-gray-500"
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                  </div>
-                  <p className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-                    Click to choose new photo
-                  </p>
-                  <p className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                    JPEG, PNG up to 10MB
-                  </p>
-                </div>
-
-                <input
-                  id="photoInput"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      const file = e.target.files[0];
-                      setFormData(prev => ({
-                        ...prev,
-                        photoFile: file
-                      }));
-                      
-                      // Create preview
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        setImagePreview(event.target.result);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="hidden"
-                />
-              </div>
-            </div>
 
             {/* SAVE BUTTON */}
             <div className="flex justify-center pt-3">
