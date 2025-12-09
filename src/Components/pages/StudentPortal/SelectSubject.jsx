@@ -51,7 +51,7 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
             try {
                 setLoading(true);
                 const token = localStorage.getItem('token');
-                
+
                 if (!token) {
                     setError('No authentication token found');
                     setLoading(false);
@@ -70,7 +70,7 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
 
                 if (response.data?.status && response.data?.data?.videos) {
                     const videosData = response.data.data.videos;
-                    
+
                     // Generate subjects dynamically from video data
                     const uniqueSubjects = new Map();
                     videosData.forEach((video) => {
@@ -86,7 +86,7 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
                         { key: "all", label: "All subject" },
                         ...Array.from(uniqueSubjects.values()),
                     ]);
-                    
+
                     console.log('Generated subjects from videos:', Array.from(uniqueSubjects.values()));
 
                     const formattedVideos = videosData.map(video => ({
@@ -147,18 +147,18 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
         console.log('Current active filter:', active);
         console.log('Search value:', searchValue);
         console.log('Total videos:', videos.length);
-        
+
         let filteredVideos = videos;
-        
+
         // Filter by subject first
         if (active !== "all") {
             filteredVideos = filteredVideos.filter(v => v.subject === active.toLowerCase());
         }
-        
+
         // Then filter by search value
         if (searchValue.trim()) {
             const searchLower = searchValue.toLowerCase().trim();
-            filteredVideos = filteredVideos.filter(v => 
+            filteredVideos = filteredVideos.filter(v =>
                 v.title.toLowerCase().includes(searchLower) ||
                 v.subtitle.toLowerCase().includes(searchLower) ||
                 v.chapter_name?.toLowerCase().includes(searchLower) ||
@@ -166,10 +166,10 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
                 v.topics?.some(topic => topic.toLowerCase().includes(searchLower))
             );
         }
-        
+
         console.log('Final filtered videos count:', filteredVideos.length);
         console.log('Final filtered videos:', filteredVideos.map(v => ({ title: v.title, subject: v.subject })));
-        
+
         return filteredVideos;
     }, [active, videos, searchValue]);
     return (
@@ -181,35 +181,38 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
             <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300`}>
                 {/* ===== Sticky Header ===== */}
                 <div className="sticky top-0 z-20">
-                    <Portalheader title="Home" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
+                    <Portalheader title="12th Science" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
                 </div>
 
                 {/* ===== Main Section ===== */}
                 <main className="mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
                     <div className="flex flex-col min-h-0 h-full">
-                        <h2 className="text-xl font-semibold">Select Subject</h2>
+                        <h2 className="font-bold text-[26px] leading-none tracking-normal">
+                            Select Subject
+                        </h2>
 
                         <div className="mt-4 w-full">
                             <div
                                 ref={tabsWrapRef}
-                                className={`${
-                                    isDark ? "bg-zinc-800" : "bg-white ring-1 ring-zinc-200"
-                                } relative flex w-full rounded-full px-2 py-2 gap-2 overflow-x-auto no-scrollbar scroll-smooth`}
+                                className={`${isDark ? "bg-zinc-900" : "bg-white ring-1 ring-zinc-200"
+                                    } relative flex w-full rounded-full px-2 py-2 gap-12 overflow-x-auto no-scrollbar scroll-smooth`}
                             >
                                 {subjects.map((s, i) => (
                                     <button
                                         key={`${s.key}-${i}`}
                                         ref={el => (tabRefs.current[i] = el)}
                                         onClick={() => { setActive(s.key); setActiveIndex(i); updateIndicatorTo(i); }}
-                                        className={`relative z-10 rounded-full flex-none w-1/3 sm:w-1/4 lg:w-1/6 px-4 py-2 text-xs sm:text-sm whitespace-nowrap select-none cursor-pointer flex items-center justify-center text-center snap-center transition-colors duration-150 ${
-                                            isDark
+                                        className={`relative z-10 rounded-full flex-none w-1/3 sm:w-1/4 lg:w-1/6 px-4 py-2 
+text-[18px] font-inter font-semibold leading-none tracking-normal 
+whitespace-nowrap select-none cursor-pointer flex items-center justify-center 
+text-center snap-center transition-colors duration-150 ${isDark
                                                 ? activeIndex === i
-                                                    ? "bg-zinc-700 text-white"
+                                                    ? "bg-zinc-800 text-white"
                                                     : "text-white/80"
                                                 : activeIndex === i
                                                     ? "bg-indigo-500 text-white"
                                                     : "text-zinc-800"
-                                        }`}
+                                            }`}
                                     >
                                         {s.label}
                                     </button>
@@ -217,7 +220,10 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
                             </div>
                         </div>
 
-                        <h3 className="mt-6 mb-3 text-base font-medium">Video</h3>
+                        <h3 className="mt-6 mb-3 font-inter font-bold text-[20px] leading-none tracking-normal">
+                            Video
+                        </h3>
+
 
                         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pr-1">
                             {loading ? (
@@ -236,7 +242,7 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
                                     <div className="text-sm opacity-60">No videos found for this subject</div>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
                                     {filtered.map((item) => (
                                         <div key={item.id} className={`${isDark ? "bg-zinc-900" : "bg-white"} rounded-xl overflow-hidden border ${isDark ? "border-zinc-800" : "border-zinc-200"}`}>
                                             <div className="relative aspect-16/10 overflow-hidden cursor-pointer" onClick={() => navigate('/StudentPortel/Videos', { state: { video: item } })}>
@@ -246,9 +252,9 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
                                                         <span className={`text-sm ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>No Image</span>
                                                     </div>
                                                 ) : (
-                                                    <img 
-                                                        src={item.thumb} 
-                                                        alt={item.title} 
+                                                    <img
+                                                        src={item.thumb}
+                                                        alt={item.title}
                                                         className="h-full w-full object-cover"
                                                         onError={() => handleImageError(item.id)}
                                                     />
@@ -262,19 +268,12 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
                                                         <img src={getAsset('video_light')} alt="play" className="h-6 w-6 invert pointer-events-none" />
                                                     </button>
                                                 </div>
-                                                <div className="absolute bottom-2 right-2 text-[11px] px-2 py-1 rounded-md bg-black/60 text-white">
-                                                    {item.duration}
-                                                </div>
-                                                <div className="absolute top-2 left-2 flex items-center gap-2 bg-black/60 px-2 py-1 rounded-md">
-                                                    <BookOpen className="w-3 h-3 text-white" />
-                                                    <span className="text-[11px] text-white">{item.title}</span>
-                                                </div>
                                             </div>
                                             <div className="p-4">
-                                                <div className="text-sm font-semibold">{item.title}</div>
-                                                <div className="mt-1 text-sm">{item.subtitle}</div>
-                                                <div className="mt-2 text-xs opacity-80">{item.topics[0]}</div>
-                                                <div className="text-xs opacity-80">{item.topics[1]?.substring(0, 30)}...</div>
+                                                <div className="text-white font-inter font-bold text-[16px] leading-none tracking-normal capitalize mb-2">{item.title}</div>
+                                                <div className="mt-1 font-inter font-medium text-[14px] leading-none tracking-normal capitalize mb-2">{item.subtitle}</div>
+                                                <div className="mt-2 font-inter font-normal text-[12px] leading-none tracking-normal capitalize opacity-80 mb-2">{item.topics[0]}</div>
+                                                <div className="mt-2 font-inter font-normal text-[10px] leading-none tracking-normal capitalize opacity-80 mb-2">{item.topics[1]?.substring(0, 30)}...</div>
                                             </div>
                                         </div>
                                     ))}

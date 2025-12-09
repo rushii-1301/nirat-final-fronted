@@ -76,7 +76,7 @@ export default function ChapterTitle({ isDark, toggleTheme, sidebardata }) {
               {/* Left: Book Card */}
               <div className={`${panelBg} rounded-xl sm:rounded-2xl border px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 lg:w-[48%]`}>
                 {/* Book cover image */}
-                <div className="flex items-center justify-center rounded-xl bg-gradient-to-br from-zinc-200 to-zinc-300 w-32 h-44 sm:w-40 sm:h-52 flex-shrink-0 shadow-lg overflow-hidden">
+                <div className="flex items-center justify-center rounded-xl bg-linear-to-br from-zinc-200 to-zinc-300 w-32 h-44 sm:w-40 sm:h-52 shrink-0 shadow-lg overflow-hidden">
                   <img
                     src={chapterInfo.coverImage}
                     alt="Chapter cover"
@@ -110,7 +110,7 @@ export default function ChapterTitle({ isDark, toggleTheme, sidebardata }) {
                       className={`flex items-center gap-3 py-2 sm:py-2.5 px-3 mb-1.5 last:mb-0 rounded-lg hover:bg-opacity-50 transition-colors cursor-pointer ${isDark ? "hover:bg-zinc-800" : "hover:bg-zinc-100"
                         }`}
                     >
-                      <BookOpen className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${subText} flex-shrink-0`} />
+                      <BookOpen className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${subText} shrink-0`} />
                       <span className="text-xs sm:text-sm">{ch.title}</span>
                     </div>
                   ))}

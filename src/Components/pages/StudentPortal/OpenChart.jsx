@@ -382,8 +382,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
 
                 <main className="mt-6 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <aside className={`${showListMobile ? 'block' : 'hidden'} lg:block lg:col-span-4 ${paneBg} rounded-xl border ${isDark ? "border-zinc-800" : "border-zinc-200"} overflow-hidden flex flex-col min-h-0`}>
-                        <div className={`px-4 py-3 border-b ${isDark ? "border-zinc-800" : "border-zinc-200"}`}>Chats</div>
-                        <div className="flex-1 overflow-y-auto no-scrollbar max-h-[calc(100vh-200px)]">
+                        <div className="flex-1 overflow-y-auto no-scrollbar h-full">
                             {loading ? (
                                 <div className="flex items-center justify-center h-32">
                                     <div className="flex flex-col items-center gap-3">

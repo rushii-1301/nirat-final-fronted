@@ -172,12 +172,12 @@ function App() {
       icon: ["home_tranperent_dark", "home_tranperent_light"]
     },
     {
-      label: "Chapter",
+      label: "Book",
       to: "/StudentPortel/chapter",
       icon: ["book_dark", "book_light"]
     },
     {
-      label: "chat",
+      label: "Chat",
       to: "/StudentPortel/OpenChart",
       icon: ["chat_dark", "chat_light"]
     },
@@ -187,7 +187,7 @@ function App() {
       icon: ["video_dark", "video_light"]
     },
     {
-      label: "purchase History",
+      label: "Purchase History",
       to: "/StudentPortel/PuchaseHistory",
       icon: ["puchase_dark", "puchase_light"]
     },
@@ -202,7 +202,7 @@ function App() {
       icon: ["settings_dark", "settings_light"]
     },
     {
-      label: "profile",
+      label: "Profile",
       to: "/StudentPortel/profile",
       icon: ["profile_dark", "profile_light"]
     },

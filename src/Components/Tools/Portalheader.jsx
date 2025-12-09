@@ -118,7 +118,7 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
     }
 
     return (
-        <header className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} flex items-center ${isMobile && !isSearchbar ? 'justify-end' : 'justify-between'} py-3 px-3 border-b transition-colors duration-300`}>
+        <header className={`${isDark ? 'bg-[#111111] border-zinc-800' : 'bg-white border-zinc-200'} flex items-center ${isMobile && !isSearchbar ? 'justify-end' : 'justify-between'} py-3 px-3 transition-colors duration-300`}>
             {/* Left: Title */}
             {!isMobile && (
                 <h1 className={`header-1 font-semibold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{title}</h1>
