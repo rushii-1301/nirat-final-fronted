@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../Tools/Sidebar.jsx";
-import Header from "../../Tools/Header.jsx";
+import Portalheader from "../../Tools/Portalheader.jsx";
 import { ThumbsUp, MessageSquare, Share2, Bookmark, Flag, Send, X, Reply, Info, Settings, RotateCcw, RotateCw, Volume, Gauge, Monitor, Volume2, VolumeX, Maximize, Play, RefreshCw, RefreshCcw } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, getAsset } from "../../../utils/assets.js";
@@ -570,14 +570,14 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
             {/* Main Content (offset for fixed sidebar) */}
-            <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+            <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300`}>
                 {/* ===== Sticky Header ===== */}
                 <div className="sticky top-0 z-20 transition-all duration-300">
-                    <Header title="Lecture Management" isDark={isDark} toggleTheme={toggleTheme} />
+                    <Portalheader title="Lecture Management" isDark={isDark} toggleTheme={toggleTheme} />
                 </div>
 
                 {/* ===== Main Section ===== */}
-                <main className="mt-4 md:mt-6 flex-1 flex flex-col min-h-0">
+                <main className="mt-4 md:mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
                     {loading ? (
                         <div className="flex items-center justify-center h-32">
                             <div className="flex flex-col items-center gap-3">

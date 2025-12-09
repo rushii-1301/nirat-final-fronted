@@ -1,10 +1,8 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, FileText } from 'lucide-react';
 import Sidebar from "../../Tools/Sidebar.jsx";
-import Header from "../../Tools/Header.jsx";
+import Portalheader from "../../Tools/Portalheader.jsx";
 import { BACKEND_API_URL } from "../../../utils/assets.js";
 import axios from 'axios';
 
@@ -286,11 +284,11 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
         {/* Conditionally render sidebar based on fullscreen state */}
         {!isFullscreen && <Sidebar isDark={isDark} sidebardata={sidebardata} />}
         
-        <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full ${isFullscreen ? 'p-0 pb-0' : 'md:ml-20 lg:ml-72 p-2 md:p-4 pb-0'} transition-all duration-300`}>
+        <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full ${isFullscreen ? 'px-0 pb-0' : 'md:ml-15 lg:ml-72 px-0 pb-0'} transition-all duration-300`}>
           <div className="sticky top-0 z-20">
-            <Header title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
+            <Portalheader title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
           </div>
-          <main className={`${isFullscreen ? '' : 'mt-4'} flex-1 flex items-center justify-center min-h-0`}>
+          <main className={`${isFullscreen ? '' : 'mt-4'} flex-1 flex items-center justify-center min-h-0 p-8`}>
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
               <p className="text-sm font-medium">Loading PDF...</p>
@@ -307,12 +305,12 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
       {!isFullscreen && <Sidebar isDark={isDark} sidebardata={sidebardata} />}
 
       {/* Main Content - Full width when fullscreen, normal when not */}
-      <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full ${isFullscreen ? 'p-0 pb-0' : 'md:ml-15 lg:ml-72 p-7 pb-0'} transition-all duration-300`}>
+      <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full ${isFullscreen ? 'px-0 pb-0' : 'md:ml-15 lg:ml-72 px-0 pb-0'} transition-all duration-300`}>
         <div className="sticky top-0 z-20">
-          <Header title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
+          <Portalheader title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
         </div>
 
-        <main className={`${isFullscreen ? '' : 'mt-6'} flex-1 flex flex-col min-h-0`}>
+        <main className={`${isFullscreen ? '' : 'mt-6'} flex-1 flex flex-col min-h-0 px-4 md:px-8`}>
           {/* PDF Viewer - Full Container */}
           <div className="flex-1 overflow-hidden">
             <iframe
@@ -429,7 +427,7 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
 // import { useLocation } from 'react-router-dom';
 // import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, FileText } from 'lucide-react';
 // import Sidebar from "../../Tools/Sidebar.jsx";
-// import Header from "../../Tools/Header.jsx";
+// import Portalheader from "../../Tools/Portalheader.jsx";
 // import { BACKEND_API_URL } from "../../../utils/assets.js";
 // import axios from 'axios';
 
@@ -712,7 +710,7 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
         
 //         <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full ${isFullscreen ? 'p-0 pb-0' : 'md:ml-20 lg:ml-72 p-4 pb-0'} transition-all duration-300`}>
 //           <div className="sticky top-0 z-20">
-//             <Header title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
+//             <Portalheader title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
 //           </div>
 //           <main className={`${isFullscreen ? '' : 'mt-4'} flex-1 flex items-center justify-center min-h-0`}>
 //             <div className="text-center">
@@ -733,7 +731,7 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
 //       {/* Main Content - Full width when fullscreen, normal when not */}
 //       <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full ${isFullscreen ? 'p-0 pb-0' : 'md:ml-15 lg:ml-72 p-7 pb-0'} transition-all duration-300`}>
 //         <div className="sticky top-0 z-20">
-//           <Header title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
+//           <Portalheader title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
 //         </div>
 
 //         <main className={`${isFullscreen ? '' : 'mt-6'} flex-1 flex flex-col min-h-0`}>

@@ -209,8 +209,8 @@ function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-3 whitespace-nowrap text-[13px] md:text-sm">
-                                                            {"*".repeat(user.password?.length || 6)}
-                                                            {/* {user.password} */}
+                                                            {/* {"*".repeat(user.password?.length || 6)} */}
+                                                            {user.password}
 
                                                         </td>
                                                     </tr>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import Sidebar from "../../Tools/Sidebar.jsx";
-import Header from "../../Tools/Header.jsx";
+import Portalheader from "../../Tools/Portalheader.jsx";
 import { Calendar, Eye, Download, CreditCard, ShoppingBag, TrendingUp, X } from 'lucide-react';
 
 export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
@@ -28,6 +28,14 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
   ]);
 
   const [activeInvoice, setActiveInvoice] = useState(null);
+  const [searchValue, setSearchValue] = useState("");
+
+  // Filter purchase items based on search value
+  const filteredItems = purchaseItems.filter(item =>
+    item.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+    item.type.toLowerCase().includes(searchValue.toLowerCase()) ||
+    item.price.toString().includes(searchValue)
+  );
 
   return (
     <div className={`flex ${shellBg} h-screen transition-colors duration-300`}>
@@ -35,14 +43,14 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
       <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
       {/* Main Content (offset for fixed sidebar) */}
-      <div className={`flex flex-col min-w-0 min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+      <div className={`flex flex-col min-w-0 min-h-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300`}>
         {/* ===== Sticky Header ===== */}
         <div className="sticky top-0 z-20">
-          <Header title="Purchase History" isDark={isDark} toggleTheme={toggleTheme} />
+          <Portalheader title="Purchase History" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
         </div>
 
         {/* ===== Main Section ===== */}
-        <main className="mt-6 flex-1 flex flex-col min-h-0">
+        <main className="mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
           <div className="flex flex-col min-h-0 h-full">
             {/* Title + subtitle */}
             <h2 className="text-xl font-semibold">Purchase History</h2>
@@ -90,7 +98,8 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
 
             {/* Purchase List */}
             <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar pr-1 mt-2 space-y-4">
-              {purchaseItems.map((item) => (
+              {filteredItems.length > 0 ? (
+                filteredItems.map((item) => (
                 <div key={item.id} className={`${panelBg} rounded-xl border p-4 mb-4`}>
                   {/* Top row: Title + badge on left, actions on right */}
                   <div className="flex items-start gap-3 mb-2">
@@ -144,7 +153,12 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
                     </span>
                   </div>
                 </div>
-              ))}
+              ))
+              ) : (
+                <div className={`${panelBg} rounded-xl border p-8 text-center`}>
+                  <p className={`${subText}`}>No purchase history found matching "{searchValue}"</p>
+                </div>
+              )}
             </div>
           </div>
         </main>

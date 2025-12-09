@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
-import Header from "../../Tools/Header.jsx";
+import Portalheader from "../../Tools/Portalheader.jsx";
 import { User, Users, IdCard, Mail, School, GraduationCap, Building2, Phone } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL } from "../../../utils/assets.js";
+
 function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
     const shellBg = isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-100 text-zinc-900";
     const panelBg = isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200";
@@ -93,12 +94,12 @@ function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
     return (
         <div className={`flex ${shellBg} h-screen transition-colors duration-300`}>
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
-            <div className="flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300">
+            <div className="flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300">
                 <div className="sticky top-0 z-20">
-                    <Header title="Student Profile" isDark={isDark} toggleTheme={toggleTheme} />
+                    <Portalheader title="Student Profile" isDark={isDark} toggleTheme={toggleTheme} />
                 </div>
 
-                <main className="mt-6 flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                <main className="mt-6 flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 md:px-8">
                     <div className="max-w-4xl mb-6 mx-auto">
                         {/* Panel with overlapping avatar */}
                         <div className={`relative border ${panelBg} rounded-2xl pt-20 p-6 md:pt-24 md:p-8 shadow-xl mt-16`}>

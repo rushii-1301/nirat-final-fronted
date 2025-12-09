@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
-import Header from "../../Tools/Header.jsx";
+import Portalheader from "../../Tools/Portalheader.jsx";
 import { CalendarDays, Clock3, Play, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import {BACKEND_API_URL } from "../../../utils/assets.js"; 
 // API implementation
@@ -90,6 +90,7 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
+    const [searchValue, setSearchValue] = useState("");
 
     useEffect(() => {
         const loadData = async () => {
@@ -119,20 +120,34 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
         { id: 3, label: "Completed", value: "0/0", icon: CheckCircle2 },
     ];
 
+    // Filter lectures based on search value
+    const filteredLectures = data ? data.lectures.filter(lec => {
+        if (!searchValue.trim()) return true;
+        
+        const search = searchValue.toLowerCase().trim();
+        return (
+            lec.title.toLowerCase().includes(search) ||
+            lec.chapter.toLowerCase().includes(search) ||
+            lec.subject.toLowerCase().includes(search) ||
+            lec.watchedDate.toLowerCase().includes(search) ||
+            lec.completion.toLowerCase().includes(search)
+        );
+    }) : [];
+
     return (
         <div className={`flex ${shellBg} h-screen transition-colors duration-300`}>
             {/* Sidebar */}
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
             {/* Main Content (offset for fixed sidebar) */}
-            <div className={`flex flex-col min-w-0 min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+            <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300`}>
                 {/* ===== Sticky Header ===== */}
                 <div className="sticky top-0 z-20">
-                    <Header title="Watched Leacher" isDark={isDark} toggleTheme={toggleTheme} />
+                    <Portalheader title="Watched Leacher" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
                 </div>
 
                 {/* ===== Main Section ===== */}
-                <main className="mt-6 flex-1 flex flex-col min-h-0">
+                <main className="mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
                     <div className="flex flex-col min-h-0 h-full">
                         <h2 className="text-xl font-semibold">Watched lecture</h2>
 
@@ -181,12 +196,14 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
                         {/* Watched lecture list */}
                         {!loading && !error && data && (
                             <div className="mt-6 flex-1 min-h-0 overflow-y-auto no-scrollbar pr-1 space-y-4">
-                                {data.lectures.length === 0 ? (
+                                {filteredLectures.length === 0 ? (
                                     <div className={`p-8 text-center`}>
-                                        <div className={`text-sm ${subText}`}>No watched lectures found</div>
+                                        <div className={`text-sm ${subText}`}>
+                                            {searchValue.trim() ? 'No lectures found matching your search' : 'No watched lectures found'}
+                                        </div>
                                     </div>
                                 ) : (
-                                    data.lectures.map((lec) => (
+                                    filteredLectures.map((lec) => (
                                         <div
                                             key={lec.id}
                                             className={`${panelBg} rounded-2xl border p-4 flex flex-col sm:flex-row gap-4`}

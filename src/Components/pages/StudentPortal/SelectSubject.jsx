@@ -5,7 +5,7 @@ import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
 import { getAsset, BACKEND_API_URL } from "../../../utils/assets.js";
 import axios from "axios";
-
+import Portalheader from "../../Tools/Portalheader.jsx";
 function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
     const navigate = useNavigate();
     const [subjects, setSubjects] = useState([
@@ -22,6 +22,7 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
     const [indicator, setIndicator] = useState({ left: 0, width: 0, top: 0, height: 0, ready: false });
     const maxPerRow = 6;
     const [imageErrors, setImageErrors] = useState({});
+    const [searchValue, setSearchValue] = useState("");
 
     const handleImageError = (videoId) => {
         setImageErrors(prev => ({ ...prev, [videoId]: true }));
@@ -144,35 +145,47 @@ function SelectSubject({ theme, isDark, toggleTheme, sidebardata }) {
 
     const filtered = useMemo(() => {
         console.log('Current active filter:', active);
+        console.log('Search value:', searchValue);
         console.log('Total videos:', videos.length);
         
-        if (active === "all") {
-            console.log('Showing all videos:', videos.length);
-            return videos;
+        let filteredVideos = videos;
+        
+        // Filter by subject first
+        if (active !== "all") {
+            filteredVideos = filteredVideos.filter(v => v.subject === active.toLowerCase());
         }
         
-        const filteredVideos = videos.filter(v => v.subject === active.toLowerCase());
+        // Then filter by search value
+        if (searchValue.trim()) {
+            const searchLower = searchValue.toLowerCase().trim();
+            filteredVideos = filteredVideos.filter(v => 
+                v.title.toLowerCase().includes(searchLower) ||
+                v.subtitle.toLowerCase().includes(searchLower) ||
+                v.chapter_name?.toLowerCase().includes(searchLower) ||
+                v.description?.toLowerCase().includes(searchLower) ||
+                v.topics?.some(topic => topic.toLowerCase().includes(searchLower))
+            );
+        }
         
-        console.log('Filtering for subject:', active);
-        console.log('Filtered videos count:', filteredVideos.length);
-        console.log('Filtered videos:', filteredVideos.map(v => ({ title: v.title, subject: v.subject })));
+        console.log('Final filtered videos count:', filteredVideos.length);
+        console.log('Final filtered videos:', filteredVideos.map(v => ({ title: v.title, subject: v.subject })));
         
         return filteredVideos;
-    }, [active, videos]);
+    }, [active, videos, searchValue]);
     return (
         <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-100 text-zinc-900"} h-screen transition-colors duration-300`}>
             {/* Sidebar */}
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
             {/* Main Content (offset for fixed sidebar) */}
-            <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+            <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300`}>
                 {/* ===== Sticky Header ===== */}
                 <div className="sticky top-0 z-20">
-                    <Header title="Home" isDark={isDark} toggleTheme={toggleTheme} />
+                    <Portalheader title="Home" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
                 </div>
 
                 {/* ===== Main Section ===== */}
-                <main className="mt-6 flex-1 flex flex-col min-h-0">
+                <main className="mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
                     <div className="flex flex-col min-h-0 h-full">
                         <h2 className="text-xl font-semibold">Select Subject</h2>
 

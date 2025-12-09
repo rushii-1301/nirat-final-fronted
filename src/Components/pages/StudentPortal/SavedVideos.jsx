@@ -1,17 +1,26 @@
 import React, { useState } from "react";
 import { Play, Trash2, Calendar, CreditCard } from "lucide-react";
 import Sidebar from "../../Tools/Sidebar.jsx";
-import Header from "../../Tools/Header.jsx";
+import Portalheader from "../../Tools/Portalheader.jsx";
 
 function SavedVideos({ isDark, toggleTheme, sidebardata }) {
     const shellBg = isDark ? "bg-black text-[#E5E7EB]" : "bg-[#F5F7FB] text-[#0F172A]";
     const [videos, setVideos] = useState([
         { id: 1, title: "Mathematics", chapters: 20, date: "12/11/25", price: "₹2999" },
-        { id: 2, title: "Mathematics", chapters: 20, date: "12/11/25", price: "₹2999" },
-        { id: 3, title: "Mathematics", chapters: 20, date: "12/11/25", price: "₹2999" },
-        { id: 4, title: "Mathematics", chapters: 20, date: "12/11/25", price: "₹2999" },
+        { id: 2, title: "Mathematics", chapters: 10, date: "12/11/25", price: "₹2999" },
+        { id: 3, title: "Mathematics", chapters: 50, date: "12/11/25", price: "₹3000" },
+        { id: 4, title: "English", chapters: 20, date: "12/11/24", price: "₹2999" },
     ]);
     const [videoToDelete, setVideoToDelete] = useState(null);
+    const [searchValue, setSearchValue] = useState("");
+
+    // Filter videos based on search value
+    const filteredVideos = videos.filter(video =>
+        video.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+        video.price.includes(searchValue) ||
+        video.chapters.toString().includes(searchValue) ||
+        video.date.includes(searchValue)
+    );
 
     const handleConfirmDelete = () => {
         if (!videoToDelete) return;
@@ -25,14 +34,14 @@ function SavedVideos({ isDark, toggleTheme, sidebardata }) {
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
             {/* Main Content (offset for fixed sidebar) */}
-            <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
+            <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300`}>
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-20">
-                    <Header title="Saved Videos" isDark={isDark} toggleTheme={toggleTheme} />
+                    <Portalheader title="Saved Videos" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
                 </div>
 
                 {/* Main Section */}
-                <main className="mt-6 flex-1 flex flex-col min-h-0">
+                <main className="mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
                     <div className="relative flex-1 min-h-0">
                         <div className="w-full h-full flex flex-col">
                             <div className="mb-5">
@@ -48,7 +57,8 @@ function SavedVideos({ isDark, toggleTheme, sidebardata }) {
 
                             {/* List of saved video cards (scrollable area) */}
                             <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-4 md:gap-5">
-                                {videos.map((video) => (
+                                {filteredVideos.length > 0 ? (
+                                    filteredVideos.map((video) => (
                                     <div
                                         key={video.id}
                                         className={`${
@@ -114,7 +124,18 @@ function SavedVideos({ isDark, toggleTheme, sidebardata }) {
                                             <Trash2 className="w-5 h-5" color={isDark ? "white" : "black"}  />
                                         </button>
                                     </div>
-                                ))}
+                                    ))
+                                    ) : (
+                                        <div className={`${
+                                            isDark
+                                                ? "bg-zinc-900 border-zinc-800"
+                                                : "bg-white border-zinc-200"
+                                        } border rounded-2xl px-6 py-8 text-center`}>
+                                            <p className={`text-xs md:text-sm ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
+                                                No saved videos found matching "{searchValue}"
+                                            </p>
+                                        </div>
+                                    )}
                             </div>
                         </div>
                     </div>

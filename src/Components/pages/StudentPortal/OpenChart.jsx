@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 import Sidebar from "../../Tools/Sidebar.jsx";
-import Header from "../../Tools/Header.jsx";
+import Portalheader from "../../Tools/Portalheader.jsx";
 import { getAsset, BACKEND_API_URL } from "../../../utils/assets.js";
 import { ArrowBigLeft, CircleArrowLeft, SendHorizontal, Search } from "lucide-react";
 
@@ -14,6 +14,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
     const [messagesByChat, setMessagesByChat] = useState({});
     const [typingStatus, setTypingStatus] = useState({}); // peerEnrollment -> boolean
     const socketRef = useRef(null);
+    const [searchValue, setSearchValue] = useState("");
 
     // null = no chat selected yet
     const [selectedId, setSelectedId] = useState(null);
@@ -177,7 +178,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
             return [];
         }
 
-        return peers.map((peer, index) => {
+        let chatList = peers.map((peer, index) => {
             let time = "";
             if (peer.last_message_time || peer.last_message_at) {
                 try {
@@ -200,7 +201,19 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                 profileImageUrl: peer.profile_image_url
             };
         });
-    }, [peers]);
+
+        // Filter by search value
+        if (searchValue.trim()) {
+            const search = searchValue.toLowerCase().trim();
+            chatList = chatList.filter((chat) => 
+                chat.title.toLowerCase().includes(search) ||
+                chat.subtitle.toLowerCase().includes(search) ||
+                chat.peerEnrollment?.toString().toLowerCase().includes(search)
+            );
+        }
+
+        return chatList;
+    }, [peers, searchValue]);
 
     const selectedChat = useMemo(
         () => (selectedId != null ? chats.find((c) => c.id === selectedId) || null : null),
@@ -362,9 +375,9 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
         <div className={`flex ${shellBg} h-screen transition-colors duration-300`}>
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
-            <div className={`flex flex-col min-w-0 min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-4 transition-all duration-300`}>
+            <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full md:ml-15 lg:ml-72 px-0 pb-0 transition-all duration-300`}>
                 <div className="sticky top-0 z-20">
-                    <Header title="Chat" isDark={isDark} toggleTheme={toggleTheme} />
+                    <Portalheader title="Chat" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
                 </div>
 
                 <main className="mt-6 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6">
