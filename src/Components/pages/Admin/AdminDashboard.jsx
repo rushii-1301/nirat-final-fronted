@@ -150,7 +150,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* Header */}
                 <div className="sticky top-0 z-20">
                     <Header
-                        title="Welcome back, John"
+                        title={`Welcome back, ${localStorage.getItem('full_name')}`}
                         isDark={isDark}
                         toggleTheme={toggleTheme}
                     />
@@ -165,7 +165,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                 <div
                                     key={i}
                                     className={`${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}
-                                        border p-5 rounded-2xl shadow flex flex-col justify-between min-h-[120px] animate-pulse`}
+                                        border p-5 rounded-2xl  flex flex-col justify-between min-h-[120px] animate-pulse`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                 <div
                                     key={i}
                                     className={`${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
-                                        } border p-5 rounded-2xl shadow flex flex-col justify-between min-h-[120px]`}
+                                        } border p-5 rounded-2xl  flex flex-col justify-between min-h-[120px]`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                             className={`${isDark
                                 ? "bg-zinc-900 border-zinc-800"
                                 : "bg-white border-zinc-200"
-                                } border p-6 pb-0 rounded-2xl shadow flex flex-col gap-6`}
+                                } border p-6 pb-0 rounded-2xl  flex flex-col gap-6`}
                         >
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                 <div>
@@ -219,7 +219,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                             {cardsLoading ? (
                                 <div className="flex flex-col xl:flex-row items-center gap-8 animate-pulse">
                                     {/* Circular placeholder */}
-                                    <div className="relative w-full max-w-[360px] aspect-square mx-auto flex items-center justify-center">
+                                    <div className="relative w-full max-w-[220px] aspect-square mx-auto flex items-center justify-center">
                                         <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} rounded-full w-40 h-40`} />
                                     </div>
 
@@ -248,7 +248,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                             ) : (
                                 <div className="flex flex-col xl:flex-row items-center gap-8">
                                     {/* ===== Circular Chart ===== */}
-                                    <div className="relative w-full max-w-[360px] aspect-square mx-auto">
+                                    <div className="relative w-full max-w-[300px] aspect-square mx-auto">
                                         <svg
                                             className="w-full h-full transform -rotate-90"
                                             viewBox="0 0 300 300"
@@ -287,7 +287,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                         {/* Center Text */}
                                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                                             <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold">
-                                                {chartTotal || 0}
+                                                {/* {chartTotal || 0} */}
                                             </h2>
                                         </div>
                                     </div>

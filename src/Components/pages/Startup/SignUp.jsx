@@ -348,11 +348,11 @@ function SignUp({ theme = 'dark', isDark: isDarkProp }) {
                         className={(isDark ? "bg-zinc-900/50 text-white border-zinc-700 focus:border-white/50 focus:ring-2 focus:ring-white/20" : "bg-gray-50 text-gray-900 border-gray-300 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20") + " w-full text-sm border rounded-xl px-4 py-3 pr-10 outline-none transition-all duration-300 appearance-none cursor-pointer hover:border-opacity-60"}
                     >
                         <option value="">Select Designation</option>
-                        <option value="Principal">Principal</option>
-                        <option value="Director">Director</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Other">Other</option>
+                        <option value="super admin">Super Admin</option>
+                        <option value="admin">Admin</option>
+                        <option value="HOD( head of department )">HOD( Head of Department )</option>
+                        <option value="manager">Manager</option>
+                        <option value="vice principle">Vice Principle</option>
                     </select>
                     <ChevronDown className={(isDark ? "text-gray-400" : "text-gray-500") + " absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-transform duration-200"} />
                 </div>

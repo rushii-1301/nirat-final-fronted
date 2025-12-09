@@ -287,7 +287,7 @@ function App() {
         {/* <Route path="/Student/Edit/:id" element={<AddStudent theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} /> */}
         <Route path="/Student/UpdateStudentDetails" element={<UpdateStudentDetails theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
         <Route path="/student/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
-        
+
 
         <Route path="/StudentPortel" element={<Navigate to="/StudentPortel/login" />} />
         <Route path="/StudentPortel/login" element={<PortalSignUp theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />

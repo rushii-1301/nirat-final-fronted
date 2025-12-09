@@ -38,7 +38,7 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
         if (!isAdminPath) return;
         if (typeof window === 'undefined') return;
 
-        const stored = localStorage.getItem('admin_profile_image');
+        const stored = localStorage.getItem('admin_profile_image') && localStorage.getItem('full_name');
         if (stored) {
             setAdminProfileImage(stored);
         } else {
@@ -52,15 +52,16 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
     }, [pathname]);
 
     const handleNotificationPath = () => {
-        if (isLecturePath) {
-            return "/lecture/Notification";
-        } else if (isAdminPath) {
-            return "/Admin/Notification";
-        } else if (isStudentPath) {
-            return "/student/Notification";
-        } else if (isChapterPath) {
-            return "/chapter/Notification";
-        }
+        // if (isLecturePath) {
+        //     return "/lecture/Notification";
+        // } else if (isAdminPath) {
+        //     return "/Admin/Notification";
+        // } else if (isStudentPath) {
+        //     return "/student/Notification";
+        // } else if (isChapterPath) {
+        //     return "/chapter/Notification";
+        // }
+        console.log("Notification Coming Soon...");
     }
 
     const fetchProfile = async () => {
@@ -74,6 +75,7 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
             if (profileData && profileData.photo) {
                 const normalizedPhoto = profileData.photo.replace(/\\/g, '/');
                 localStorage.setItem('admin_profile_image', normalizedPhoto);
+                localStorage.setItem('full_name', profileData.full_name);
                 setAdminProfileImage(normalizedPhoto);
             }
         } catch (error) {

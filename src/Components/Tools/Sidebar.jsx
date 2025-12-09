@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import axios from "axios";
 import { BACKEND_API_URL, getAsset, handlesuccess, handleerror } from "../../utils/assets.js";
 import {
@@ -18,17 +18,27 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-function Sidebar({ isDark, sidebardata = [] }) {
+const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
   const [isMembersOpen, setMembersOpen] = useState(false);
   const [isLectureOpen, setLectureOpen] = useState(false);
   const [isStudentOpen, setStudentOpen] = useState(false);
   const [isMobileMenu, setMobileMenu] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
+  const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024 || window.innerWidth < 768);
   const [adminId] = useState(localStorage.getItem('admin_id'));
+  const [isMounted, setIsMounted] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // ✅ Set mounted state after first render to enable transitions
+  useEffect(() => {
+    // Small delay to ensure initial render is complete
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // ✅ Handle responsive default state
   useEffect(() => {
@@ -153,9 +163,10 @@ function Sidebar({ isDark, sidebardata = [] }) {
 
       {/* ===== Sidebar ===== */}
       <aside
-        className={`${isDark ? 'bg-zinc-900 text-gray-200' : 'bg-white text-zinc-700'} flex flex-col justify-between fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out
+        className={`${isDark ? 'bg-zinc-900 text-gray-200' : 'bg-white text-zinc-700'} flex flex-col justify-between fixed top-0 left-0 z-40 h-screen ${isMounted ? 'transition-all duration-300 ease-in-out' : ''}
         ${isMobileMenu ? "translate-x-0 w-64" : "-translate-x-full"}
         md:translate-x-0 ${isSidebarOpen ? "md:w-64" : "md:w-15"} lg:w-72`}
+        style={{ contain: 'layout style paint' }}
       >
         {/* <div className="flex flex-col h-full"> */}
         <div className="flex flex-col min-h-full justify-between">
@@ -165,8 +176,7 @@ function Sidebar({ isDark, sidebardata = [] }) {
             <img
               src={isDark ? getAsset('inailogo_dark') : getAsset('inailogo_light')}
               alt="INAI Logo"
-              className={`object-contain transition-all duration-300 ${isSidebarOpen ? "w-28" : "w-10"
-                }`}
+              className={`object-contain ${isMounted ? 'transition-all duration-300' : ''} ${isSidebarOpen ? "w-28" : "w-10"}`}
             />
 
             {/* ===== Tablet Toggle Button (hidden as requested) ===== */}
@@ -255,6 +265,6 @@ function Sidebar({ isDark, sidebardata = [] }) {
       )}
     </>
   );
-}
+});
 
 export default Sidebar;

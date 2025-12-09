@@ -32,7 +32,7 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
               alt="INAI Logo"
               className={`object-contain transition-all duration-300 w-10`}
             />
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+            <h2 className={`text-lg font-semibold text-[#F2C100]`}>
               Chapter Management
             </h2>
           </div>
@@ -45,7 +45,7 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
               alt="INAI Logo"
               className={`object-contain transition-all duration-300 w-10`}
             />
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+            <h2 className={`text-lg font-semibold text-[#8779CA]`}>
               Student Management
             </h2>
           </div>
@@ -59,7 +59,7 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
               alt="INAI Logo"
               className={`object-contain transition-all duration-300 w-10`}
             />
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+            <h2 className={`text-lg font-semibold text-[#4FBCA5]`}>
               Lecture Management
             </h2>
           </div>
@@ -78,7 +78,7 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
               alt="INAI Logo"
               className={`object-contain transition-all duration-300 w-10`}
             />
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-pink-400' : 'text-pink-600'}`}>
+            <h2 className={`text-lg font-semibold text-[#B25CC1]`}>
               All Member List
             </h2>
           </div>

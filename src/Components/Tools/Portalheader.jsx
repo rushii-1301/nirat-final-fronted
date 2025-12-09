@@ -146,34 +146,34 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
                 </button>
 
                 {/* Notifications - only navigates on lecture routes */}
-                <button
+                {/* <button
                     type="button"
                     onClick={() => navigate(handleNotificationPath())}
                     className={`relative cursor-pointer p-1 rounded-lg transition ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`}
                 >
                     <Bell size={18} className={`${isDark ? 'text-gray-300' : 'text-zinc-700'} transition-colors duration-300`} />
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
+                </button> */}
 
                 {/* Profile Avatar */}
-                
-                    <button
-                        type="button"
-                        onClick={() => navigate(handleProfilePath())}
-                        className="relative cursor-pointer"
-                    >
-                        {adminProfileImage
-                            ? <img
-                                src={adminProfileImage ? `${BACKEND_API_URL}/${adminProfileImage}` : "https://i.pravatar.cc/32"}
 
-                                alt="User Avatar"
-                                className={`w-8 h-8 rounded-full border-2 ${isDark ? 'border-zinc-700' : 'border-zinc-300'} transition-colors duration-300`}
-                            />
-                            : <User size={32} className="text-gray-300" />
-                        }
-                        <span className={`absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border ${isDark ? 'border-zinc-900' : 'border-white'} transition-colors duration-300`}></span>
-                    </button>
-                
+                <button
+                    type="button"
+                    onClick={() => navigate(handleProfilePath())}
+                    className="relative cursor-pointer"
+                >
+                    {adminProfileImage
+                        ? <img
+                            src={adminProfileImage ? `${BACKEND_API_URL}/${adminProfileImage}` : "https://i.pravatar.cc/32"}
+
+                            alt="User Avatar"
+                            className={`w-8 h-8 rounded-full border-2 ${isDark ? 'border-zinc-700' : 'border-zinc-300'} transition-colors duration-300`}
+                        />
+                        : <User size={32} className="text-gray-300" />
+                    }
+                    <span className={`absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border ${isDark ? 'border-zinc-900' : 'border-white'} transition-colors duration-300`}></span>
+                </button>
+
             </div>
         </header>
     )
