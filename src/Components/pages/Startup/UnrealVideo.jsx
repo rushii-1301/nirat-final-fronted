@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Download, Circle, Volume2, VolumeX } from "lucide-react";
 import { BACKEND_API_URL } from "../../../utils/assets.js";
 import axios from "axios";
@@ -7,79 +7,56 @@ const STREAMPIXEL_VIDEO_URL = "https://share.streampixel.io/67375bc07d20a24b406e
 
 const Typewriter = ({ text, speed = 20, onComplete, isPlaying }) => {
   const [displayedText, setDisplayedText] = useState("");
+  const indexRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
+  // Reset when text changes
   useEffect(() => {
-    if (!isPlaying) return;
-
     setDisplayedText("");
-    if (!text) {
+    indexRef.current = 0;
+  }, [text]);
+
+  useEffect(() => {
+    if (!isPlaying || !text) return;
+
+    // Use Intl.Segmenter to properly split text by graphemes (handling Indic scripts, emojis, etc.)
+    let chars = [];
+    if (typeof Intl !== "undefined" && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+      chars = [...segmenter.segment(text)].map(s => s.segment);
+    } else {
+      chars = Array.from(text);
+    }
+
+    const textLength = chars.length;
+
+    // If finished, don't restart
+    if (indexRef.current >= textLength) {
       if (onCompleteRef.current) onCompleteRef.current();
       return;
     }
-    const chars = Array.from(text);
-    const textLength = chars.length;
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < textLength) {
-        setDisplayedText((prev) => prev + chars[i]);
-        i++;
-      } else {
 
+    const timer = setInterval(() => {
+      if (indexRef.current < textLength) {
+        setDisplayedText((prev) => prev + chars[indexRef.current]);
+        indexRef.current++;
+      } else {
         clearInterval(timer);
         if (onCompleteRef.current) {
-          onCompleteRef.current();
+          // Small delay to ensure render catches up before triggering next step
+          setTimeout(() => {
+            onCompleteRef.current();
+          }, 50);
         }
       }
     }, speed);
+
     return () => clearInterval(timer);
   }, [text, speed, isPlaying]);
-
-  return <span>{displayedText}</span>;
-};
-
-// Audio-synced typewriter that matches audio narration timing
-const AudioSyncedTypewriter = ({ text, audioDuration, onComplete, isPlaying }) => {
-  const [displayedText, setDisplayedText] = useState("");
-  const onCompleteRef = useRef(onComplete);
-
-  useEffect(() => {
-    onCompleteRef.current = onComplete;
-  }, [onComplete]);
-
-  useEffect(() => {
-    if (!isPlaying || !text) {
-      if (!text && onCompleteRef.current) onCompleteRef.current();
-      return;
-    }
-
-    setDisplayedText("");
-
-    const chars = Array.from(text);
-    const textLength = chars.length;
-
-    const speed = audioDuration ? (audioDuration * 1000) / textLength : 15;
-
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < textLength) {
-        setDisplayedText((prev) => prev + chars[i]);
-        i++;
-      } else {
-
-        clearInterval(timer);
-        if (onCompleteRef.current) {
-          onCompleteRef.current();
-        }
-      }
-    }, speed);
-
-    return () => clearInterval(timer);
-  }, [text, audioDuration, isPlaying]);
 
   return <span>{displayedText}</span>;
 };
@@ -143,6 +120,45 @@ export default function UnrealVideo({ fullScreen = true, lecturejson, handleStar
     }
   }, [lecturejson]);
 
+  // Calculate global char speed based on audio duration for perfect sync
+  const globalCharSpeed = useMemo(() => {
+    if (!slidesData[currentSlideIndex]) return 30; // default speed
+
+    const slide = slidesData[currentSlideIndex];
+    let totalChars = 0;
+
+    // Add title length
+    if (slide.title) totalChars += slide.title.length;
+
+    // Add bullets length
+    if (slide.bullets && Array.isArray(slide.bullets)) {
+      slide.bullets.forEach(b => totalChars += b.length);
+    }
+
+    // Add narration length
+    if (slide.narration) totalChars += slide.narration.length;
+
+    // Add question length
+    if (slide.question) totalChars += slide.question.length;
+
+    if (totalChars === 0) return 30;
+
+    // If audio duration is available, calculate speed to fit exactly
+    // Subtract a small buffer (e.g., 0.5s) to ensure text finishes slightly before audio
+    if (audioDuration > 0) {
+      // (Duration in ms) / totalChars
+      // Clamp speed to be reasonable (not too slow, not too fast?)
+      // Actually, for sync, we want exact math.
+      // But if audio is very long (pauses), text might be too slow. 
+      // User asked to sync with bullets ("bullets ke sath bol rha he").
+      // So distribute strictly.
+      return Math.max(10, (audioDuration * 1000) / totalChars);
+    }
+
+    return 30; // Default if no audio or audio loading
+  }, [slidesData, currentSlideIndex, audioDuration]);
+
+
   // Helper to change slide safely
   const goToSlide = (index) => {
     setCurrentSlideIndex((prev) => {
@@ -157,31 +173,40 @@ export default function UnrealVideo({ fullScreen = true, lecturejson, handleStar
     setAnimationStep(0);
   };
 
-  const nextSlide = () => goToSlide(currentSlideIndex + 1);
+  const nextSlide = () => {
+    // If this is the last slide, finish
+    if (currentSlideIndex >= slidesData.length - 1) {
+      if (isRecording && typeof onSlidesComplete === 'function') {
+        onSlidesComplete();
+      }
+    } else {
+      goToSlide(currentSlideIndex + 1);
+    }
+  };
+
   const prevSlide = () => goToSlide(currentSlideIndex - 1);
 
-  // Fixed 7-second timer to auto-advance slides while playing.
-  // When the last slide finishes, notify parent so it can stop recording & show controls.
-  useEffect(() => {
-    if (!isPlaying || slidesData.length === 0) return;
+  // Removed the fixed 7-second timer. 
+  // Now transitions are primarily driven by audio.onended or a fallback timer.
 
-    const isLastSlide = currentSlideIndex === slidesData.length - 1;
+  // Fallback timer if no audio present
+  useEffect(() => {
+    if (!isPlaying || !slidesData[currentSlideIndex] || slidesData[currentSlideIndex].audio_url) return;
+
+    // Only set fallback timer if NO Audio URL.
+    // If Audio URL exists, we wait for audio events.
+    const slide = slidesData[currentSlideIndex];
+    let totalChars = (slide.title?.length || 0) + (slide.bullets?.join('').length || 0) + (slide.narration?.length || 0) + (slide.question?.length || 0);
+
+    const estimatedTime = (totalChars * 50) + 2000; // 50ms per char + 2s buffer
 
     const timer = setTimeout(() => {
-      if (isLastSlide) {
-        if (isRecording && typeof onSlidesComplete === 'function') {
-          onSlidesComplete();
-        }
-      } else {
-        setCurrentSlideIndex(prev => {
-          const next = prev + 1;
-          return next >= slidesData.length ? slidesData.length - 1 : next;
-        });
-      }
-    }, 7000);
+      nextSlide();
+    }, estimatedTime);
 
     return () => clearTimeout(timer);
-  }, [currentSlideIndex, isPlaying, slidesData.length, isRecording, onSlidesComplete]);
+  }, [currentSlideIndex, isPlaying, slidesData, audioDuration]); // Trigger when slide changes
+
 
   // Whenever slide changes (manual or auto), ensure we start animation from 0
   useEffect(() => {
@@ -252,11 +277,19 @@ export default function UnrealVideo({ fullScreen = true, lecturejson, handleStar
         console.error('Audio loading error:', e);
         console.error('Failed URL:', url);
         setAudioPlaying(false);
+        // If audio fails, trigger next slide after delay?
+        // Fallback handled by the effect above checking !audio_url? 
+        // No, if audio_url exists but FAILS, we need to recover.
+        // We'll set a safeguard timeout here.
+        transitionTimeoutRef.current = setTimeout(() => {
+          nextSlide();
+        }, 10000);
       };
 
       audio.onended = () => {
-        console.log('Audio ended');
+        console.log('Audio ended - advancing slide');
         setAudioPlaying(false);
+        nextSlide(); // Advance slide when audio ends
       };
 
       if (isPlaying) {
@@ -276,7 +309,7 @@ export default function UnrealVideo({ fullScreen = true, lecturejson, handleStar
         clearTimeout(transitionTimeoutRef.current);
       }
     };
-  }, [currentSlideIndex, slidesData]);
+  }, [currentSlideIndex, slidesData]); // Note: removing isPlaying from dependency to avoid re-creating audio on toggle. 
 
   // Handle Play/Pause for Audio
   useEffect(() => {
@@ -371,68 +404,78 @@ export default function UnrealVideo({ fullScreen = true, lecturejson, handleStar
                   )}
 
                   <div className="relative w-full max-w-5xl h-full flex flex-col justify-center">
-                    <h3 className="text-white text-2xl md:text-4xl font-bold mb-6 md:mb-10 border-b-2 border-white/20 pb-4 tracking-wide text-center shrink-0">
-                      {animationStep === 0 ? (
-                        <Typewriter text={slidesData[currentSlideIndex].title} speed={30} onComplete={() => setAnimationStep(1)} isPlaying={isPlaying} />
-                      ) : (
-                        <span>{slidesData[currentSlideIndex].title}</span>
-                      )}
-                    </h3>
+                    {(() => {
+                      const hasAudio = !!slidesData[currentSlideIndex].audio_url;
+                      // Wait for audio to actually play before animating text, unless no audio
+                      const shouldAnimate = isPlaying && (!hasAudio || audioPlaying);
 
-                    <ul className="space-y-4 md:space-y-6 px-4 md:px-8">
-                      {slidesData[currentSlideIndex].bullets?.map((bullet, idx) => {
-                        const bulletStep = 1 + idx;
-                        const isVisible = animationStep >= bulletStep;
-                        const isAnimating = animationStep === bulletStep;
-                        return (
-                          <li key={idx}
-                            className={`transition-all duration-700 flex items-start gap-3 md:gap-4 text-lg md:text-2xl leading-relaxed text-white
-                                      ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}
-                          >
-                            <span className="mt-2.5 w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-white shrink-0"></span>
-                            {isAnimating ? (
-                              <Typewriter text={bullet} speed={20} onComplete={() => setAnimationStep(bulletStep + 1)} isPlaying={isPlaying} />
+                      return (
+                        <>
+                          <h3 className="text-white text-2xl md:text-4xl font-bold mb-6 md:mb-10 border-b-2 border-white/20 pb-4 tracking-wide text-center shrink-0">
+                            {animationStep === 0 ? (
+                              <Typewriter text={slidesData[currentSlideIndex].title} speed={globalCharSpeed} onComplete={() => setAnimationStep(1)} isPlaying={shouldAnimate} />
                             ) : (
-                              <span>{bullet}</span>
+                              <span>{slidesData[currentSlideIndex].title}</span>
                             )}
-                          </li>
-                        );
-                      })}
-                    </ul>
+                          </h3>
 
-                    {slidesData[currentSlideIndex].narration && (() => {
-                      const narrationStep = 1 + (slidesData[currentSlideIndex].bullets?.length || 0);
-                      const isVisible = animationStep >= narrationStep;
-                      const isAnimating = animationStep === narrationStep;
-                      return (
-                        <div className={`mt-6 px-4 md:px-8 text-sm md:text-base text-gray-100/90 leading-relaxed transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
-                          {isAnimating ? (
-                            <AudioSyncedTypewriter
-                              text={slidesData[currentSlideIndex].narration}
-                              audioDuration={audioDuration}
-                              onComplete={() => setAnimationStep(narrationStep + 1)}
-                              isPlaying={isPlaying}
-                            />
-                          ) : (
-                            <span>{slidesData[currentSlideIndex].narration}</span>
-                          )}
-                        </div>
-                      );
-                    })()}
+                          <ul className="space-y-4 md:space-y-6 px-4 md:px-8">
+                            {slidesData[currentSlideIndex].bullets?.map((bullet, idx) => {
+                              const bulletStep = 1 + idx;
+                              const isVisible = animationStep >= bulletStep;
+                              const isAnimating = animationStep === bulletStep;
+                              return (
+                                <li key={idx}
+                                  className={`transition-all duration-700 flex items-start gap-3 md:gap-4 text-lg md:text-2xl leading-relaxed text-white
+                                              ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}
+                                >
+                                  <span className="mt-2.5 w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-white shrink-0"></span>
+                                  {isAnimating ? (
+                                    <Typewriter text={bullet} speed={globalCharSpeed} onComplete={() => setAnimationStep(bulletStep + 1)} isPlaying={shouldAnimate} />
+                                  ) : (
+                                    <span>{bullet}</span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
 
-                    {slidesData[currentSlideIndex].question && (() => {
-                      const narrationStep = 1 + (slidesData[currentSlideIndex].bullets?.length || 0);
-                      const questionStep = narrationStep + (slidesData[currentSlideIndex].narration ? 1 : 0);
-                      const isVisible = animationStep >= questionStep;
-                      const isAnimating = animationStep === questionStep;
-                      return (
-                        <div className={`mt-4 px-4 md:px-8 text-sm md:text-base text-emerald-300/90 font-medium italic transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
-                          {isAnimating ? (
-                            <Typewriter text={slidesData[currentSlideIndex].question} speed={20} onComplete={() => setAnimationStep(questionStep + 1)} isPlaying={isPlaying} />
-                          ) : (
-                            <span>{slidesData[currentSlideIndex].question}</span>
-                          )}
-                        </div>
+                          {slidesData[currentSlideIndex].narration && (() => {
+                            const narrationStep = 1 + (slidesData[currentSlideIndex].bullets?.length || 0);
+                            const isVisible = animationStep >= narrationStep;
+                            const isAnimating = animationStep === narrationStep;
+                            return (
+                              <div className={`mt-6 px-4 md:px-8 text-sm md:text-base text-gray-100/90 leading-relaxed transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
+                                {isAnimating ? (
+                                  <Typewriter
+                                    text={slidesData[currentSlideIndex].narration}
+                                    speed={globalCharSpeed}
+                                    onComplete={() => setAnimationStep(narrationStep + 1)}
+                                    isPlaying={shouldAnimate}
+                                  />
+                                ) : (
+                                  <span>{slidesData[currentSlideIndex].narration}</span>
+                                )}
+                              </div>
+                            );
+                          })()}
+
+                          {slidesData[currentSlideIndex].question && (() => {
+                            const narrationStep = 1 + (slidesData[currentSlideIndex].bullets?.length || 0);
+                            const questionStep = narrationStep + (slidesData[currentSlideIndex].narration ? 1 : 0);
+                            const isVisible = animationStep >= questionStep;
+                            const isAnimating = animationStep === questionStep;
+                            return (
+                              <div className={`mt-4 px-4 md:px-8 text-sm md:text-base text-emerald-300/90 font-medium italic transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
+                                {isAnimating ? (
+                                  <Typewriter text={slidesData[currentSlideIndex].question} speed={globalCharSpeed} onComplete={() => setAnimationStep(questionStep + 1)} isPlaying={shouldAnimate} />
+                                ) : (
+                                  <span>{slidesData[currentSlideIndex].question}</span>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </>
                       );
                     })()}
 

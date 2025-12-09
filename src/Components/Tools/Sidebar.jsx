@@ -161,7 +161,7 @@ function Sidebar({ isDark, sidebardata = [] }) {
         <div className="flex flex-col min-h-full justify-between">
 
           {/* ===== Logo Section ===== */}
-          <div className={`relative flex flex-col h-[100px] items-center justify-center p-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'} transition-colors duration-300`}>
+          <div className={`relative flex flex-col h-[100px] items-center justify-center p-4 ${isDark ? 'border-zinc-800' : 'border-zinc-200'} transition-colors duration-300`}>
             <img
               src={isDark ? getAsset('inailogo_dark') : getAsset('inailogo_light')}
               alt="INAI Logo"
@@ -182,7 +182,7 @@ function Sidebar({ isDark, sidebardata = [] }) {
           </div>
 
           {/* ===== Navigation (always show; icons only on tablet collapsed) ===== */}
-          <nav className="flex-1 mt-2 p-1 z-1000">
+          <nav className="flex-1 flex flex-col gap-[15px] mt-2 p-1 z-1000">
             {(sidebardata || []).map((bar, i) => {
               // Calculate active state manually
               const activePaths = Array.isArray(bar?.activePaths) ? bar.activePaths : [];

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { Pencil, Trash2, Clock, Video } from "lucide-react";
+import { Pencil, Trash2, Clock, Video, ChevronDown } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getAsset, BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets";
 
@@ -256,18 +256,59 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
 
     const totalVideos = videos.length;
 
-    const resetFilters = () => {
+    const resetFilters = async () => {
         setSelectedClass("");
         setSelectedSubject("");
         setSelectedChapter("");
-        // Fetch all data again
-        fetchFiltersAndLectures();
+        // Fetch all data again immediately
+        setLoadingLectures(true);
+        try {
+            const token = localStorage.getItem("token") || localStorage.getItem("access_token") || "";
+            const response = await axios.get(`${BACKEND_API_URL}/chapter-materials/chapter_lectures`, {
+                headers: {
+                    Accept: "application/json",
+                    Authorization: ensureBearer(token),
+                },
+            });
+
+            const payload = response?.data;
+            const list = Array.isArray(payload?.data?.items)
+                ? payload.data.items
+                : Array.isArray(payload?.lectures)
+                    ? payload.lectures
+                    : Array.isArray(payload)
+                        ? payload
+                        : [];
+
+            const normalized = list.map((item, index) => ({
+                id: item?.id ?? item?.lecture_uid,
+                subject: item?.subject || "—",
+                chapterName: item?.chapter || "—",
+                title: item?.chapter || `Chapter ${index + 1}`,
+                size: formatFileSize(item?.size ?? item?.file_size ?? item?.file_size_bytes ?? item?.size),
+                topics: Array.isArray(item?.topics)
+                    ? item.topics.filter(Boolean)
+                    : typeof item?.topics === "string"
+                        ? [item.topics]
+                        : [],
+                duration: `${item?.video_duration_minutes ?? 20}:00`,
+                thumbnailUrl: item?.thumbnail_url,
+            }));
+
+            setVideos(normalized);
+            setAllVideos(normalized);
+        } catch (error) {
+            console.error("Error resetting chapter filters:", error);
+        } finally {
+            setLoadingLectures(false);
+        }
     };
 
     const applyFilters = () => {
         // Fetch with current selections - only when Apply is clicked
         fetchFiltersAndLectures(selectedClass, selectedSubject, selectedChapter);
         setOpenFilter(null);
+        setShowFilter(false);
     };
 
 
@@ -421,17 +462,17 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                 className={`${isDark
                                                     ? "bg-zinc-900 border-zinc-700 text-gray-100"
                                                     : "bg-white border-zinc-300 text-zinc-800"
-                                                    } w-full flex items-center justify-between rounded-md border px-4 py-2 text-xs sm:text-sm cursor-pointer shadow-sm hover:shadow transition-all duration-150`}
+                                                    } w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer shadow-sm hover:shadow transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                             >
                                                 <span>{selectedClass || "Standard"}</span>
-                                                <span className="text-[10px]">▾</span>
+                                                <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
                                             </button>
                                             {openFilter === "class" && (
                                                 <div
                                                     className={`${isDark
                                                         ? "bg-zinc-900 text-gray-100"
                                                         : "bg-white text-zinc-800"
-                                                        } absolute z-100 mt-2 w-full rounded-2xl border ${isDark ? "border-zinc-700" : "border-zinc-300"
+                                                        } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 ${isDark ? "border-zinc-700" : "border-zinc-300"
                                                         } px-3 py-3 shadow-xl transition-all duration-150`}
                                                 >
                                                     <div className="flex flex-wrap gap-2">
@@ -459,121 +500,127 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                         </div>
 
                                         {/* Subject Name dropdown */}
-                                        <div className="relative z-20">
-                                            <button
-                                                type="button"
-                                                onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
-                                                disabled={!selectedClass}
-                                                className={`${isDark
-                                                    ? "bg-zinc-900 border-zinc-700 text-gray-100"
-                                                    : "bg-white border-zinc-300 text-zinc-800"
-                                                    } w-full flex items-center justify-between rounded-md border px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                <span>{selectedSubject || "Subject Name"}</span>
-                                                <span className="text-[10px]">▾</span>
-                                            </button>
-                                            {openFilter === "subject" && selectedClass && (
-                                                <div
+                                        {selectedClass && (
+                                            <div className="relative z-20">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
+                                                    disabled={!selectedClass}
                                                     className={`${isDark
-                                                        ? "bg-zinc-900 text-gray-100"
-                                                        : "bg-white text-zinc-800"
-                                                        } absolute z-100 mt-2 w-full rounded-xl border ${isDark ? "border-zinc-700" : "border-zinc-300"
-                                                        } px-3 py-3 shadow-lg`}
+                                                        ? "bg-zinc-900 border-zinc-700 text-gray-100"
+                                                        : "bg-white border-zinc-300 text-zinc-800"
+                                                        } w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                                 >
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {subjectOptions.map((item) => (
-                                                            <button
-                                                                key={item}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setSelectedSubject(item);
-                                                                    setOpenFilter(null);
-                                                                }}
-                                                                className={`${selectedSubject === item
-                                                                    ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
-                                                                    : isDark
-                                                                        ? "bg-zinc-800 text-gray-100"
-                                                                        : "bg-zinc-100 text-zinc-800"
-                                                                    } cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03]`}
-                                                            >
-                                                                {item}
-                                                            </button>
-                                                        ))}
+                                                    <span>{selectedSubject || "Subject Name"}</span>
+                                                    <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
+                                                </button>
+                                                {openFilter === "subject" && selectedClass && (
+                                                    <div
+                                                        className={`${isDark
+                                                            ? "bg-zinc-900 text-gray-100"
+                                                            : "bg-white text-zinc-800"
+                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 ${isDark ? "border-zinc-700" : "border-zinc-300"
+                                                            } px-3 py-3 shadow-lg`}
+                                                    >
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {subjectOptions.map((item) => (
+                                                                <button
+                                                                    key={item}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedSubject(item);
+                                                                        setOpenFilter(null);
+                                                                    }}
+                                                                    className={`${selectedSubject === item
+                                                                        ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                        : isDark
+                                                                            ? "bg-zinc-800 text-gray-100"
+                                                                            : "bg-zinc-100 text-zinc-800"
+                                                                        } cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03]`}
+                                                                >
+                                                                    {item}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         {/* Chapter Name dropdown */}
-                                        <div className="relative z-10">
-                                            <button
-                                                type="button"
-                                                onClick={() => setOpenFilter((prev) => (prev === "chapter" ? null : "chapter"))}
-                                                disabled={!selectedSubject}
-                                                className={`${isDark
-                                                    ? "bg-zinc-900 border-zinc-700 text-gray-100"
-                                                    : "bg-white border-zinc-300 text-zinc-800"
-                                                    } w-full flex items-center justify-between rounded-md border px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedSubject ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                <span>{selectedChapter || "Chapter Name"}</span>
-                                                <span className="text-[10px]">▾</span>
-                                            </button>
-                                            {openFilter === "chapter" && selectedSubject && (
-                                                <div
+                                        {selectedSubject && (
+                                            <div className="relative z-10">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenFilter((prev) => (prev === "chapter" ? null : "chapter"))}
+                                                    disabled={!selectedSubject}
                                                     className={`${isDark
-                                                        ? "bg-zinc-900 text-gray-100"
-                                                        : "bg-white text-zinc-800"
-                                                        } absolute z-100 mt-2 w-full rounded-xl border ${isDark ? "border-zinc-700" : "border-zinc-300"
-                                                        } px-3 py-3 shadow-lg`}
+                                                        ? "bg-zinc-900 border-zinc-700 text-gray-100"
+                                                        : "bg-white border-zinc-300 text-zinc-800"
+                                                        } w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedSubject ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "chapter" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                                 >
-                                                    <div className="flex flex-col gap-2">
-                                                        {chapterOptions.map((item) => (
-                                                            <button
-                                                                key={item}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setSelectedChapter(item);
-                                                                    setOpenFilter(null);
-                                                                }}
-                                                                className={`${selectedChapter === item
-                                                                    ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
-                                                                    : isDark
-                                                                        ? "bg-zinc-800 text-gray-100"
-                                                                        : "bg-zinc-100 text-zinc-800"
-                                                                    } cursor-pointer w-full text-left px-4 py-1.5 rounded-full text-xs transition-all duration-150 hover:scale-[1.02]`}
-                                                            >
-                                                                {item}
-                                                            </button>
-                                                        ))}
+                                                    <span>{selectedChapter || "Chapter Name"}</span>
+                                                    <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "chapter" ? "rotate-180" : ""}`} /></span>
+                                                </button>
+                                                {openFilter === "chapter" && selectedSubject && (
+                                                    <div
+                                                        className={`${isDark
+                                                            ? "bg-zinc-900 text-gray-100"
+                                                            : "bg-white text-zinc-800"
+                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 ${isDark ? "border-zinc-700" : "border-zinc-300"
+                                                            } px-3 py-3 shadow-lg`}
+                                                    >
+                                                        <div className="flex flex-col gap-2">
+                                                            {chapterOptions.map((item) => (
+                                                                <button
+                                                                    key={item}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedChapter(item);
+                                                                        setOpenFilter(null);
+                                                                    }}
+                                                                    className={`${selectedChapter === item
+                                                                        ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                        : isDark
+                                                                            ? "bg-zinc-800 text-gray-100"
+                                                                            : "bg-zinc-100 text-zinc-800"
+                                                                        } cursor-pointer w-full text-left px-4 py-1.5 rounded-full text-xs transition-all duration-150 hover:scale-[1.02]`}
+                                                                >
+                                                                    {item}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Reset / Apply row */}
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={resetFilters}
-                                            className={`${isDark
-                                                ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900"
-                                                : "bg-transparent text-zinc-700 border border-zinc-300 hover:bg-zinc-100"
-                                                } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
-                                        >
-                                            Reset Filter
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={applyFilters}
-                                            className={`${isDark
-                                                ? "bg-white text-black hover:bg-zinc-100"
-                                                : "bg-white text-zinc-900 hover:bg-zinc-100"
-                                                } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm shadow-sm`}
-                                        >
-                                            Apply Filter
-                                        </button>
-                                    </div>
+                                    {selectedClass && selectedSubject && selectedChapter && (
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={resetFilters}
+                                                className={`${isDark
+                                                    ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900"
+                                                    : "bg-transparent text-zinc-700 border border-zinc-300 hover:bg-zinc-100"
+                                                    } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
+                                            >
+                                                Reset Filter
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={applyFilters}
+                                                className={`${isDark
+                                                    ? "bg-white text-black hover:bg-zinc-100"
+                                                    : "bg-white text-zinc-900 hover:bg-zinc-100"
+                                                    } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm shadow-sm`}
+                                            >
+                                                Apply Filter
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

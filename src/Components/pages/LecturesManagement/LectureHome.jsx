@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
 import { getAsset, BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets.js";
-import { Play, PlusIcon, Share2, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ChevronDown, Play, PlusIcon, Share2, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -210,9 +210,28 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
         fetchLectures();
     }, []);
 
-    const resetFilters = () => {
+    const resetFilters = async () => {
         setSelectedClass("");
         setSelectedSubject("");
+
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem("access_token");
+            const response = await axios.get(`${BACKEND_API_URL}/lectures/`, {
+                headers: {
+                    'Accept': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+
+            if (response.data && Array.isArray(response.data)) {
+                setLectureData(response.data);
+            }
+        } catch (error) {
+            console.error("Error resetting lectures:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const applyFilters = () => {
@@ -241,7 +260,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                 },
                 params: {
                     std: lectureToDelete.std,
-                    subject: lectureToDelete.subject || "science",
+                    subject: lectureToDelete.subject,
                     lecture_id: lectureToDelete.lecture_id,
                 },
             });
@@ -407,13 +426,13 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                     <button
                                         type="button"
                                         onClick={() => setOpenFilter((prev) => (prev === "class" ? null : "class"))}
-                                        className={`w-full flex items-center justify-between rounded-md border px-4 py-2 text-xs sm:text-sm cursor-pointer shadow-sm hover:shadow transition-all duration-150 ${resolvedDark ? "bg-zinc-900 border-zinc-700 text-gray-100" : "bg-white border-zinc-300 text-zinc-800"}`}>
+                                        className={`w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer shadow-sm hover:shadow transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"} ${resolvedDark ? "bg-zinc-900 border-zinc-700 text-gray-100" : "bg-white border-zinc-300 text-zinc-800"}`}>
                                         <span>{selectedClass || "Class"}</span>
-                                        <span className="text-[10px]">▾</span>
+                                        <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
                                     </button>
                                     {openFilter === "class" && (
                                         <div
-                                            className={`absolute z-40 mt-2 w-full rounded-2xl border px-3 py-3 shadow-xl transition-all duration-150 ${resolvedDark ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-zinc-800 border-zinc-300"}`}>
+                                            className={`relative z-40 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 px-3 py-3 shadow-xl transition-all duration-150 ${resolvedDark ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-zinc-800 border-zinc-300"}`}>
                                             <div className="flex flex-wrap gap-2">
                                                 {classOptions.length > 0 ? (
                                                     classOptions.map((item) => (
@@ -436,54 +455,60 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                     )}
                                 </div>
 
-                                <div className={`relative ${openFilter === "subject" ? "z-30" : "z-10"}`}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
-                                        className={`w-full flex items-center justify-between rounded-md border px-4 py-2 text-xs sm:text-sm cursor-pointer ${resolvedDark ? "bg-zinc-900 border-zinc-700 text-gray-100" : "bg-white border-zinc-300 text-zinc-800"}`}>
-                                        <span>{selectedSubject || "Subject Name"}</span>
-                                        <span className="text-[10px]">▾</span>
-                                    </button>
-                                    {openFilter === "subject" && (
-                                        <div
-                                            className={`absolute z-40 mt-2 w-full rounded-xl border px-3 py-3 shadow-lg ${resolvedDark ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-zinc-800 border-zinc-300"}`}>
-                                            <div className="flex flex-wrap gap-2">
-                                                {subjectOptions.length > 0 ? (
-                                                    subjectOptions.map((item) => (
-                                                        <button
-                                                            key={item}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setSelectedSubject(item);
-                                                                setOpenFilter(null);
-                                                            }}
-                                                            className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedSubject === item ? `${resolvedDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}` : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
-                                                            {item}
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    <p className={`text-xs ${resolvedDark ? 'text-gray-400' : 'text-zinc-500'}`}>No subjects available</p>
-                                                )}
-                                            </div>
+                                {selectedClass &&
+                                    (
+
+                                        <div className={`relative ${openFilter === "subject" ? "z-30" : "z-10"}`}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
+                                                className={`w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"} ${resolvedDark ? "bg-zinc-900 border-zinc-700 text-gray-100" : "bg-white border-zinc-300 text-zinc-800"}`}>
+                                                <span>{selectedSubject || "Subject Name"}</span>
+                                                <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
+                                            </button>
+                                            {openFilter === "subject" && (
+                                                <div
+                                                    className={`relative z-40 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 px-3 py-3 shadow-lg ${resolvedDark ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-zinc-800 border-zinc-300"}`}>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {subjectOptions.length > 0 ? (
+                                                            subjectOptions.map((item) => (
+                                                                <button
+                                                                    key={item}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedSubject(item);
+                                                                        setOpenFilter(null);
+                                                                    }}
+                                                                    className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedSubject === item ? `${resolvedDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}` : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
+                                                                    {item}
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <p className={`text-xs ${resolvedDark ? 'text-gray-400' : 'text-zinc-500'}`}>No subjects available</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-                                </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={resetFilters}
-                                    className={`cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm ${resolvedDark ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900" : "bg-transparent text-zinc-700 border border-zinc-300 hover:bg-zinc-100"}`}>
-                                    Reset Filter
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={applyFilters}
-                                    className={`cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm shadow-sm ${resolvedDark ? "bg-white text-black hover:bg-zinc-100" : "bg-white text-zinc-900 hover:bg-zinc-100"}`}>
-                                    Apply Filter
-                                </button>
-                            </div>
+                            {selectedClass && selectedSubject && (
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={resetFilters}
+                                        className={`cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm ${resolvedDark ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900" : "bg-transparent text-zinc-700 border border-zinc-300 hover:bg-zinc-100"}`}>
+                                        Reset Filter
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={applyFilters}
+                                        className={`cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm shadow-sm ${resolvedDark ? "bg-white text-black hover:bg-zinc-100" : "bg-white text-zinc-900 hover:bg-zinc-100"}`}>
+                                        Apply Filter
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 

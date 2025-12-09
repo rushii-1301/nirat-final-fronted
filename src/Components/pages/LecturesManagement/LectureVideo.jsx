@@ -230,6 +230,9 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     // Start recording - captures current tab/window
     const startRecording = async () => {
         try {
+            // Force reset of UnrealVideo to ensure we start from the beginning
+            setResetKey(prev => prev + 1);
+
             // Get display media stream
             const stream = await navigator.mediaDevices.getDisplayMedia({
                 video: {
