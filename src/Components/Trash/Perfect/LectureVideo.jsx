@@ -562,107 +562,34 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             />
 
             {/* Custom Recording Confirmation Modal */}
-            {isRecordModalOpen && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setIsRecordModalOpen(false)}
-                >
+            {
+                isRecordModalOpen && (
                     <div
-                        className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
-                            } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
-                            } px-6 py-6 transform transition-all`}
-                        onClick={(e) => e.stopPropagation()}
+                        className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
+                        onClick={() => setIsRecordModalOpen(false)}
                     >
-                        <div className="text-center mb-6">
-                            <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-                                <Play size={32} className="text-green-500" fill="currentColor" />
-                            </div>
-                            <h3 className="text-lg md:text-xl font-semibold mb-2">
-                                {recordedBlob ? "Start New Recording?" : "Start Recording Lecture?"}
-                            </h3>
-                            <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                                {recordedBlob ? "Starting a new recording will discard the previous one." : "This will record the current lecture screen"}
-                            </p>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setIsRecordModalOpen(false)}
-                                className={`flex-1 cursor-pointer px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
-                                    ? 'bg-zinc-800 text-white hover:bg-zinc-700'
-                                    : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
-                                    }`}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={startRecording}
-                                className="flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
-                            >
-                                <Play size={16} fill="white" />
-                                <span>Start</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Share Modal */}
-            {isShareOpen && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setIsShareOpen(false)}
-                >
-                    <div
-                        className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
-                            } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
-                            } px-6 py-6 transform transition-all`}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-start justify-between mb-5">
-                            <div>
-                                <h3 className="text-base md:text-lg font-semibold">
-                                    Share With Student
+                        <div
+                            className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
+                                } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
+                                } px-6 py-6 transform transition-all`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="text-center mb-6">
+                                <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+                                    <Play size={32} className="text-green-500" fill="currentColor" />
+                                </div>
+                                <h3 className="text-lg md:text-xl font-semibold mb-2">
+                                    {recordedBlob ? "Start New Recording?" : "Start Recording Lecture?"}
                                 </h3>
-                                <p className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                                    Enter class number to share this lecture
+                                <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                                    {recordedBlob ? "Starting a new recording will discard the previous one." : "This will record the current lecture screen"}
                                 </p>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsShareOpen(false)}
-                                className={`shrink-0 cursor-pointer p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'
-                                    }`}
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-zinc-300' : 'text-zinc-700'
-                                    }`}>
-                                    Class Number
-                                </label>
-                                <input
-                                    type="text"
-                                    value={shareClass}
-                                    onChange={(e) => setShareClass(e.target.value)}
-                                    placeholder="e.g., Class 10-A"
-                                    className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none border-2 transition-colors ${isDark
-                                        ? 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-zinc-500'
-                                        : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder:text-zinc-400 focus:border-[#696CFF]'
-                                        }`}
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setIsShareOpen(false)}
+                                    onClick={() => setIsRecordModalOpen(false)}
                                     className={`flex-1 cursor-pointer px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
                                         ? 'bg-zinc-800 text-white hover:bg-zinc-700'
                                         : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
@@ -672,21 +599,98 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={handleShare}
-                                    className={`flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
-                                        ? 'bg-white text-zinc-900 hover:bg-zinc-100'
-                                        : 'bg-[#696CFF] text-white hover:bg-[#5a5de6]'
-                                        }`}
+                                    onClick={startRecording}
+                                    className="flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
                                 >
-                                    <Share2 size={16} />
-                                    <span>Share Now</span>
+                                    <Play size={16} fill="white" />
+                                    <span>Start</span>
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {/* Share Modal */}
+            {
+                isShareOpen && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
+                        onClick={() => setIsShareOpen(false)}
+                    >
+                        <div
+                            className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
+                                } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
+                                } px-6 py-6 transform transition-all`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start justify-between mb-5">
+                                <div>
+                                    <h3 className="text-base md:text-lg font-semibold">
+                                        Share With Student
+                                    </h3>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                                        Enter class number to share this lecture
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsShareOpen(false)}
+                                    className={`shrink-0 cursor-pointer p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'
+                                        }`}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-zinc-300' : 'text-zinc-700'
+                                        }`}>
+                                        Class Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={shareClass}
+                                        onChange={(e) => setShareClass(e.target.value)}
+                                        placeholder="e.g., Class 10-A"
+                                        className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none border-2 transition-colors ${isDark
+                                            ? 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-zinc-500'
+                                            : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder:text-zinc-400 focus:border-[#696CFF]'
+                                            }`}
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsShareOpen(false)}
+                                        className={`flex-1 cursor-pointer px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
+                                            ? 'bg-zinc-800 text-white hover:bg-zinc-700'
+                                            : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                                            }`}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleShare}
+                                        className={`flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
+                                            ? 'bg-white text-zinc-900 hover:bg-zinc-100'
+                                            : 'bg-[#696CFF] text-white hover:bg-[#5a5de6]'
+                                            }`}
+                                    >
+                                        <Share2 size={16} />
+                                        <span>Share Now</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 }
 

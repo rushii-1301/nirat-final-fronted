@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import UnrealVideo from "../Startup/UnrealVideo.jsx";
 import { useLocation, useNavigate } from "react-router-dom";
-import { X, Share2, Download, Play, Square, ChevronLeft, Mic, MicOff, Pause, RotateCcw } from "lucide-react";
+import { X, Share2, Download, Play, Square, ChevronLeft, Pause, RotateCcw } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets.js";
 
@@ -20,18 +19,10 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         isPortrait: window.innerHeight > window.innerWidth
     });
 
-    // Video & Speech Controls State
+    // Video Controls State
     const videoRef = useRef(null);
-    const recognitionRef = useRef(null);
-    const isListeningRef = useRef(false);
-    const finalTranscriptRef = useRef("");
-    const retryTimeoutRef = useRef(null);
 
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isListening, setIsListening] = useState(false);
-    const [recognizedText, setRecognizedText] = useState("");
-    const [speechError, setSpeechError] = useState("");
-    const [resetKey, setResetKey] = useState(0); // Key to force remount UnrealVideo on reset
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -143,95 +134,11 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isRecording, mediaRecorder]);
 
-    // Speech recognition setup
-    useEffect(() => {
-        const SpeechRecognition =
-            window.SpeechRecognition ||
-            window.webkitSpeechRecognition;
 
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = "en-US";
-            recognition.maxAlternatives = 1;
-
-            recognition.onstart = () => {
-                isListeningRef.current = true;
-                setIsListening(true);
-                setSpeechError("");
-            };
-
-            recognition.onresult = (event) => {
-                setSpeechError("");
-                let interimTranscript = "";
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const part = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscriptRef.current += part + " ";
-                    } else {
-                        interimTranscript += part;
-                    }
-                }
-                const displayText = (
-                    finalTranscriptRef.current + (interimTranscript ? " " + interimTranscript : "")
-                ).trim();
-                setRecognizedText(displayText);
-            };
-
-            recognition.onerror = (event) => {
-                let errorMessage = "";
-                let shouldRetry = false;
-                switch (event.error) {
-                    case "no-speech":
-                        errorMessage = "No speech detected. Listening...";
-                        shouldRetry = true;
-                        break;
-                    case "audio-capture":
-                        errorMessage = "No microphone found.";
-                        break;
-                    case "network":
-                        errorMessage = "Network error.";
-                        break;
-                    case "not-allowed":
-                        errorMessage = "Microphone access denied.";
-                        break;
-                    case "bad-grammar":
-                        errorMessage = "Speech not recognized.";
-                        shouldRetry = true;
-                        break;
-                    default:
-                        errorMessage = `Error: ${event.error}`;
-                }
-                setSpeechError(errorMessage);
-                if (shouldRetry && isListeningRef.current) {
-                    if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
-                    retryTimeoutRef.current = setTimeout(() => {
-                        try {
-                            recognitionRef.current?.start();
-                        } catch { }
-                    }, 2000);
-                }
-            };
-
-            recognition.onend = () => {
-                isListeningRef.current = false;
-                setIsListening(false);
-            };
-
-            recognitionRef.current = recognition;
-        }
-
-        return () => {
-            if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
-        };
-    }, []);
 
     // Start recording - captures current tab/window
     const startRecording = async () => {
         try {
-            // Force reset of UnrealVideo to ensure we start from the beginning
-            setResetKey(prev => prev + 1);
 
             // Get display media stream
             const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -293,38 +200,9 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         }
     };
 
-    // Called when UnrealVideo reports all slides have completed
-    const handleSlidesComplete = () => {
-        if (isRecording) {
-            stopRecording();
-        }
-    };
 
-    // Control Handlers
-    const handleMicrophone = () => {
-        if (!isPlaying) return;
 
-        if (!recognitionRef.current) return;
-        if (isListeningRef.current) {
-            recognitionRef.current.stop();
-            isListeningRef.current = false;
-            setIsListening(false);
-            setSpeechError("");
-        } else {
-            finalTranscriptRef.current = "";
-            setRecognizedText("");
-            setSpeechError("");
-            isListeningRef.current = true;
-            setIsListening(true);
-            try {
-                recognitionRef.current.start();
-            } catch (e) {
-                isListeningRef.current = false;
-                setIsListening(false);
-                setSpeechError("Failed to start microphone.");
-            }
-        }
-    };
+
 
     const handlePlay = async () => {
         // If not recording, open modal to start/restart recording
@@ -365,16 +243,6 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             URL.revokeObjectURL(URL.createObjectURL(recordedBlob)); // Clean up
             setRecordedBlob(null);
         }
-
-        if (isListeningRef.current && recognitionRef.current) {
-            recognitionRef.current.stop();
-            isListeningRef.current = false;
-            setIsListening(false);
-        }
-        finalTranscriptRef.current = "";
-        setRecognizedText("");
-        setSpeechError("");
-        setResetKey(prev => prev + 1); // Force remount of UnrealVideo to reset its state
     };
 
     // Download recorded video
@@ -433,20 +301,19 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         <div className={`relative w-screen h-screen overflow-hidden ${isDark ? "bg-black" : "bg-zinc-900"}`}>
             {/* Full-Screen Video Player */}
             <div className="absolute inset-0 w-full h-full">
-                <UnrealVideo
-                    key={resetKey}
-                    fullScreen={true}
-                    lecturejson={lecturejson}
-                    isRecording={isRecording}
-                    setIsRecording={setIsRecording}
-                    showControls={showControls}
-                    videoRef={videoRef}
-                    isPlaying={isPlaying}
-                    setIsPlaying={setIsPlaying}
-                    recognizedText={recognizedText}
-                    speechError={speechError}
-                    onSlidesComplete={handleSlidesComplete}
-                />
+                {lecturejson && (
+                    <iframe
+                        ref={videoRef}
+                        src={`https://19hnincmd661.id.wasmer.app/?lectureId=${location.state?.lectureId ||
+                            (lecturejson.match(/(\d+)\.json$/) ? lecturejson.match(/(\d+)\.json$/)[1] : '2')
+                            }`}
+                        className="w-full h-full"
+                        allow="autoplay; fullscreen; picture-in-picture; microphone"
+                        allowFullScreen
+                        style={{ border: 'none' }}
+                        title="Unreal Lecture Viewer"
+                    />
+                )}
             </div>
 
             {/* Floating Top Bar - Shows on hover/touch */}
@@ -514,19 +381,8 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 </div>
             )}
 
-            {/* Controls overlay - Moved from UnrealVideo */}
+            {/* Controls overlay */}
             <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-6 z-30 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-                <button
-                    onClick={handleMicrophone}
-                    className={`p-4 cursor-pointer rounded-full border-2 transition-all duration-300 ${isListening
-                        ? "border-red-500 bg-red-500/20 text-red-400 shadow-lg shadow-red-500/50"
-                        : "border-cyan-500 bg-cyan-500/10 text-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50"
-                        }`}
-                    title={(isPlaying && isListening) ? "Stop Listening" : "Start Listening"}
-                >
-                    {(isPlaying && isListening) ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                </button>
-
                 <button
                     onClick={handlePlay}
                     className={`p-4 cursor-pointer rounded-full border-2 border-cyan-500 bg-cyan-500/10 text-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-300`}
@@ -562,107 +418,34 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             />
 
             {/* Custom Recording Confirmation Modal */}
-            {isRecordModalOpen && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setIsRecordModalOpen(false)}
-                >
+            {
+                isRecordModalOpen && (
                     <div
-                        className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
-                            } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
-                            } px-6 py-6 transform transition-all`}
-                        onClick={(e) => e.stopPropagation()}
+                        className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
+                        onClick={() => setIsRecordModalOpen(false)}
                     >
-                        <div className="text-center mb-6">
-                            <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-                                <Play size={32} className="text-green-500" fill="currentColor" />
-                            </div>
-                            <h3 className="text-lg md:text-xl font-semibold mb-2">
-                                {recordedBlob ? "Start New Recording?" : "Start Recording Lecture?"}
-                            </h3>
-                            <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                                {recordedBlob ? "Starting a new recording will discard the previous one." : "This will record the current lecture screen"}
-                            </p>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setIsRecordModalOpen(false)}
-                                className={`flex-1 cursor-pointer px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
-                                    ? 'bg-zinc-800 text-white hover:bg-zinc-700'
-                                    : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
-                                    }`}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={startRecording}
-                                className="flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
-                            >
-                                <Play size={16} fill="white" />
-                                <span>Start</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Share Modal */}
-            {isShareOpen && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setIsShareOpen(false)}
-                >
-                    <div
-                        className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
-                            } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
-                            } px-6 py-6 transform transition-all`}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-start justify-between mb-5">
-                            <div>
-                                <h3 className="text-base md:text-lg font-semibold">
-                                    Share With Student
+                        <div
+                            className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
+                                } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
+                                } px-6 py-6 transform transition-all`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="text-center mb-6">
+                                <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+                                    <Play size={32} className="text-green-500" fill="currentColor" />
+                                </div>
+                                <h3 className="text-lg md:text-xl font-semibold mb-2">
+                                    {recordedBlob ? "Start New Recording?" : "Start Recording Lecture?"}
                                 </h3>
-                                <p className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                                    Enter class number to share this lecture
+                                <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                                    {recordedBlob ? "Starting a new recording will discard the previous one." : "This will record the current lecture screen"}
                                 </p>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsShareOpen(false)}
-                                className={`shrink-0 cursor-pointer p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'
-                                    }`}
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-zinc-300' : 'text-zinc-700'
-                                    }`}>
-                                    Class Number
-                                </label>
-                                <input
-                                    type="text"
-                                    value={shareClass}
-                                    onChange={(e) => setShareClass(e.target.value)}
-                                    placeholder="e.g., Class 10-A"
-                                    className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none border-2 transition-colors ${isDark
-                                        ? 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-zinc-500'
-                                        : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder:text-zinc-400 focus:border-[#696CFF]'
-                                        }`}
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setIsShareOpen(false)}
+                                    onClick={() => setIsRecordModalOpen(false)}
                                     className={`flex-1 cursor-pointer px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
                                         ? 'bg-zinc-800 text-white hover:bg-zinc-700'
                                         : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
@@ -672,21 +455,98 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={handleShare}
-                                    className={`flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
-                                        ? 'bg-white text-zinc-900 hover:bg-zinc-100'
-                                        : 'bg-[#696CFF] text-white hover:bg-[#5a5de6]'
-                                        }`}
+                                    onClick={startRecording}
+                                    className="flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
                                 >
-                                    <Share2 size={16} />
-                                    <span>Share Now</span>
+                                    <Play size={16} fill="white" />
+                                    <span>Start</span>
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {/* Share Modal */}
+            {
+                isShareOpen && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm"
+                        onClick={() => setIsShareOpen(false)}
+                    >
+                        <div
+                            className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-900'
+                                } w-full max-w-md rounded-2xl shadow-2xl border ${isDark ? 'border-zinc-800' : 'border-zinc-200'
+                                } px-6 py-6 transform transition-all`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start justify-between mb-5">
+                                <div>
+                                    <h3 className="text-base md:text-lg font-semibold">
+                                        Share With Student
+                                    </h3>
+                                    <p className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                                        Enter class number to share this lecture
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsShareOpen(false)}
+                                    className={`shrink-0 cursor-pointer p-1.5 rounded-full transition-colors ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'
+                                        }`}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-zinc-300' : 'text-zinc-700'
+                                        }`}>
+                                        Class Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={shareClass}
+                                        onChange={(e) => setShareClass(e.target.value)}
+                                        placeholder="e.g., Class 10-A"
+                                        className={`w-full rounded-lg px-4 py-2.5 text-sm outline-none border-2 transition-colors ${isDark
+                                            ? 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-zinc-500'
+                                            : 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder:text-zinc-400 focus:border-[#696CFF]'
+                                            }`}
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsShareOpen(false)}
+                                        className={`flex-1 cursor-pointer px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
+                                            ? 'bg-zinc-800 text-white hover:bg-zinc-700'
+                                            : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                                            }`}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleShare}
+                                        className={`flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isDark
+                                            ? 'bg-white text-zinc-900 hover:bg-zinc-100'
+                                            : 'bg-[#696CFF] text-white hover:bg-[#5a5de6]'
+                                            }`}
+                                    >
+                                        <Share2 size={16} />
+                                        <span>Share Now</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 }
 

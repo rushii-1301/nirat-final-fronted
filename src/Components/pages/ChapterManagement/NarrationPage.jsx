@@ -241,7 +241,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                         : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'
                                         } px-3 py-1.5 rounded-md text-[11px] sm:text-xs border ${isDark ? 'border-zinc-700' : 'border-zinc-300'} cursor-pointer inline-flex items-center gap-1 transition-all duration-200`}
                                 >
-                                    Restore <RotateCcw size={14} />
+                                    Re Generate <RotateCcw size={14} />
                                 </button>
                             </div>
 
@@ -254,51 +254,92 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                 )}
 
                                 {!isLoadingSlides && currentSlide && (
-                                    <div className="flex items-stretch gap-3 sm:gap-4">
-                                        {/* Left arrow */}
+                                    <div className="flex items-start gap-3 sm:gap-4">
+                                        {/* Left arrow - Controls all sections */}
                                         <button
                                             type="button"
                                             onClick={handlePrevSlide}
                                             disabled={currentSlideIndex === 0}
-                                            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105`}
+                                            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105 mt-2`}
                                         >
                                             <ChevronLeft size={18} />
                                         </button>
 
-                                        {/* Slide box */}
-                                        <div
-                                            key={currentSlideIndex}
-                                            className={`flex-1 rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950/40' : 'border-zinc-200 bg-white'} px-4 sm:px-5 py-3 sm:py-4 shadow-sm transition-all duration-300 ease-out`}
-                                        >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                                    Slide Narration
+                                        {/* Content sections */}
+                                        <div className="flex-1 space-y-3">
+                                            {/* Bullets Section */}
+                                            {currentSlide?.bullets && currentSlide.bullets.length > 0 && (
+                                                <div className={`rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950/40' : 'border-zinc-200 bg-white'} px-4 sm:px-5 py-3 sm:py-4 shadow-sm`}>
+                                                    <div className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
+                                                        Key Points
+                                                    </div>
+                                                    <ul className="space-y-2.5 pl-1">
+                                                        {currentSlide.bullets.map((point, index) => (
+                                                            <li key={index} className="flex items-start gap-2.5">
+                                                                <span className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${isDark ? 'bg-blue-400' : 'bg-[#696CFF]'}`}></span>
+                                                                <span className="flex-1 text-sm leading-relaxed">{point}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
                                                 </div>
-                                                <span className="text-[11px] text-gray-400">
-                                                    {currentSlideIndex + 1} / {slides.length}
-                                                </span>
-                                            </div>
+                                            )}
 
-                                            {isManualEdit ? (
-                                                <textarea
-                                                    value={narration}
-                                                    onChange={(e) => setNarration(e.target.value)}
-                                                    className={`${isDark ? 'bg-zinc-900 text-gray-100 border-zinc-700' : 'bg-white text-zinc-900 border-zinc-300'} text-sm leading-relaxed text-justify w-full rounded-lg border px-3 py-2 h-[37vh] md:h-[40vh] lg:h-[40vh] xl:h-[40vh] overflow-y-auto no-scrollbar resize-none`}
-                                                    placeholder="Edit narration manually here"
-                                                />
-                                            ) : (
-                                                <div className="text-sm leading-relaxed text-justify max-h-[27vh] md:max-h-[30vh] lg:max-h-[30vh] xl:max-h-[30vh] overflow-y-auto pr-1 no-scrollbar">
-                                                    <p>{narration || 'No narration available for this slide.'}</p>
+                                            {/* Narration Box */}
+                                            {narration && narration.trim() && (
+                                                <div
+                                                    key={currentSlideIndex}
+                                                    className={`rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950/40' : 'border-zinc-200 bg-white'} px-4 sm:px-5 py-3 sm:py-4 shadow-sm transition-all duration-300 ease-out`}
+                                                >
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                            Slide Narration
+                                                        </div>
+                                                        <span className="text-[11px] text-gray-400">
+                                                            {currentSlideIndex + 1} / {slides.length}
+                                                        </span>
+                                                    </div>
+
+                                                    {isManualEdit ? (
+                                                        <textarea
+                                                            value={narration}
+                                                            onChange={(e) => setNarration(e.target.value)}
+                                                            className={`${isDark ? 'bg-zinc-900 text-gray-100 border-zinc-700' : 'bg-white text-zinc-900 border-zinc-300'} text-sm leading-relaxed text-justify w-full rounded-lg border px-3 py-2 h-[37vh] md:h-[40vh] lg:h-[40vh] xl:h-[40vh] overflow-y-auto no-scrollbar resize-none`}
+                                                            placeholder="Edit narration manually here"
+                                                        />
+                                                    ) : (
+                                                        <div className="text-sm leading-relaxed text-justify max-h-[27vh] md:max-h-[30vh] lg:max-h-[30vh] xl:max-h-[30vh] overflow-y-auto pr-1 no-scrollbar">
+                                                            <p className="leading-relaxed">{narration}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Questions Section - Only show on last slide */}
+                                            {currentSlide?.question && currentSlide.question.trim() && currentSlideIndex === slides.length - 1 && (
+                                                <div className={`rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950/40' : 'border-zinc-200 bg-white'} px-4 sm:px-5 py-3 sm:py-4 shadow-sm`}>
+                                                    <div className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
+                                                        Questions
+                                                    </div>
+                                                    <div className={`${isDark ? 'bg-zinc-900/50 border-zinc-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-3`}>
+                                                        <p className="text-sm leading-relaxed whitespace-pre-line">{currentSlide.question}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Show message only if everything is empty */}
+                                            {!narration?.trim() && (!currentSlide?.bullets || currentSlide.bullets.length === 0) && !currentSlide?.question?.trim() && (
+                                                <div className="text-center py-6 text-gray-400 text-sm">
+                                                    No content available for this slide.
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* Right arrow */}
+                                        {/* Right arrow - Controls all sections */}
                                         <button
                                             type="button"
                                             onClick={handleNextSlide}
                                             disabled={currentSlideIndex >= slides.length - 1}
-                                            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105`}
+                                            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full border cursor-pointer ${isDark ? 'border-zinc-700 text-gray-300 hover:bg-zinc-800/60' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'} disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-sm hover:scale-105 mt-2`}
                                         >
                                             <ChevronRight size={18} />
                                         </button>
@@ -345,7 +386,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                     Generate
                                 </button>
 
-                                <button
+                                {/* <button
                                     type="button"
                                     onClick={() => {
                                         setShowPromptBar(true);
@@ -354,7 +395,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                     className={`${isDark ? 'bg-zinc-800 text-gray-100 hover:bg-zinc-700' : 'bg-white text-[#696CFF] hover:bg-[#f9faff] border border-[#696CFF]/40'} w-full sm:w-28 md:w-32 px-4 py-2 rounded-md text-xs sm:text-sm cursor-pointer shadow-md hover:shadow-lg transition-all duration-200`}
                                 >
                                     Edit
-                                </button>
+                                </button> */}
                             </div>
                         )}
 

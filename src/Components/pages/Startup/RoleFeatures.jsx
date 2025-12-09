@@ -6,273 +6,121 @@ function RoleFeatures({ theme, isDark, toggleTheme, sidebardata }) {
     const navigate = useNavigate();
 
     return (
-        <div className={`w-full min-h-screen relative overflow-hidden transition-all duration-300 ${isDark
-            ? 'bg-linear-to-br from-slate-950 via-slate-900 to-slate-950'
-            : 'bg-linear-to-br from-gray-50 via-white to-gray-100'
+        <div className={`w-screen h-screen relative overflow-hidden flex items-center justify-center ${isDark ? 'bg-black' : 'bg-[#F5F5F5]'
             }`}>
-            {/* Subtle Background Elements */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-                <div className={`absolute top-20 -left-20 w-96 h-96 rounded-full blur-3xl ${isDark ? 'bg-blue-900/20' : 'bg-blue-200/30'
-                    }`} />
-                <div className={`absolute bottom-20 -right-20 w-96 h-96 rounded-full blur-3xl ${isDark ? 'bg-purple-900/20' : 'bg-purple-200/30'
-                    }`} />
-            </div>
+            {/* Main Container - Scales proportionally */}
+            <div className="relative w-full h-full flex items-center justify-center">
+                {/* Content Wrapper - Max width for large screens */}
+                <div className="w-full h-full max-w-[1920px] max-h-[1080px] mx-auto flex items-center justify-between px-[5vw] lg:px-[8vw]">
 
-            {/* ===== Mobile/Tablet Layout ===== */}
-            <div className="lg:hidden static w-full min-h-screen flex flex-col">
-                {/* Full Screen Background with Model */}
-                <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-                    {/* Model Image - Centered and Contained */}
-                    <img
-                        src={getAsset('Model')}
-                        alt="3D Avatar"
-                        className="w-full h-full object-contain object-center scale-110"
-                    />
-
-                    {/* Gradient Overlay - Stronger at bottom */}
-                    <div className={`absolute inset-0 ${isDark
-                        ? 'bg-linear-to-b from-slate-950/40 via-slate-900/60 to-slate-950'
-                        : 'bg-linear-to-b from-white/30 via-gray-50/50 to-white'
-                        }`} />
-                </div>
-
-                {/* Content Section - Positioned at Bottom */}
-                <div className="relative z-20 mt-auto px-4 sm:px-6 pb-6 sm:pb-8">
-                    {/* Title */}
-                    <div className="text-center mb-6 sm:mb-8">
-                        <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'
-                            }`}>
-                            Choose Your Role
-                        </h1>
-                        <p className={`text-sm sm:text-base md:text-lg mt-2 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
-                            Select the option that best describes you
-                        </p>
-                    </div>
-
-                    {/* Feature Cards - Stacked at Bottom */}
-                    <div className="w-full max-w-lg mx-auto space-y-3 sm:space-y-4">
-                        {/* Principal Card */}
-                        <div
-                            onClick={() => navigate('/login')}
-                            className={`group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer backdrop-blur-lg ${isDark
-                                ? 'bg-slate-900/95 border-2 border-yellow-500/60 hover:border-yellow-400/90 shadow-xl hover:shadow-yellow-500/40'
-                                : 'bg-white/98 border-2 border-yellow-400/70 hover:border-yellow-500 shadow-xl hover:shadow-yellow-500/40'
-                                } hover:scale-[1.02] hover:shadow-2xl`}
-                        >
-                            <div className="relative p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-                                {/* Icon Container */}
-                                <div className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center transition-all duration-300 ${isDark
-                                    ? 'bg-yellow-500/30'
-                                    : 'bg-yellow-100'
-                                    } group-hover:scale-105`}>
-                                    <img
-                                        src={getAsset('Principle')}
-                                        alt="Principal"
-                                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                                    />
-                                </div>
-
-                                {/* Text Content */}
-                                <div className="flex-1 min-w-0">
-                                    <h3 className={`text-lg sm:text-xl font-bold mb-1 ${isDark ? 'text-yellow-400' : 'text-yellow-700'
-                                        }`}>
-                                        Principal
-                                    </h3>
-                                    <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'
-                                        }`}>
-                                        Manage school operations and lead your team
-                                    </p>
-                                </div>
-
-                                {/* Arrow Icon */}
-                                <div className="shrink-0">
-                                    <svg className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:translate-x-1 ${isDark ? 'text-yellow-400' : 'text-yellow-700'
-                                        }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Student Card */}
-                        <div
-                            onClick={() => navigate('/StudentPortel/login')}
-                            className={`group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer backdrop-blur-lg ${isDark
-                                ? 'bg-slate-900/95 border-2 border-blue-500/60 hover:border-blue-400/90 shadow-xl hover:shadow-blue-500/40'
-                                : 'bg-white/98 border-2 border-blue-400/70 hover:border-blue-500 shadow-xl hover:shadow-blue-500/40'
-                                } hover:scale-[1.02] hover:shadow-2xl`}
-                        >
-                            <div className="relative p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-                                {/* Icon Container */}
-                                <div className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center transition-all duration-300 ${isDark
-                                    ? 'bg-blue-500/30'
-                                    : 'bg-blue-100'
-                                    } group-hover:scale-105`}>
-                                    <img
-                                        src={getAsset('student_login')}
-                                        alt="Student"
-                                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                                    />
-                                </div>
-
-                                {/* Text Content */}
-                                <div className="flex-1 min-w-0">
-                                    <h3 className={`text-lg sm:text-xl font-bold mb-1 ${isDark ? 'text-blue-400' : 'text-blue-700'
-                                        }`}>
-                                        Student
-                                    </h3>
-                                    <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'
-                                        }`}>
-                                        Access your courses and track your progress
-                                    </p>
-                                </div>
-
-                                {/* Arrow Icon */}
-                                <div className="shrink-0">
-                                    <svg className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:translate-x-1 ${isDark ? 'text-blue-400' : 'text-blue-700'
-                                        }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </div>
-                            </div>
+                    {/* Left Side - 3D Avatar */}
+                    <div className="hidden lg:flex lg:w-[35%] xl:w-[32%] items-center justify-center">
+                        <div className="relative w-full aspect-[3/4] max-w-[450px]">
+                            <img
+                                src={getAsset('Model')}
+                                alt="3D Avatar"
+                                className="w-full h-full object-contain"
+                                style={{
+                                    filter: isDark ? 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.6))' : 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.1))'
+                                }}
+                            />
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* ===== Desktop Layout ===== */}
-            <div className="hidden lg:flex lg:flex-row w-full min-h-screen items-center relative">
-                {/* Left Side - 3D Avatar */}
-                <div className="w-[40%] h-full flex items-center justify-center relative py-12">
-                    {/* Subtle Decorative Circle */}
-                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full ${isDark ? 'bg-blue-900/10' : 'bg-blue-200/20'
-                        } blur-3xl`} />
+                    {/* Right Side - Content */}
+                    <div className="w-full lg:w-[65%] xl:w-[68%] flex flex-col items-center lg:items-start justify-center px-4 lg:px-0">
+                        {/* Title Section */}
+                        <div className="text-center lg:text-left mb-[6vh] lg:mb-[8vh]">
+                            <h1 className={`text-[7vw] sm:text-[6vw] md:text-[5vw] lg:text-[3.5vw] xl:text-[3.2vw] 2xl:text-[60px] font-bold leading-tight mb-[1.5vh] ${isDark ? 'text-white' : 'text-black'
+                                }`} style={{ letterSpacing: '-0.02em' }}>
+                                What's Features
+                            </h1>
+                            <p className={`text-[4.5vw] sm:text-[3.5vw] md:text-[3vw] lg:text-[2vw] xl:text-[1.8vw] 2xl:text-[34px] ${isDark ? 'text-gray-300' : 'text-gray-700'
+                                }`} style={{ letterSpacing: '-0.01em' }}>
+                                That Feel Like They're Made For You ?
+                            </p>
+                        </div>
 
-                    {/* Model Container */}
-                    <div className="relative z-10">
-                        <img
-                            src={getAsset('Model')}
-                            alt="3D Avatar"
-                            className="h-[60vh] max-h-[550px] w-auto max-w-[450px] object-contain drop-shadow-2xl"
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                            }}
-                        />
-                    </div>
-                </div>
+                        {/* Feature Cards Container */}
+                        <div className="w-full max-w-[1000px] flex flex-col md:flex-row gap-[3vh] md:gap-[2.5vw] lg:gap-[3vw]">
+                            {/* Principal Card */}
+                            <div
+                                onClick={() => navigate('/login')}
+                                className={`group relative flex-1 rounded-[20px] md:rounded-[24px] lg:rounded-[28px] overflow-hidden transition-all duration-300 cursor-pointer ${isDark
+                                        ? 'bg-gray-900/40 border-[3px] border-yellow-500 hover:border-yellow-400 shadow-2xl hover:shadow-yellow-500/60'
+                                        : 'bg-white border-[3px] border-yellow-400 hover:border-yellow-500 shadow-xl hover:shadow-yellow-400/50'
+                                    } hover:scale-[1.02] backdrop-blur-md`}
+                            >
+                                <div className="relative p-[4vh] md:p-[3.5vh] lg:p-[4.5vh] flex flex-col items-center text-center h-full min-h-[280px] md:min-h-[32vh] lg:min-h-[36vh]">
+                                    {/* Icon Container */}
+                                    <div className={`w-[18vw] h-[18vw] md:w-[12vw] md:h-[12vw] lg:w-[8vw] lg:h-[8vw] xl:w-[7vw] xl:h-[7vw] 2xl:w-[130px] 2xl:h-[130px] max-w-[130px] max-h-[130px] rounded-[16px] md:rounded-[20px] flex items-center justify-center mb-[2vh] md:mb-[2.5vh] transition-all duration-300 ${isDark ? 'bg-yellow-500/25' : 'bg-yellow-100'
+                                        } group-hover:scale-110`}>
+                                        <img
+                                            src={getAsset('Principle')}
+                                            alt="Principal"
+                                            className="w-[85%] h-[85%] object-contain"
+                                        />
+                                    </div>
 
-                {/* Right Side - Content */}
-                <div className="w-[60%] flex flex-col items-start justify-center px-12 xl:px-20 py-12">
-                    {/* Title Section */}
-                    <div className="mb-12 max-w-3xl">
-                        <h1 className={`text-5xl xl:text-6xl font-bold leading-tight mb-4 ${isDark ? 'text-white' : 'text-gray-900'
-                            }`}>
-                            Choose Your Role
-                        </h1>
-                        <p className={`text-xl xl:text-2xl ${isDark ? 'text-gray-400' : 'text-gray-600'
-                            }`}>
-                            Select the option that best describes you
-                        </p>
-                    </div>
-
-                    {/* Feature Cards Container - Side by Side */}
-                    <div className="grid grid-cols-2 gap-6 w-full max-w-4xl">
-                        {/* Principal Card */}
-                        <div
-                            onClick={() => navigate('/login')}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === 'Enter') navigate('/login') }}
-                            className={`group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer ${isDark
-                                ? 'bg-slate-900/80 border-2 border-yellow-500/40 hover:border-yellow-400/70 shadow-xl hover:shadow-yellow-500/20'
-                                : 'bg-white border-2 border-yellow-400/50 hover:border-yellow-500/80 shadow-xl hover:shadow-yellow-500/20'
-                                } hover:scale-[1.03] hover:shadow-2xl focus:outline-none focus:ring-4 ${isDark ? 'focus:ring-yellow-400/30' : 'focus:ring-yellow-500/40'
-                                }`}
-                        >
-                            <div className="relative p-8 pb-16 min-h-[280px]">
-                                {/* Icon Container */}
-                                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 ${isDark
-                                    ? 'bg-yellow-500/20'
-                                    : 'bg-yellow-100'
-                                    } group-hover:scale-110`}>
-                                    <img
-                                        src={getAsset('Principle')}
-                                        alt="Principal"
-                                        className="w-20 h-20 object-contain"
-                                    />
+                                    {/* Text Content */}
+                                    <div className="flex-1 flex flex-col justify-center">
+                                        <h3 className={`text-[5.5vw] md:text-[3.5vw] lg:text-[2.2vw] xl:text-[2vw] 2xl:text-[38px] font-bold mb-[1.5vh] md:mb-[2vh] ${isDark ? 'text-yellow-400' : 'text-yellow-700'
+                                            }`}>
+                                            Principle
+                                        </h3>
+                                        <p className={`text-[3.2vw] md:text-[2vw] lg:text-[1.2vw] xl:text-[1.1vw] 2xl:text-[20px] leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'
+                                            }`} style={{ lineHeight: '1.6' }}>
+                                            Shaping Young Minds, Building Bright Future, With Dedication And Vision, The Principal Leads Both Teachers And Students
+                                        </p>
+                                    </div>
                                 </div>
+                            </div>
 
-                                {/* Text Content */}
-                                <div className="pr-12">
-                                    <h3 className={`text-2xl font-bold mb-3 ${isDark ? 'text-yellow-400' : 'text-yellow-700'
-                                        }`}>
-                                        Principal
-                                    </h3>
-                                    <p className={`text-base leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'
-                                        }`}>
-                                        Manage school operations, oversee staff, and lead your educational institution
-                                    </p>
-                                </div>
+                            {/* Student Card */}
+                            <div
+                                onClick={() => navigate('/StudentPortel/login')}
+                                className={`group relative flex-1 rounded-[20px] md:rounded-[24px] lg:rounded-[28px] overflow-hidden transition-all duration-300 cursor-pointer ${isDark
+                                        ? 'bg-gray-900/40 border-[3px] border-blue-500 hover:border-blue-400 shadow-2xl hover:shadow-blue-500/60'
+                                        : 'bg-white border-[3px] border-blue-400 hover:border-blue-500 shadow-xl hover:shadow-blue-400/50'
+                                    } hover:scale-[1.02] backdrop-blur-md`}
+                            >
+                                <div className="relative p-[4vh] md:p-[3.5vh] lg:p-[4.5vh] flex flex-col items-center text-center h-full min-h-[280px] md:min-h-[32vh] lg:min-h-[36vh]">
+                                    {/* Icon Container */}
+                                    <div className={`w-[18vw] h-[18vw] md:w-[12vw] md:h-[12vw] lg:w-[8vw] lg:h-[8vw] xl:w-[7vw] xl:h-[7vw] 2xl:w-[130px] 2xl:h-[130px] max-w-[130px] max-h-[130px] rounded-[16px] md:rounded-[20px] flex items-center justify-center mb-[2vh] md:mb-[2.5vh] transition-all duration-300 ${isDark ? 'bg-blue-500/25' : 'bg-blue-100'
+                                        } group-hover:scale-110`}>
+                                        <img
+                                            src={getAsset('student_login')}
+                                            alt="Student"
+                                            className="w-[85%] h-[85%] object-contain"
+                                        />
+                                    </div>
 
-                                {/* Arrow Icon - Fixed Position */}
-                                <div className="absolute bottom-6 right-6">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${isDark ? 'bg-yellow-500/20' : 'bg-yellow-400/30'
-                                        } group-hover:translate-x-1`}>
-                                        <svg className={`w-5 h-5 ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                        </svg>
+                                    {/* Text Content */}
+                                    <div className="flex-1 flex flex-col justify-center">
+                                        <h3 className={`text-[5.5vw] md:text-[3.5vw] lg:text-[2.2vw] xl:text-[2vw] 2xl:text-[38px] font-bold mb-[1.5vh] md:mb-[2vh] ${isDark ? 'text-blue-400' : 'text-blue-700'
+                                            }`}>
+                                            Student
+                                        </h3>
+                                        <p className={`text-[3.2vw] md:text-[2vw] lg:text-[1.2vw] xl:text-[1.1vw] 2xl:text-[20px] leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'
+                                            }`} style={{ lineHeight: '1.6' }}>
+                                            With A Student Account, You Can Discover New Ideas, Track Progress, And Unlock Your Potential Every Day
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Student Card */}
-                        <div
-                            onClick={() => navigate('/StudentPortel/login')}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === 'Enter') navigate('/StudentPortel/login') }}
-                            className={`group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer ${isDark
-                                ? 'bg-slate-900/80 border-2 border-blue-500/40 hover:border-blue-400/70 shadow-xl hover:shadow-blue-500/20'
-                                : 'bg-white border-2 border-blue-400/50 hover:border-blue-500/80 shadow-xl hover:shadow-blue-500/20'
-                                } hover:scale-[1.03] hover:shadow-2xl focus:outline-none focus:ring-4 ${isDark ? 'focus:ring-blue-400/30' : 'focus:ring-blue-500/40'
-                                }`}
-                        >
-                            <div className="relative p-8 pb-16 min-h-[280px]">
-                                {/* Icon Container */}
-                                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 ${isDark
-                                    ? 'bg-blue-500/20'
-                                    : 'bg-blue-100'
-                                    } group-hover:scale-110`}>
-                                    <img
-                                        src={getAsset('student_login')}
-                                        alt="Student"
-                                        className="w-20 h-20 object-contain"
-                                    />
-                                </div>
-
-                                {/* Text Content */}
-                                <div className="pr-12">
-                                    <h3 className={`text-2xl font-bold mb-3 ${isDark ? 'text-blue-400' : 'text-blue-700'
-                                        }`}>
-                                        Student
-                                    </h3>
-                                    <p className={`text-base leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'
-                                        }`}>
-                                        Access your courses, track progress, and unlock your full potential
-                                    </p>
-                                </div>
-
-                                {/* Arrow Icon - Fixed Position */}
-                                <div className="absolute bottom-6 right-6">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${isDark ? 'bg-blue-500/20' : 'bg-blue-400/30'
-                                        } group-hover:translate-x-1`}>
-                                        <svg className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </div>
-                                </div>
+                        {/* Mobile Avatar - Shows only on mobile */}
+                        <div className="lg:hidden w-full flex items-center justify-center mt-[6vh]">
+                            <div className="relative w-[60vw] max-w-[300px] aspect-[3/4]">
+                                <img
+                                    src={getAsset('Model')}
+                                    alt="3D Avatar"
+                                    className="w-full h-full object-contain"
+                                    style={{
+                                        filter: isDark ? 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.6))' : 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.1))'
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
