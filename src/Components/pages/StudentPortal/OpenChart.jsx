@@ -205,7 +205,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
         // Filter by search value
         if (searchValue.trim()) {
             const search = searchValue.toLowerCase().trim();
-            chatList = chatList.filter((chat) => 
+            chatList = chatList.filter((chat) =>
                 chat.title.toLowerCase().includes(search) ||
                 chat.subtitle.toLowerCase().includes(search) ||
                 chat.peerEnrollment?.toString().toLowerCase().includes(search)
@@ -367,7 +367,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
     };
 
     const shellBg = isDark ? "bg-black text-gray-100" : "bg-zinc-100 text-zinc-900";
-    const paneBg = isDark ? "bg-zinc-900" : "bg-white";
+    const paneBg = isDark ? "bg-[#111111]" : "bg-white";
 
     const isTyping = selectedId && typingStatus[selectedId];
 
@@ -380,8 +380,15 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                     <Portalheader title="Chat" isDark={isDark} toggleTheme={toggleTheme} isSearchbar={true} searchValue={searchValue} setSearchValue={setSearchValue} />
                 </div>
 
-                <main className="mt-6 flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <aside className={`${showListMobile ? 'block' : 'hidden'} lg:block lg:col-span-4 ${paneBg} rounded-xl border ${isDark ? "border-zinc-800" : "border-zinc-200"} overflow-hidden flex flex-col min-h-0`}>
+                <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12">
+                    <aside className={`${showListMobile ? 'block' : 'hidden'} 
+    lg:block lg:col-span-4 
+    rounded-none 
+    border-r 
+    border-t-0 border-l-0 border-b-0
+    ${isDark ? "border-zinc-800" : "border-zinc-200"} 
+    overflow-hidden flex flex-col min-h-0`}
+                    >   
                         <div className="flex-1 overflow-y-auto no-scrollbar h-full">
                             {loading ? (
                                 <div className="flex items-center justify-center h-32">
@@ -511,45 +518,46 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
 
                                 <div className="mt-4 sticky bottom-0 left-0 right-0">
                                     <div
-                                        className={`${paneBg} rounded-full border ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'
-                                            } flex items-center gap-2 px-3 py-2 shadow-sm`}
+                                        className={`${isDark ? 'border-zinc-800' : 'border-zinc-200'
+                                            } px-4 py-3`}
                                     >
-                                        {/* AI Button */}
-                                        <button
-                                            className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors duration-200 ${isDark
-                                                ? 'bg-zinc-800 hover:bg-zinc-700'
-                                                : 'bg-zinc-100 hover:bg-zinc-200'
-                                                }`}
-                                        >
-                                            <img src={getAsset('Ai_dark')} alt="AI" className={`h-5 w-5 object-contain ${!isDark ? 'invert' : ''}`} />
-                                        </button>
+                                        <div className="flex items-center gap-3">
+                                            {/* AI Button */}
+                                            <button
+                                                className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors duration-200 ${isDark
 
-                                        {/* Input Field */}
-                                        <input
-                                            value={input}
-                                            onChange={handleInputChange}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleSend();
-                                                }
-                                            }}
-                                            placeholder="Type a message"
-                                            className={`flex-1 bg-transparent outline-none text-[15px] font-[Inter] font-normal leading-[100%] px-2 focus:outline-none focus:ring-0 ${isDark ? 'text-white placeholder:text-zinc-500' : 'text-black placeholder:text-zinc-400'
-                                                }`}
-                                        />
+                                                    }`}
+                                            >
+                                                <img src={getAsset('Ai_dark')} alt="AI" className={`h-5 w-5 object-contain ${!isDark ? 'invert' : ''}`} />
+                                            </button>
 
-                                        {/* Send Button */}
-                                        <button
-                                            onClick={handleSend}
-                                            className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors duration-200 border ${isDark
-                                                ? 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-white'
-                                                : 'bg-zinc-100 hover:bg-zinc-200 border-zinc-200 text-zinc-800'
-                                                }`}
-                                            aria-label="Send message"
-                                        >
-                                            <SendHorizontal size={18} className="shrink-0" />
-                                        </button>
+                                            {/* Input Field */}
+                                            <input
+                                                value={input}
+                                                onChange={handleInputChange}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSend();
+                                                    }
+                                                }}
+                                                placeholder="Type A Message"
+                                                className={`flex-1 ${isDark ? 'bg-[#111111] text-white' : 'bg-white text-zinc-900'} rounded-full px-4 py-2 outline-none focus:outline-none ${isDark ? 'placeholder:text-zinc-500' : 'placeholder:text-zinc-400'
+                                                    }`}
+                                            />
+
+                                            {/* Send Button */}
+                                            <button
+                                                onClick={handleSend}
+                                                className={`cursor-pointer h-10 w-10 rounded-full flex items-center justify-center transition-colors duration-200 ${isDark
+                                                    ? 'bg-[#111111] text-white'
+                                                    : 'bg-white text-white'
+                                                    }`}
+                                                aria-label="Send message"
+                                            >
+                                                <img src={getAsset(isDark ? 'chatsend_dark' : 'chatsend_light')} alt="" width={18} height={18} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </>

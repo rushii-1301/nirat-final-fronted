@@ -94,6 +94,8 @@ const assetRegistry = {
   student_active_light: '/Icons/student-active-light.png',
   student_progress_dark: '/Icons/student-progress-dark.png',
   student_progress_light: '/Icons/student-progress-light.png',
+  chatsend_dark: '/Icons/chatsend-dark.png',
+  chatsend_light: '/Icons/chatsend-light.png',
 
 }
 
