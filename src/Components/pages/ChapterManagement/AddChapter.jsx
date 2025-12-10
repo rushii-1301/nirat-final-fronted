@@ -4,6 +4,7 @@ import Header from "../../Tools/Header";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets";
+import { ArrowLeft } from "lucide-react";
 
 function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter" }) {
   const isDark = typeof isDarkProp === 'boolean' ? isDarkProp : theme === 'dark';
@@ -16,7 +17,7 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
 
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const cardCls = `${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-2xl p-4 sm:p-5 shadow-sm`;
+  const cardCls = `${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-4 sm:p-5`;
   const labelCls = `${isDark ? 'text-white' : 'text-gray-900'} text-base sm:text-lg font-semibold mb-2 flex items-center gap-2`;
   const sublabelCls = `${isDark ? 'text-gray-400' : 'text-gray-600'} text-xs mb-2`;
   const inputCls = `${isDark ? 'bg-zinc-800 text-gray-200 placeholder-gray-400 focus:ring-1 focus:ring-zinc-600' : 'bg-gray-100 text-gray-900 placeholder-gray-500 focus:ring-1 focus:ring-gray-400'} h-11 w-full rounded-lg px-3 outline-none transition`;
@@ -128,11 +129,33 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
         <main className="mt-4 sm:mt-6 flex-1 overflow-y-auto no-scrollbar">
           <div className="w-full mx-auto space-y-4">
             {/* Toolbar row (sticky) */}
-            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90 shadow-sm`}>
-              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-medium`}>Add Chapter Management</div>
+            <div className={`${isDark ? 'bg-zinc-900' : 'bg-white'} sticky top-0 z-30 border border-transparent rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}>
+              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-medium`}>
+                <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
+                  <button
+                    onClick={() => navigate("/chapter/Home")}
+                    className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <h2 className={`text-md font-semibold transition-colors duration-300 ${isDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                    Add Chapter Management
+                  </h2>
+                </div>
+
+              </div>
               <div className="flex gap-2 w-[200px] justify-center items-center">
                 <button
-                  onClick={() => navigate(backto)}
+                  onClick={() => {
+                    setForm({
+                      class_name: "",
+                      subject_name: "",
+                      chapter_name: "",
+                    });
+                    setSelectedIds([]);
+                    setShowSuggestions(false);
+                    setSuggestions([]);
+                  }}
                   className={`${isDark ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700 border border-zinc-700' : 'bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-300'} w-full cursor-pointer px-4 py-1.5 flex items-center justify-center rounded-md text-sm`}
                 >
                   Cancel
@@ -154,8 +177,8 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
 
             {/* Add Class */}
             <div className={cardCls}>
-              <div className={labelCls}>🟦 Add Class</div>
-              <div className={sublabelCls}>Class</div>
+              <div className={labelCls}>🟦 Class</div>
+              {/* <div className={sublabelCls}>Class</div> */}
               <input
                 type="text"
                 name="class_name"
@@ -168,8 +191,8 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
 
             {/* Add Subject */}
             <div className={cardCls}>
-              <div className={labelCls}>📚 Add Subject</div>
-              <div className={sublabelCls}>Subject Name</div>
+              <div className={labelCls}>📚 Subject</div>
+              {/* <div className={sublabelCls}>Subject Name</div> */}
               <input
                 type="text"
                 name="subject_name"
@@ -183,7 +206,7 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
             {/* Chapter Name */}
             <div className={cardCls}>
               <div className={labelCls}>📘 Chapter Name</div>
-              <div className={sublabelCls}>Chapter</div>
+              {/* <div className={sublabelCls}>Chapter</div> */}
               <input
                 type="text"
                 name="chapter_name"
@@ -195,7 +218,7 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
             </div>
 
             {/* Get Suggestions Button */}
-            <div className={cardCls}>
+            <div>
               <button
                 onClick={fetchSuggestions}
                 disabled={!form.class_name || !form.subject_name || !form.chapter_name || loading}
@@ -216,7 +239,23 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
             {/* Chapter Suggestions */}
             {showSuggestions && (
               <div>
-                <div className={`${isDark ? 'text-white' : 'text-gray-900'} text-base sm:text-lg font-semibold`}>Chapter Suggestions</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`${isDark ? 'text-white' : 'text-gray-900'} text-base sm:text-lg font-semibold`}>Chapter Suggestions</div>
+                  <button
+                    onClick={() =>
+                      navigate("/chapter/UploadBook", {
+                        state: {
+                          suggestion: false,
+                          selectedIds: [],
+                          form: form
+                        },
+                      })
+                    }
+                    className={`cursor-pointer text-sm font-medium ${isDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'} rounded-md cursor-pointer px-4 py-1.5 flex items-center justify-center`}
+                  >
+                    Skip
+                  </button>
+                </div>
                 <div className={sublabelCls}>Recommended Chapters Based On Popular Topics</div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
@@ -241,7 +280,7 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
                         className={`${isDark
                           ? 'bg-[#18181b] text-gray-100'
                           : 'bg-zinc-900/5 text-zinc-900'
-                          } rounded-3xl px-6 py-5 sm:px-7 sm:py-6 flex flex-col justify-between shadow-sm`}
+                          } rounded-3xl px-6 py-5 sm:px-7 sm:py-6 flex flex-col justify-between`}
                       >
                         <div className="flex items-start justify-between gap-4 mb-4">
                           <div className="space-y-1">
@@ -285,34 +324,23 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
                   )}
                 </div>
 
-                <div className="mt-3 flex justify-between mx-2 mb-3 md:mb-0">
-                  <button
-                    onClick={() => navigate("/chapter/Suggestions", {
-                      state: {
-                        selectedIds: selectedIds,
-                        suggestion: true,
-                        form: form
-                      }
-                    })}
-                    className="cursor-pointer text-red-500 hover:text-red-400 text-xs font-medium"
-                  >
-                    See All Suggestion
-                  </button>
-                  <button
-                    onClick={() =>
-                      navigate("/chapter/UploadBook", {
+                {filteredSuggestions.length !== 0 && (
+                  <div className="mt-3 mx-2 mb-3 md:mb-0">
+                    <button
+                      onClick={() => navigate("/chapter/Suggestions", {
                         state: {
-                          suggestion: false,
-                          selectedIds: [],
+                          selectedIds: selectedIds,
+                          suggestion: true,
                           form: form
-                        },
-                      })
-                    }
-                    className="cursor-pointer text-[#696CFF] hover:text-[#696CFF]/70 text-xs font-medium"
-                  >
-                    Skip
-                  </button>
-                </div>
+                        }
+                      })}
+                      className="cursor-pointer text-red-500 hover:text-red-400 text-xs font-medium"
+                    >
+                      See All Suggestion
+                    </button>
+                  </div>
+                )}
+
               </div>
             )}
           </div>

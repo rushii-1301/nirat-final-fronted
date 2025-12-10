@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { Search, Bell, Sun, Moon, User } from "lucide-react";
+import { Search, Bell, Sun, Moon, User, ArrowLeft } from "lucide-react";
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { checkType, BACKEND_API_URL, studentPortalAuth } from '../../utils/assets';
 import axios from 'axios';
 
-const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSearchbar = false }) => {
+const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSearchbar = false, isBack = false, backValue = "" }) => {
     const location = useLocation();
     const pathname = location.pathname || "";
     const isAdminDashboard = /^\/admin\/dashboard$/i.test(pathname);
@@ -38,8 +38,8 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
         if (!isAdminPath) return;
         if (typeof window === 'undefined') return;
 
-        const stored = localStorage.getItem('admin_profile_image') && localStorage.getItem('full_name');
-        if (stored) {
+        const stored = localStorage.getItem('admin_profile_image');
+        if (stored && localStorage.getItem('full_name')) {
             setAdminProfileImage(stored);
         } else {
             fetchProfile();
@@ -120,11 +120,21 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
     }
 
     return (
-        <header className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} flex items-center ${isMobile && !isSearchbar ? 'justify-end' : 'justify-between'} p-4 border-b transition-colors duration-300 rounded-md`}>
-            {/* Left: Title */}
-            {!isMobile && (
-                <h1 className={`header-1 font-semibold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{title}</h1>
-            )}
+        <header className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent flex items-center ${isMobile && !isSearchbar && !isBack ? 'justify-end' : 'justify-between'} p-4 border-b transition-colors duration-300 rounded-md`}>
+            {/* Left: Title & Back */}
+            <div className="flex items-center">
+                {isBack && !isMobile && (
+                    <button
+                        onClick={() => navigate(backValue)}
+                        className={`mr-3 p-1 rounded-full transition-all ${isMobile && "ml-[30px]"} cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                )}
+                {!isMobile && (
+                    <h1 className={`header-1 font-semibold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{title}</h1>
+                )}
+            </div>
 
             {/* Center: Search Bar */}
             {isSearchbar && (
@@ -145,7 +155,7 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
 
             {/* Right: Icons */}
             <div
-                className={`flex items-center space-x-4`}
+                className={`flex items-center space-x-2`}
             >
                 {/* Dark / Light toggle */}
                 <button onClick={toggleTheme} className={`p-2 rounded-lg transition cursor-pointer ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`} aria-label="Toggle theme">

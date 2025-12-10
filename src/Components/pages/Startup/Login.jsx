@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Eye, EyeOff, Moon, Sun } from "lucide-react";
+import React, { useState } from "react";
+import { Eye, EyeOff, Moon, Sun, ArrowLeft } from "lucide-react";
 import { getAsset, handlesuccess, handleerror, BACKEND_API_URL } from "../../../utils/assets.js";
 import axios from "axios";
 import { NavLink, useNavigate } from "react-router-dom";
 
 
-function Login() {
+function Login({ theme, isDark, toggleTheme }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
@@ -13,26 +13,9 @@ function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [isForgotLoading, setIsForgotLoading] = useState(false);
-
-  useEffect(() => {
-    if (!theme) {
-      setTheme(localStorage.getItem("theme"));
-    }
-  }, [localStorage.getItem("theme")]);
-
-  const isDark = useMemo(() => theme === "dark", [theme]);
-
-  useEffect(() => {
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
 
   const handleChange = (e) => {
     setFormData({
@@ -240,7 +223,7 @@ function Login() {
     <div
       className={`w-full h-screen flex flex-col items-center justify-center overflow-hidden px-4 transition-colors duration-500 ${isDark
         ? "bg-black text-white"
-        : "bg-linear-to-br from-zinc-50 via-white to-zinc-100 text-zinc-900"
+        : "bg-[#F5F5F9] text-zinc-900"
         }`}
     >
       <div className="mb-8 sm:mb-10 md:mb-12 text-center">
@@ -255,11 +238,19 @@ function Login() {
 
       <div className="w-full max-w-md px-4">
         <div
-          className={`relative rounded-2xl p-8 sm:p-10 shadow-2xl transition-all duration-500 ${isDark
+          className={`relative rounded-2xl p-8 sm:p-10 transition-all duration-500 ${isDark
             ? "bg-zinc-900/95 border border-zinc-800"
-            : "bg-white border border-zinc-100 shadow-[0_20px_60px_rgba(0,0,0,0.1)]"
+            : "bg-white border border-zinc-100"
             }`}
         >
+          {/* Back Button */}
+          <button
+            onClick={() => navigate("/")}
+            className={(isDark ? "text-gray-200 hover:text-white hover:bg-white/10" : "text-gray-700 hover:text-gray-900 hover:bg-gray-100") + " absolute cursor-pointer top-4 left-4 sm:top-4 sm:left-4 p-2 rounded-full transition-all duration-300"}
+          >
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+
           {/* Header */}
           <div className="mb-8 text-center">
             <h3
@@ -337,7 +328,7 @@ function Login() {
                     <button
                       type="submit"
                       disabled={isForgotLoading}
-                      className={`w-full font-bold text-base uppercase tracking-wide rounded-xl py-4 transition-all duration-300 focus:outline-none focus:ring-4 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg cursor-pointer ${isDark
+                      className={`w-full font-bold text-base uppercase tracking-wide rounded-xl py-4 transition-all duration-300 focus:outline-none focus:ring-4 transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer ${isDark
                         ? "bg-white text-black hover:bg-gray-100 focus:ring-white/20 shadow-white/10"
                         : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80 focus:ring-indigo-500/30 shadow-zinc-900/20"
                         } disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
@@ -425,7 +416,7 @@ function Login() {
                         placeholder="Enter your email"
                         className={`w-full pl-12 pr-4 py-3.5 text-sm sm:text-base rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 ${isDark
                           ? "bg-zinc-800/60 text-white border-2 border-zinc-700/50 placeholder-gray-500 focus:border-white/20 focus:ring-white/10 hover:border-zinc-600"
-                          : "bg-zinc-50 text-zinc-900 border-2 border-zinc-200 placeholder-zinc-400 focus:border-indigo-500 focus:ring-indigo-500/20 hover:border-zinc-300"
+                          : "bg-[#F5F5F9] text-zinc-900 border-2 border-zinc-200 placeholder-zinc-400 focus:border-indigo-500 focus:ring-indigo-500/20 hover:border-zinc-300"
                           }`}
                         required
                       />
@@ -467,7 +458,7 @@ function Login() {
                         placeholder="Enter your password"
                         className={`w-full pl-12 pr-12 py-3.5 text-sm sm:text-base rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 ${isDark
                           ? "bg-zinc-800/60 text-white border-2 border-zinc-700/50 placeholder-gray-500 focus:border-white/20 focus:ring-white/10 hover:border-zinc-600"
-                          : "bg-zinc-50 text-zinc-900 border-2 border-zinc-200 placeholder-zinc-400 focus:border-indigo-500 focus:ring-indigo-500/20 hover:border-zinc-300"
+                          : "bg-[#F5F5F9] text-zinc-900 border-2 border-zinc-200 placeholder-zinc-400 focus:border-indigo-500 focus:ring-indigo-500/20 hover:border-zinc-300"
                           }`}
                         required
                       />
@@ -481,9 +472,9 @@ function Login() {
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
                           <Eye className="w-5 h-5" />
+                        ) : (
+                          <EyeOff className="w-5 h-5" />
                         )}
                       </button>
                     </div>
@@ -510,7 +501,7 @@ function Login() {
                       disabled={isLoading}
                       className={`w-full font-bold text-base uppercase tracking-wide rounded-xl py-4 transition-all duration-300 focus:outline-none focus:ring-4 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg cursor-pointer ${isDark
                         ? "bg-white text-black hover:bg-gray-100 focus:ring-white/20 shadow-white/10"
-                        : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80 focus:ring-indigo-500/30 shadow-zinc-900/20"
+                        : "bg-[#696CFF] text-white hover:bg-[#696CFF]/90 focus:ring-indigo-500/30 shadow-zinc-900/20"
                         } disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
                     >
                       {isLoading ? (

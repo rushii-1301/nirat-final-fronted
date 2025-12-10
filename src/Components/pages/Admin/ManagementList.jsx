@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
 import { useNavigate } from "react-router-dom";
-import { Search, SquarePen, Trash2, Inbox } from "lucide-react";
+import { Search, SquarePen, Trash2, Inbox, Copy, ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets.js";
 
@@ -106,13 +106,23 @@ function ManagementList({ theme, isDark, toggleTheme, sidebardata, title = 'Mana
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
             <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 transition-all duration-300`}>
                 <div className="sticky top-0 z-20">
-                    <Header title={title} isDark={isDark} toggleTheme={toggleTheme} searchValue={search} setSearchValue={setSearch} isSearchbar={true} />
+                    <Header title={"All Member"} isDark={isDark} toggleTheme={toggleTheme} searchValue={search} setSearchValue={setSearch} isSearchbar={true} />
                 </div>
 
                 <main className="mt-6 overflow-y-hidden no-scrollbar pr-1 overflow-x-hidden min-w-0">
                     {/* Filter and actions */}
                     <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-2xl p-5 mb-6`}>
-                        <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base font-semibold mb-3`}>{title}</div>
+                        <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold mb-3 flex items-center`}>
+                            <button
+                                onClick={() => navigate("/Admin/AllMembers")}
+                                className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
+                            <span className={`${isDark ? 'text-white' : 'text-[#696CFF]'}`}>
+                                {title}
+                            </span>
+                        </div>
                         <div className={`${isDark ? 'text-gray-300' : 'text-zinc-700'} text-sm mb-2`}>{filterLabel}</div>
                         <div className="grid grid-cols-[repeat(1,minmax(0,1fr))_repeat(1,minmax(0,133px))] gap-3 items-center w-full">
                             {/* <div className="relative col-span-1 sm:col-span-2">
@@ -133,7 +143,7 @@ function ManagementList({ theme, isDark, toggleTheme, sidebardata, title = 'Mana
 
                             <button
                                 onClick={() => navigate('/Admin/AddMembers')}
-                                className={`${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-[#696CFF] text-white hover:bg-[#3134f4]'} h-10 rounded-md font-semibold w-full sm:w-auto sm:justify-self-end px-4 cursor-pointer`}
+                                className={`${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-[#696CFF] text-white'} h-10 rounded-md font-semibold w-full sm:w-auto sm:justify-self-end px-4 cursor-pointer`}
                             >
                                 Add Member
                             </button>
@@ -152,6 +162,7 @@ function ManagementList({ theme, isDark, toggleTheme, sidebardata, title = 'Mana
                                                 <th className="text-left px-4 py-3 font-semibold">Management</th>
                                                 <th className="text-left px-4 py-3 font-semibold">Designation</th>
                                                 <th className="text-left px-4 py-3 font-semibold">Email</th>
+                                                <th className="text-left px-4 py-3 font-semibold">Password</th>
                                                 <th className="text-left px-4 py-3 font-semibold">Mobile Number</th>
                                                 <th className="text-left px-4 py-3 font-semibold"></th>
                                             </tr>
@@ -214,6 +225,21 @@ function ManagementList({ theme, isDark, toggleTheme, sidebardata, title = 'Mana
                                                     <td className="px-4 py-3 capitalize">{m.work_type || '-'}</td>
                                                     <td className="px-4 py-3">{m.designation || '-'}</td>
                                                     <td className="px-4 py-3">{m.email || m.inai_email || '-'}</td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2 group">
+                                                            <span className="font-mono text-xs">{m.password || '••••••••'}</span>
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(m.password || '');
+                                                                    handlesuccess("Password copied");
+                                                                }}
+                                                                className={`transition-opacity cursor-pointer ${isDark ? 'text-gray-400 hover:text-white' : 'text-zinc-400 hover:text-zinc-600'}`}
+                                                                title="Copy Password"
+                                                            >
+                                                                <Copy size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
                                                     <td className="px-4 py-3">{m.phone_number || '-'}</td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-3">

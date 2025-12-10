@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { Pencil, Trash2, Clock, Video, ChevronDown } from "lucide-react";
+import { Pencil, Trash2, Clock, Video, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getAsset, BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets";
 
@@ -385,7 +385,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
 
     return (
         <div
-            className={`flex ${isDark ? "bg-black text-white" : "bg-zinc-50 text-zinc-900"
+            className={`flex ${isDark ? "bg-black text-white" : "bg-[#F5F5F9] text-zinc-900"
                 } h-screen overflow-x-hidden overflow-y-hidden transition-colors duration-300`}
         >
             {/* Sidebar */}
@@ -407,23 +407,17 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
 
                 {/* Main Content */}
                 <main
-                    className={`mt-6 flex-1 transition-colors duration-300 ${isDark ? "bg-black" : "bg-zinc-50"
-                        }`}
+                    className={`mt-6 flex-1 transition-colors duration-300`}
                 >
                     <div
-                        className={`h-full flex flex-col ${isDark ? "bg-black text-gray-200" : "bg-white text-[#696CFF]"
-                            }`}
+                        className={`h-full flex flex-col`}
                     >
                         {/* Top Table Container */}
-                        <div className={`w-full max-w-none rounded pb-0 p-3 md:px-5 lg:px-6 overflow-x-auto no-scrollbar transition-colors duration-300 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border`}>
+                        <div className={`w-full max-w-none rounded pb-0 p-3 md:px-5 lg:px-6 overflow-x-auto no-scrollbar transition-colors duration-300`}>
 
                             {/* Top Row */}
 
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                                <h2 className={`font-medium header-3 transition-colors duration-300 ${isDark ? "text-white" : "text-[#696CFF]"}`}>
-                                    Chapter Management
-                                </h2>
-
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -436,10 +430,11 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                         }
                                     }}
                                     className={`${isDark
-                                        ? "bg-zinc-800 text-gray-100 hover:bg-zinc-700 border border-zinc-700"
-                                        : "bg-white text-zinc-800 hover:bg-zinc-100 border border-zinc-300"
-                                        } cursor-pointer inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 self-start`}
+                                        ? "bg-zinc-800 text-gray-100"
+                                        : "bg-white text-zinc-800"
+                                        } border border-transparent cursor-pointer inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 self-start`}
                                 >
+                                    <SlidersHorizontal className="mr-2 w-4" />
                                     {showFilter ? "Hide Filter" : "Show Filter"}
                                 </button>
                             </div>
@@ -447,10 +442,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                             {showFilter && (
                                 <div
                                     ref={filterRef}
-                                    className={`mb-5 space-y-3 rounded-2xl border px-3 sm:px-4 py-3 shadow-md transition-all duration-200 ${isDark
-                                        ? "bg-black/40 border-zinc-800"
-                                        : "bg-zinc-50 border-zinc-200"
-                                        }`}
+                                    className={`mb-5 space-y-3 rounded-2xl border px-3 sm:px-4 py-3 transition-all duration-200 border-none`}
                                 >
                                     {/* Dropdown row */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -460,11 +452,11 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                 type="button"
                                                 onClick={() => setOpenFilter((prev) => (prev === "class" ? null : "class"))}
                                                 className={`${isDark
-                                                    ? "bg-zinc-900 border-zinc-700 text-gray-100"
-                                                    : "bg-white border-zinc-300 text-zinc-800"
-                                                    } w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer shadow-sm hover:shadow transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                    ? "bg-zinc-900 text-gray-100"
+                                                    : "bg-white text-zinc-800"
+                                                    } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                             >
-                                                <span>{selectedClass || "Standard"}</span>
+                                                <span className="font-bold text-[16px] leading-[100%]">{selectedClass || "Standard"}</span>
                                                 <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
                                             </button>
                                             {openFilter === "class" && (
@@ -472,8 +464,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                     className={`${isDark
                                                         ? "bg-zinc-900 text-gray-100"
                                                         : "bg-white text-zinc-800"
-                                                        } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 ${isDark ? "border-zinc-700" : "border-zinc-300"
-                                                        } px-3 py-3 shadow-xl transition-all duration-150`}
+                                                        } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150`}
                                                 >
                                                     <div className="flex flex-wrap gap-2">
                                                         {standardOptions.map((item) => (
@@ -489,7 +480,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                                     : isDark
                                                                         ? "bg-zinc-800 text-gray-100"
                                                                         : "bg-zinc-100 text-zinc-800"
-                                                                    } cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03]`}
+                                                                    } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
                                                             >
                                                                 {item}
                                                             </button>
@@ -507,11 +498,11 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                     onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
                                                     disabled={!selectedClass}
                                                     className={`${isDark
-                                                        ? "bg-zinc-900 border-zinc-700 text-gray-100"
-                                                        : "bg-white border-zinc-300 text-zinc-800"
-                                                        } w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                        ? "bg-zinc-900 text-gray-100"
+                                                        : "bg-white text-zinc-800"
+                                                        } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                                 >
-                                                    <span>{selectedSubject || "Subject Name"}</span>
+                                                    <span className="font-bold text-[16px] leading-[100%]">{selectedSubject || "Subject Name"}</span>
                                                     <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
                                                 </button>
                                                 {openFilter === "subject" && selectedClass && (
@@ -519,8 +510,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                         className={`${isDark
                                                             ? "bg-zinc-900 text-gray-100"
                                                             : "bg-white text-zinc-800"
-                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 ${isDark ? "border-zinc-700" : "border-zinc-300"
-                                                            } px-3 py-3 shadow-lg`}
+                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent`}
                                                     >
                                                         <div className="flex flex-wrap gap-2">
                                                             {subjectOptions.map((item) => (
@@ -536,7 +526,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                                         : isDark
                                                                             ? "bg-zinc-800 text-gray-100"
                                                                             : "bg-zinc-100 text-zinc-800"
-                                                                        } cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03]`}
+                                                                        } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
                                                                 >
                                                                     {item}
                                                                 </button>
@@ -555,11 +545,11 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                     onClick={() => setOpenFilter((prev) => (prev === "chapter" ? null : "chapter"))}
                                                     disabled={!selectedSubject}
                                                     className={`${isDark
-                                                        ? "bg-zinc-900 border-zinc-700 text-gray-100"
-                                                        : "bg-white border-zinc-300 text-zinc-800"
-                                                        } w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedSubject ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "chapter" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                        ? "bg-zinc-900 text-gray-100"
+                                                        : "bg-white text-zinc-800"
+                                                        } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedSubject ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "chapter" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                                 >
-                                                    <span>{selectedChapter || "Chapter Name"}</span>
+                                                    <span className="font-bold text-[16px] leading-[100%]">{selectedChapter || "Chapter Name"}</span>
                                                     <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "chapter" ? "rotate-180" : ""}`} /></span>
                                                 </button>
                                                 {openFilter === "chapter" && selectedSubject && (
@@ -567,8 +557,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                         className={`${isDark
                                                             ? "bg-zinc-900 text-gray-100"
                                                             : "bg-white text-zinc-800"
-                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 ${isDark ? "border-zinc-700" : "border-zinc-300"
-                                                            } px-3 py-3 shadow-lg`}
+                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent`}
                                                     >
                                                         <div className="flex flex-col gap-2">
                                                             {chapterOptions.map((item) => (
@@ -584,7 +573,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                                         : isDark
                                                                             ? "bg-zinc-800 text-gray-100"
                                                                             : "bg-zinc-100 text-zinc-800"
-                                                                        } cursor-pointer w-full text-left px-4 py-1.5 rounded-full text-xs transition-all duration-150 hover:scale-[1.02]`}
+                                                                        } cursor-pointer w-full text-left px-4 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.02]`}
                                                                 >
                                                                     {item}
                                                                 </button>
@@ -604,7 +593,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                 onClick={resetFilters}
                                                 className={`${isDark
                                                     ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900"
-                                                    : "bg-transparent text-zinc-700 border border-zinc-300 hover:bg-zinc-100"
+                                                    : "bg-transparent text-zinc-800 border border-zinc-300 hover:bg-zinc-100"
                                                     } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
                                             >
                                                 Reset Filter
@@ -614,7 +603,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                                 onClick={applyFilters}
                                                 className={`${isDark
                                                     ? "bg-white text-black hover:bg-zinc-100"
-                                                    : "bg-white text-zinc-900 hover:bg-zinc-100"
+                                                    : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80"
                                                     } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm shadow-sm`}
                                             >
                                                 Apply Filter
@@ -627,6 +616,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                             {/* Skeleton Loading Cards */}
                             {loadingLectures && (
                                 <div className={`overflow-y-auto no-scrollbar ${showFilter ? "max-h-[calc(100vh-480px)] md:max-h-[calc(100vh-380px)]" : "max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-250px)]"} mt-5`}>
+                                    <h2 className={`font-medium header-3 mb-4 transition-colors duration-300 ${isDark ? "text-white" : "text-[#696CFF]"}`}>Chapter Management</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
                                             <div
@@ -669,11 +659,12 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                 <div
                                     className={`overflow-y-auto no-scrollbar ${showFilter ? "max-h-[calc(100vh-480px)] md:max-h-[calc(100vh-380px)]" : "max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-250px)]"} mt-5`}
                                 >
+                                    <h2 className={`font-medium header-3 mb-4 transition-colors duration-300 ${isDark ? "text-white" : "text-[#696CFF]"}`}>Chapter Management</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                         {videos.map((video, index) => (
                                             <div
                                                 key={`${video.id}-${index}`}
-                                                className={`flex gap-4 rounded-2xl border p-4 relative overflow-hidden ${isDark ? 'bg-linear-to-br from-zinc-900 via-zinc-900/80 to-black border-zinc-800' : 'bg-white border-zinc-200 shadow-[0_10px_30px_rgba(105,108,255,0.08)]'}`}
+                                                className={`flex gap-4 rounded-2xl border border-transparent p-4 relative overflow-hidden ${isDark ? 'bg-zinc-900' : 'bg-white'}`}
                                             >
                                                 <div className={`w-28 sm:w-32 h-24 sm:h-28 rounded-xl shrink-0 relative ${isDark ? 'bg-zinc-800' : 'bg-[#e7e6ff]'} overflow-hidden`}>
                                                     {video.thumbnailUrl ? (

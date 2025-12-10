@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { Plus, Trash2, Lock, Check } from "lucide-react";
+import { Plus, Trash2, Lock, Check, ArrowLeft } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets";
@@ -158,6 +158,11 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
       const data = response?.data?.data;
       if (response.status === 200) {
         handlesuccess(response?.data?.message || "Merged lecture created successfully")
+        navigate("/chapter/AllChapters", {
+          state: {
+            lectureId: data?.lecture_id || data?.merged_id || null
+          }
+        });
       }
       const newLectureId = data?.lecture_id || data?.merged_id || null;
       if (newLectureId) {
@@ -186,7 +191,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
 
   return (
     <div
-      className={`flex ${isDark ? "bg-black text-gray-100" : "bg-[#f5f3ff] text-[#232347]"
+      className={`flex ${isDark ? "bg-black text-gray-100" : "bg-[#F5F5F9] text-[#232347]"
         } h-screen overflow-hidden transition-colors duration-300`}
     >
       {/* Sidebar */}
@@ -209,18 +214,23 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
             {/* Toolbar row (sticky) */}
             <div
               className={`${isDark
-                ? "bg-zinc-900 border-zinc-800"
-                : "bg-white border-[#e3e1f4]"
-                } sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90 shadow-sm`}
+                ? "bg-zinc-900"
+                : "bg-white"
+                } sticky top-0 z-30 border border-transparent rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}
             >
-              <div
-                className={`${isDark ? "text-white" : "text-[#1d1f3b]"
-                  } text-base sm:text-lg font-medium`}
-              >
-                Upload Boook
+              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
+                <button
+                  onClick={() => navigate(-1)}
+                  className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <h2 className={`text-md font-semibold transition-colors duration-300 ${isDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                  Merged Content
+                </h2>
               </div>
               <div className="flex gap-2 w-[200px] justify-center items-center">
-                <button
+                {/* <button
                   onClick={() => navigate(backto, {
                     state: {
                       materialIds: navState.selectedIds || navState.materialIds,
@@ -246,7 +256,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                       : "opacity-50 cursor-not-allowed"}`}
                 >
                   Next
-                </button>
+                </button> */}
               </div>
             </div>
 
@@ -255,7 +265,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
               // Full-page style loading while topics are being fetched
               <div className="flex-1 flex items-center justify-center py-24">
                 <div className="flex flex-col items-center gap-3 text-xs sm:text-sm text-gray-400">
-                  <div className="h-8 w-8 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="h-8 w-8 border border-transparent rounded-full animate-spin" />
                   <span>Loading topics for all selected materials...</span>
                 </div>
               </div>
@@ -263,7 +273,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
               <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6">
                 {/* Left: Merge Chapter card */}
                 <div
-                  className={`flex-1 rounded-2xl border shadow-sm px-5 sm:px-7 py-5 sm:py-6 ${isDark ? "bg-zinc-950 border-zinc-900" : "bg-white border-[#e1dff5]"
+                  className={`flex-1 max-h-fit rounded-2xl border border-transparent px-5 sm:px-7 py-5 sm:py-6 ${isDark ? "bg-zinc-950" : "bg-white"
                     }`}
                 >
                   <div className="mb-2">
@@ -283,7 +293,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                         key={book.id}
                         className={`rounded-2xl px-4 sm:px-5 py-4 space-y-3 border ${isDark
                           ? "bg-zinc-900 border-zinc-800"
-                          : "bg-white border-[#edeafd] shadow-[0_6px_16px_rgba(97,94,168,0.08)]"
+                          : "bg-white border-[#edeafd]"
                           }`}
                       >
                         {/* Book header */}
@@ -322,7 +332,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                             return (
                               <div
                                 key={chapter.id}
-                                className={`flex items-center gap-3 rounded-2xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm ${isDark
+                                className={`flex items-center gap-3 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm ${isDark
                                   ? "bg-[#1f1f1f] border border-zinc-800"
                                   : "bg-white border border-[#e9e7fb]"
                                   }`}
@@ -396,7 +406,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
 
                 {/* Right: Merged Lecture card (always visible, driven by confirmedChapters) */}
                 <div
-                  className={`flex-1 rounded-2xl border shadow-sm px-5 sm:px-7 py-5 sm:py-6 ${isDark ? "bg-zinc-950 border-zinc-900" : "bg-white border-[#e1dff5]"
+                  className={`flex-1 rounded-2xl border border-transparent px-5 sm:px-7 py-5 sm:py-6 ${isDark ? "bg-zinc-950" : "bg-white"
                     }`}
                 >
                   <div className="mb-4">
@@ -407,7 +417,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                   </div>
 
                   <div
-                    className={`mb-5 rounded-2xl border border-dashed px-4 py-3 ${isDark ? "border-zinc-700 bg-zinc-900" : "border-[#d7d5f0] bg-[#f9f8ff]"
+                    className={`mb-5 rounded-2xl border border-dashed px-4 py-3 ${isDark ? "border-zinc-700 bg-zinc-900" : "border-[#696CFF] bg-[#f9f8ff]"
                       }`}
                   >
                     <p
@@ -436,7 +446,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                             key={`${item.bookId}-${item.chapterId}`}
                             className={`flex items-start gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm ${isDark
                               ? "bg-[#1f1f1f] border border-zinc-800 text-white"
-                              : "bg-white border border-[#e5e3f6] text-[#1f1f3d] shadow-[0_4px_12px_rgba(96,94,168,0.08)]"
+                              : "bg-white border border-[#e5e3f6] text-[#1f1f3d]"
                               }`}
                           >
                             <div
@@ -448,9 +458,9 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                               ✓
                             </div>
 
-                            <div className="flex-1 flex flex-col gap-1">
+                            <div className="flex-1 flex flex-col gap-2">
                               {/* Chapter title */}
-                              <span className="text-sm font-semibold">{item.title}</span>
+                              <span className={`text-[20px] font-semibold ${isDark ? "text-white" : "text-[#696CFF]"}`}>{item.title}</span>
 
                               {/* Optional short context (book title or first subtopic title) */}
                               {/* <span className={`text-[11px] ${isDark ? "text-gray-400" : "text-[#7b7dab]"}`}>
@@ -461,14 +471,14 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
 
                               {/* Full subtopics + narration list */}
                               {Array.isArray(item.subtopics) && item.subtopics.length > 0 && (
-                                <div className="mt-1 space-y-1.5">
+                                <div className="mt-1 space-y-4">
                                   {item.subtopics.map((sub, idx) => (
-                                    <div key={idx} className="text-[11px] leading-snug">
-                                      <div className={isDark ? "text-gray-200 font-semibold" : "text-[#3f4170] font-semibold"}>
+                                    <div key={idx} className="text-[11px] leading-snug space-y-1">
+                                      <div className={`text-[15px] 2xl:text-[17px] ${isDark ? "text-gray-200 font-semibold" : "text-[#3f4170] font-bold"}`}>
                                         {idx + 1}. {sub.title}
                                       </div>
                                       {sub.narration && (
-                                        <div className={isDark ? "text-gray-400" : "text-[#5a5c8c]"}>
+                                        <div className={`text-[13px] 2xl:text-[15px] ${isDark ? "text-gray-400" : "text-[#5a5c8c]"}`}>
                                           {sub.narration}
                                         </div>
                                       )}
@@ -485,9 +495,10 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
 
                   <button
                     type="button"
+                    aria-disabled={confirmedChapters.length === 0}
                     onClick={handleCreateMergedLecture}
                     className={`w-full inline-flex items-center justify-center gap-2 rounded-md text-xs sm:text-sm font-medium px-4 py-2.5 cursor-pointer transition-colors ${isDark ? "bg-white text-black hover:bg-zinc-100" : "bg-[#6a6dff] text-white hover:bg-[#585bdf]"
-                      }`}
+                      } ${confirmedChapters.length === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <span>Create Merged Lecture</span>
                     <Lock className="h-4 w-4" />

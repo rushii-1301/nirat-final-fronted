@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
 import { useLocation, useNavigate } from "react-router-dom";
-import { X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Send, RotateCcw, Sparkles } from "lucide-react";
+import { X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Send, RotateCcw, Sparkles, ArrowLeft } from "lucide-react";
 
 import axios from "axios";
 import { BACKEND_API_URL, handlesuccess } from "../../../utils/assets";
@@ -380,8 +380,8 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
   };
 
   // Theme classes (aligned with other chapter pages)
-  const pageBg = isDark ? "bg-black text-gray-100" : "bg-white text-zinc-900";
-  const cardBg = isDark ? "bg-zinc-900 border border-zinc-800" : "bg-white border border-zinc-200";
+  const pageBg = isDark ? "bg-black text-gray-100" : "bg-[#F5F5F9] text-zinc-900";
+  const cardBg = isDark ? "bg-zinc-900" : "bg-white";
   const inputBg = isDark ? "bg-[#18181b] border border-zinc-800" : "bg-white border border-zinc-200";
   const accentLabel = isDark ? "text-blue-400" : "text-blue-600";
 
@@ -395,7 +395,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
 
         {/* Header - Sticky */}
         <div
-          className={`sticky top-0 z-20 pb-4 backdrop-blur-md border-b ${isDark ? "bg-black/80 border-white/5" : "bg-white/90 border-zinc-200 shadow-sm"
+          className={`sticky top-0 z-20 ${isDark ? "bg-black" : "bg-white"
             }`}
         >
           <Header title="Add Chapter Management" isDark={isDark} toggleTheme={toggleTheme} />
@@ -408,12 +408,17 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
             {/* Top Header Section */}
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <h1
-                  className={`text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r bg-clip-text text-transparent ${isDark ? "from-white to-gray-300" : "from-zinc-900 to-zinc-600"
-                    }`}
-                >
-                  Chapter Management
-                </h1>
+                <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
+                  <button
+                    onClick={() => navigate(-1)}
+                    className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <h2 className={`text-md font-semibold transition-colors duration-300 ${isDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                    Add Topic Narration
+                  </h2>
+                </div>
                 <p className="text-gray-500 text-sm sm:text-base font-light">
                   View and manage chapter topics with AI assistance
                 </p>
@@ -435,9 +440,12 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                         ]
                     );
                   }}
-                  className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transform hover:scale-105 cursor-pointer"
+                  className={`mr-0.5 group flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 transform cursor-pointer ${isDark
+                    ? 'bg-white text-black hover:bg-zinc-100'
+                    : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'
+                    }`}
                 >
-                  <Sparkles size={16} className="text-yellow-300" />
+                  <Sparkles size={16} className={isDark ? "text-yellow-500" : "text-yellow-300"} />
                   AI Assistant
                 </button>
                 <span className="text-xs text-gray-500 font-medium">Get AI help anytime</span>
@@ -448,7 +456,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
             <div className="space-y-3">
               {!isLoadingTopics && (
                 <div className="flex items-center justify-between ml-1">
-                  <label className={`block text-sm font-semibold uppercase tracking-wider ${accentLabel}`}>
+                  <label className={`block text-sm font-semibold ${accentLabel}`}>
                     Chapter Title
                   </label>
                   {materialsTopics && materialsTopics.length > 1 && (
@@ -490,7 +498,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.6s_infinite]" />
                 </div>
               ) : (
-                <div className={`w-full rounded-2xl px-6 py-4 text-base font-medium ${inputBg} border border-blue-500/30 shadow-lg shadow-blue-500/10 backdrop-blur-sm`}>
+                <div className={`w-full rounded-2xl px-6 py-4 text-base font-medium ${inputBg} border border-transparent`}>
                   {chapterTitle || "No chapter title available"}
                 </div>
               )}
@@ -513,9 +521,9 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                       className={`text-lg font-bold flex items-center gap-3 ${isDark ? "text-white" : "text-zinc-900"
                         }`}
                     >
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <div className={`w-2 h-2 rounded-full animate-pulse ${isDark ? 'bg-white' : 'bg-[#696CFF]'}`}></div>
                       Topics
-                      <span className="text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full font-semibold shadow-lg shadow-blue-500/25">{topics.length}</span>
+                      <span className={`text-sm px-3 py-1 rounded-full font-semibold ${isDark ? 'bg-white text-black' : 'bg-[#696CFF] text-white'}`}>{topics.length}</span>
                     </h2>
                     <button
                       type="button"
@@ -523,9 +531,9 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                         const materialIds = navState.materialIds || navState.selectedIds || [];
                         if (materialIds.length > 0) fetchExtractedTopics(materialIds);
                       }}
-                      className="group flex items-center cursor-pointer gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-green-500/25 hover:shadow-green-500/40 transform hover:scale-105"
+                      className={`cursor-pointer px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all transform active:scale-95 flex items-center gap-2 ${isDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'}`}
                     >
-                      <RotateCcw size={14} className="group-hover:-rotate-180 transition-transform duration-500" />
+                      <RotateCcw size={14} className={`transition-transform duration-500`} />
                       Restore Data
                     </button>
                   </div>
@@ -534,8 +542,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                     {topics.map((topic, index) => (
                       <div
                         key={index}
-                        className={`rounded-xl overflow-hidden transition-all duration-300 ${cardBg} ${expandedTopicIndex === index ? 'ring-1 ring-zinc-700 shadow-lg shadow-black/40' : 'hover:border-zinc-700'
-                          }`}
+                        className={`rounded-xl border border-transparent overflow-hidden transition-all duration-300 ${cardBg}`}
                       >
                         <button
                           onClick={() => setExpandedTopicIndex(expandedTopicIndex === index ? null : index)}
@@ -543,10 +550,10 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                         >
                           <div className="flex-1 pr-6">
                             <h3
-                              className={`text-sm sm:text-base font-medium mb-1.5 transition-colors ${expandedTopicIndex === index
+                              className={`text-[16px] 2xl:text-[20px] text-base font-bold mb-1.5 transition-colors ${expandedTopicIndex === index
                                 ? isDark
-                                  ? 'text-sky-400'
-                                  : 'text-blue-600'
+                                  ? 'text-white'
+                                  : 'text-[#696CFF]'
                                 : isDark
                                   ? 'text-gray-200 group-hover:text-white'
                                   : 'text-zinc-900 group-hover:text-zinc-900'
@@ -562,8 +569,8 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                           <div
                             className={`mt-1 p-1 rounded-full transition-colors ${expandedTopicIndex === index
                               ? isDark
-                                ? 'bg-zinc-800 text-sky-400'
-                                : 'bg-blue-100 text-blue-600'
+                                ? 'bg-zinc-800 text-white'
+                                : 'bg-[#696CFF]/10 text-[#696CFF]'
                               : isDark
                                 ? 'text-zinc-600 group-hover:text-zinc-400'
                                 : 'text-zinc-500 group-hover:text-zinc-700'
@@ -595,25 +602,25 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                             {topic.subtopics && topic.subtopics.length > 0 && (
                               <div>
                                 <div className="flex items-center justify-between mb-3">
-                                  <label className="text-[10px] font-bold uppercase tracking-widest text-blue-500">
+                                  <label className={`text-[16px] font-semibold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>
                                     Sub Topics & Narration
                                   </label>
-                                  <span className="text-[10px] text-zinc-500">{topic.subtopics.length} items</span>
+                                  <span className="text-[14px] text-zinc-500">{topic.subtopics.length} items</span>
                                 </div>
                                 <div className="space-y-3">
                                   {topic.subtopics.map((sub, idx) => (
                                     <div
                                       key={idx}
                                       className={`group relative pl-4 border-l-2 transition-colors ${isDark
-                                        ? "border-zinc-800 hover:border-sky-500/50"
-                                        : "border-zinc-200 hover:border-blue-400/60"
+                                        ? "border-zinc-800 hover:border-white"
+                                        : "border-zinc-200 hover:border-[#696CFF]"
                                         }`}
                                     >
                                       <div className="mb-1.5">
                                         <h4
-                                          className={`text-xs font-medium transition-colors ${isDark
-                                            ? "text-gray-300 group-hover:text-sky-300"
-                                            : "text-zinc-800 group-hover:text-blue-600"
+                                          className={`text-xs text-[12px] 2xl:text-[15px] font-medium transition-colors ${isDark
+                                            ? "text-gray-300 group-hover:text-white"
+                                            : "text-zinc-800 group-hover:text-[#696CFF]"
                                             }`}
                                         >
                                           {sub.title}
@@ -621,7 +628,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                                       </div>
                                       {sub.narration && (
                                         <div
-                                          className={`w-full rounded-lg px-3 py-2 text-xs transition-all ${isDark
+                                          className={`w-full text-[10px] 2xl:text-[14px] rounded-lg px-3 py-2 text-xs transition-all ${isDark
                                             ? "bg-zinc-950/50 text-gray-400 border border-zinc-800/50"
                                             : "bg-zinc-100 text-zinc-800 border border-zinc-200"
                                             }`}
@@ -646,8 +653,8 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
             {/* Footer Actions */}
             <div className="flex justify-end gap-3 pt-6">
               <button
-                onClick={() => navigate(backto)}
-                className="px-5 py-2 rounded-lg cursor-pointer border border-zinc-800 text-gray-400 text-xs sm:text-sm font-medium hover:bg-zinc-900 hover:text-white transition-colors"
+                onClick={() => navigate(-1)}
+                className="px-5 py-2 rounded-lg cursor-pointer border border-zinc-800 text-gray-400 text-xs sm:text-sm font-medium transition-colors"
               >
                 Cancel
               </button>
@@ -674,7 +681,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
 
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b border-zinc-800">
-              <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Chapter Assistant</span>
+              <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>Chapter Assistant</span>
               <button onClick={() => setAssistantVisible(false)}><X size={14} className="text-gray-400 cursor-pointer" /></button>
             </div>
 
@@ -687,7 +694,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                   if (msg.type === "user") {
                     return (
                       <div key={i} className="flex justify-end">
-                        <div className="max-w-[80%] rounded-full px-4 py-2 text-sm leading-snug shadow-sm bg-blue-600 text-white">
+                        <div className={`max-w-[80%] rounded-full px-4 py-2 text-sm leading-snug shadow-sm ${isDark ? 'bg-white text-black' : 'bg-[#696CFF] text-white'}`}>
                           {msg.text}
                         </div>
                       </div>
@@ -717,7 +724,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                           : 'bg-zinc-100 border-zinc-200 text-zinc-800'
                           }`}>
 
-                          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest opacity-80">
+                          <div className="flex items-center justify-between text-[11px] font-semibold opacity-80">
                             <span>Grounded AI Suggestions </span>
                             <span className="text-[10px]">AI topics</span>
                           </div>
@@ -741,7 +748,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                                     onClick={() => handleAddTopicFromSuggestion(s.id)}
                                     className={`text-[11px] font-semibold cursor-pointer whitespace-nowrap ${s.added
                                       ? "text-emerald-400 hover:text-emerald-300"
-                                      : "text-sky-500 hover:text-sky-400"
+                                      : isDark ? "text-white hover:text-gray-200" : "text-[#696CFF] hover:text-[#696CFF]/80"
                                       }`}
                                   >
                                     {s.added ? "Added" : "Add"}
@@ -772,9 +779,9 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                       }`}
                   >
                     <span className="inline-flex gap-1">
-                      <span className="w-1 h-1 rounded-full bg-sky-400 animate-bounce" />
-                      <span className="w-1 h-1 rounded-full bg-sky-400 animate-bounce [animation-delay:120ms]" />
-                      <span className="w-1 h-1 rounded-full bg-sky-400 animate-bounce [animation-delay:240ms]" />
+                      <span className={`w-1 h-1 rounded-full animate-bounce ${isDark ? 'bg-white' : 'bg-[#696CFF]'}`} />
+                      <span className={`w-1 h-1 rounded-full animate-bounce [animation-delay:120ms] ${isDark ? 'bg-white' : 'bg-[#696CFF]'}`} />
+                      <span className={`w-1 h-1 rounded-full animate-bounce [animation-delay:240ms] ${isDark ? 'bg-white' : 'bg-[#696CFF]'}`} />
                     </span>
                     <span>Thinking…</span>
                   </div>

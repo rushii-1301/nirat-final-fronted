@@ -30,23 +30,42 @@
   font-size: 12px;
 }
 
-/* Dark theme autofill for inputs (Chrome / Edge / Safari) */
+/* Hide browser's default password reveal icon and autofill icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="text"]::-ms-reveal,
+input[type="text"]::-ms-clear {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+  height: 0;
+  width: 0;
+  margin: 0;
+}
+
+/* Transparent autofill for inputs - works with both dark and light themes */
 input:-webkit-autofill,
 textarea:-webkit-autofill,
 select:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px #18181b inset;
-  box-shadow: 0 0 0 1000px #18181b inset;
-  -webkit-text-fill-color: #ffffff;
-  caret-color: #ffffff;
-  transition: background-color 9999s ease-out 0s;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 9999s ease-out 0s, color 9999s ease-out 0s;
 }
 
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill:focus,
 select:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #18181b inset;
-  box-shadow: 0 0 0 1000px #18181b inset;
-  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 9999s ease-out 0s, color 9999s ease-out 0s;
 }
 
 /* Fade-in animation for smooth transitions */
@@ -72,6 +91,7 @@ select:-webkit-autofill:focus {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -84,14 +104,23 @@ select:-webkit-autofill:focus {
 
 /* Float Animation */
 @keyframes float {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(0, 20px); }
-  100% { transform: translate(0, 0); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(0, 20px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
 }
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
 /* Video Player Slider Styling */
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -128,7 +157,7 @@ select:-webkit-autofill:focus {
     width: 10px;
     height: 10px;
   }
-  
+
   .slider::-moz-range-thumb {
     width: 10px;
     height: 10px;

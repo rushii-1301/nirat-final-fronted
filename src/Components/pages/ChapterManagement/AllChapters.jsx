@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, Book, Layers, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Book, Layers, Sparkles, ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL } from "../../../utils/assets";
 
@@ -23,14 +23,14 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
   const lastFetchedLectureId = useRef(null);
 
   const themeClasses = {
-    shell: isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900",
+    shell: isDark ? "bg-zinc-950 text-gray-100" : "bg-[#F5F5F9] text-zinc-900",
     panel: isDark ? "bg-zinc-900/50 border-zinc-800" : "bg-white/80 border-zinc-200",
     headerCard: isDark ? "bg-zinc-900/80 border-zinc-800" : "bg-white/80 border-zinc-200",
     subText: isDark ? "text-gray-400" : "text-gray-500",
     card: isDark ? "bg-zinc-900 border-zinc-800 hover:border-zinc-700" : "bg-white border-zinc-200 hover:border-zinc-300",
-    cardActive: isDark ? "bg-zinc-800/50 border-zinc-700" : "bg-indigo-50/50 border-indigo-200",
+    cardActive: isDark ? "bg-[#F5F5F9] border-zinc-700" : "bg-[#F5F5F9]/50 border-indigo-200",
     badge: isDark ? "bg-zinc-800 text-zinc-300" : "bg-zinc-100 text-zinc-600",
-    accentText: isDark ? "text-indigo-400" : "text-indigo-600",
+    accentText: isDark ? "text-indigo-400" : "text-[#696CFF]",
     divider: isDark ? "border-zinc-800" : "border-zinc-200",
   };
 
@@ -139,47 +139,44 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
         <main className="mt-4 sm:mt-6 flex-1 flex flex-col min-h-0 z-10">
           {/* Toolbar */}
           <div
-            className={`${themeClasses.headerCard} sticky top-0 z-30 border rounded-2xl px-4 py-3 flex items-center justify-between backdrop-blur-md shadow-sm mb-6 transition-all duration-300`}
+            className={`${themeClasses.headerCard} sticky top-0 z-30 border rounded-xl px-4 py-3 flex items-center justify-between backdrop-blur-md mb-6 transition-all duration-300`}
           >
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-                <Layers className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className={`text-base sm:text-lg font-semibold tracking-tight ${isDark ? "text-white" : "text-zinc-900"}`}>
-                  Merged Content
-                </h1>
-                <p className={`text-xs ${themeClasses.subText} hidden sm:block`}>
-                  {lectureId ? "Review and manage your merged topics" : "Select a lecture to view content"}
-                </p>
-              </div>
+            <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
+              <button
+                onClick={() => navigate(-1)}
+                className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className={`text-md font-semibold transition-colors duration-300 ${isDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                Merged Content
+              </h2>
             </div>
 
             <div className="flex gap-3">
-              <button
+              {/* <button
                 onClick={() => navigate(backto)}
-                className={`px-4 py-2 rounded-xl cursor-pointer  text-sm font-medium transition-all duration-200 ${isDark
-                  ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-                  : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+                className={`px-4 py-2 rounded-xl cursor-pointer border text-sm font-medium transition-all duration-200 ${isDark
+                  ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border-zinc-500"
+                  : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-500"
                   }`}
               >
                 Cancel
-              </button>
+              </button> */}
               <button
                 onClick={() => navigate("/chapter/SetChapter", { state: { lectureId } })}
-                className={`px-5 py-2 rounded-xl cursor-pointer text-sm font-medium shadow-lg shadow-indigo-500/20 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2 ${isDark
+                className={`px-5 py-2 rounded-xl cursor-pointer text-sm font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2 ${isDark
                   ? "bg-white text-black hover:bg-zinc-100"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700"
+                  : "bg-[#696CFF] text-white hover:bg-[#585BDF]"
                   }`}
               >
-                <Sparkles className="w-4 h-4" />
-                <span>Next Step</span>
+                <span>Next</span>
               </button>
             </div>
           </div>
 
           {/* Content Area - Hidden Scrollbar */}
-          <div className={`flex-1 overflow-y-auto pr-2 pb-6 ${themeClasses.panel} rounded-3xl border shadow-sm p-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']`}>
+          <div className={`flex-1 overflow-y-auto max-h-fit pr-2 pb-6 ${themeClasses.panel} rounded-xl border p-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']`}>
             <div className="p-4 sm:p-6 space-y-8">
 
               {isLoading && (
@@ -206,7 +203,7 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
                     className="flex items-center justify-between group cursor-pointer select-none"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`h-8 w-1 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-600'}`}></div>
+                      <div className={`h-8 w-1 rounded-full ${isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF]'}`}></div>
                       <h2 className={`text-lg font-bold tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-800'}`}>
                         {book.title}
                       </h2>
@@ -233,7 +230,7 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
                         return (
                           <div
                             key={chapter.id}
-                            className={`group rounded-2xl border transition-all duration-300 overflow-hidden ${isExpanded ? themeClasses.cardActive : themeClasses.card
+                            className={`group rounded-xl border transition-all duration-300 overflow-hidden ${isExpanded ? themeClasses.cardActive : themeClasses.card
                               }`}
                           >
                             {/* Topic Header (Clickable) */}
@@ -243,7 +240,7 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
                             >
                               <div
                                 className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${isExpanded
-                                  ? (isDark ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white")
+                                  ? (isDark ? "bg-[#696CFF] text-white" : "bg-[#696CFF] text-white")
                                   : (isDark ? "bg-zinc-800 text-zinc-400 group-hover:bg-zinc-700" : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200")
                                   }`}
                               >
@@ -279,7 +276,7 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
                                     <div
                                       key={sub.id + "_" + index}
                                       className={`relative pl-4 border-l-2 transition-colors ${isDark
-                                        ? "border-zinc-800 hover:border-indigo-500/50"
+                                        ? "border-zinc-800 hover:border-[#696CFF]/50"
                                         : "border-zinc-200 hover:border-indigo-300"
                                         }`}
                                     >

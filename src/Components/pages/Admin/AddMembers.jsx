@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar";
-import { ChevronDown, Eye, EyeClosed, EyeOff } from "lucide-react";
+import { ArrowLeft, ChevronDown, Eye, EyeClosed, EyeOff } from "lucide-react";
 import Header from "../../Tools/Header";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -30,38 +30,38 @@ const Dropdown = ({ label, placeholder, options, isDark, value, onSelect }) => {
   };
 
   return (
-    <div className="w-full space-y-2" ref={dropdownRef}>
+    <div className="w-full space-y-2 relative" ref={dropdownRef}>
       <label className={`block text-sm transition-colors duration-300 ${isDark ? 'text-gray-300' : 'text-zinc-700'}`}>{label}</label>
-      <div className={`${isDark ? 'bg-[#FFFFFF0D] border-zinc-700' : 'bg-zinc-100 border-zinc-200'} border rounded-md overflow-hidden transition-colors duration-300`}>
+      <div className="relative">
         {/* Header */}
         <div
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex justify-between items-center px-3 py-2 cursor-pointer transition-colors duration-300 ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-200'}`}
+          className={`${isDark ? 'bg-[#FFFFFF0D] border-zinc-700 hover:bg-zinc-800' : 'bg-zinc-100 border-zinc-200 hover:bg-zinc-200'} border rounded-md flex justify-between items-center px-3 py-2 cursor-pointer transition-colors duration-300`}
         >
           <span className={`text-sm transition-colors duration-300 ${isDark ? 'text-gray-300' : 'text-zinc-700'}`}>
             {value || placeholder}
           </span>
           <ChevronDown
-            className={`w-4 h-4 transition-transform ${isDark ? 'text-gray-400' : 'text-zinc-500'} ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 transition-transform duration-300 ${isDark ? 'text-gray-400' : 'text-zinc-500'} ${isOpen ? 'rotate-180' : ''}`}
           />
         </div>
 
-        {/* Dropdown Options */}
-        <div
-          className={`transition-all duration-300 overflow-hidden ${isOpen ? `max-h-60 border-t ${isDark ? 'border-zinc-100' : 'border-zinc-700'}` : 'max-h-0'}`}
-        >
-          <div className={`${isDark ? 'bg-zinc-900 divide-zinc-800' : 'bg-zinc-100 divide-zinc-200'} divide-y transition-colors duration-300`}>
-            {options.map((opt, i) => (
-              <div
-                key={i}
-                onClick={() => handleSelect(opt)}
-                className={`px-3 py-2 text-sm cursor-pointer transition-colors duration-300 ${isDark ? 'hover:bg-zinc-800 text-gray-200' : 'hover:bg-zinc-200 text-zinc-800'} ${value === opt ? (isDark ? 'bg-zinc-800' : 'bg-zinc-200') : ''}`}
-              >
-                {opt}
-              </div>
-            ))}
+        {/* Dropdown Options - Absolutely Positioned */}
+        {isOpen && (
+          <div className={`absolute top-full left-0 right-0 mt-1 rounded-md border overflow-hidden z-50 shadow-lg ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}>
+            <div className={`max-h-60 overflow-y-auto ${isDark ? 'divide-zinc-800' : 'divide-zinc-200'} divide-y transition-colors duration-300`}>
+              {options.map((opt, i) => (
+                <div
+                  key={i}
+                  onClick={() => handleSelect(opt)}
+                  className={`px-3 py-2 text-sm cursor-pointer transition-colors duration-200 ${isDark ? 'hover:bg-zinc-800 text-gray-200' : 'hover:bg-zinc-50 text-zinc-800'} ${value === opt ? (isDark ? 'bg-zinc-800' : 'bg-zinc-100') : ''}`}
+                >
+                  {opt}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -228,7 +228,7 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
   };
 
   return (
-    <div className={`flex ${resolvedDark ? 'bg-zinc-950 text-gray-100' : 'bg-zinc-50 text-zinc-900'} h-screen overflow-hidden transition-colors duration-300`}>
+    <div className={`flex ${resolvedDark ? 'bg-zinc-950 text-gray-100' : 'bg-[#F5F5F9] text-zinc-900'} h-screen overflow-hidden transition-colors duration-300`}>
       {/* Sidebar */}
       <Sidebar isDark={resolvedDark} sidebardata={sidebardata} />
 
@@ -244,19 +244,30 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
           <div className={`w-full rounded-lg shadow-lg p-6 space-y-6 transition-colors duration-300 ${resolvedDark ? 'bg-zinc-900 text-gray-200 border border-zinc-800' : 'bg-white text-zinc-800 border border-zinc-200'}`}>
             {/* Header */}
             <div className={`flex justify-between items-center pb-3 transition-colors duration-300 ${resolvedDark ? 'border-b border-zinc-800' : 'border-b border-zinc-200'}`}>
-              <h2 className={`text-sm font-semibold transition-colors duration-300 ${resolvedDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>Member Information</h2>
+              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
+                <button
+                  onClick={() => navigate("/Admin/Managementlist")}
+                  className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <h2 className={`text-md font-semibold transition-colors duration-300 ${resolvedDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                  Member Information
+                </h2>
+              </div>
               <div className="space-x-2">
-                <NavLink
-                  to={"/Admin/Managementlist"}
+                <button
+                  type="button"
+                  onClick={resetForm}
                   className={`px-4 py-1 rounded transition-colors duration-300 ${resolvedDark ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200'}`}
                 >
                   Cancel
-                </NavLink>
+                </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className={`px-4 py-1 rounded cursor-pointer transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed ${resolvedDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}
+                  className={`px-4 py-1 rounded cursor-pointer transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed ${resolvedDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]'}`}
                 >
                   {isSubmitting ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update' : 'Save')}
                 </button>
@@ -289,15 +300,15 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
               </div>
               {/* Work Type */}
               <Dropdown
-                label="Work Type"
-                placeholder="Select Your Work Type"
+                label="Academic Roles"
+                placeholder="Select Your Role"
                 isDark={resolvedDark}
                 value={form.work_type}
                 onSelect={handleDropdownChange('work_type')}
                 options={[
-                  "Chapter",
-                  "Student",
-                  "Lecture",
+                  "Chapter Management",
+                  "Student Management",
+                  "Lecture Management",
                 ]}
               />
               <div>

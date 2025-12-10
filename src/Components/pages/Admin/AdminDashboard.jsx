@@ -16,10 +16,11 @@ const toSafeNumber = (value) => {
 function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
     const [cardsLoading, setCardsLoading] = useState(true);
     const [cards, setCards] = useState([
-        { name: "Management", value: 111 },
-        { name: "Total Credits", value: `111/111` },
-        { name: "Lectures After Limit", value: 111 },
-        { name: "Active Subscription", value: 111 },
+        { name: "Management", value: 0, path: "" },
+        { name: "Total Credits", value: `0/0`, path: "" },
+        { name: "Lectures After Limit", value: 0, path: "" },
+        { name: "Active Subscription", value: 0, path: "" },
+        { name: "Watch Lecture", value: 0, path: "/Admin/WatchLecture" },
     ]);
 
     const [chapterCount, setChapterCount] = useState(10);
@@ -56,11 +57,13 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 const totalCreditsDisplay = `${remainingCredits}/${totalCredits}`;
 
                 const activeSubsVal = payload.account_status?.days_until_expiry ?? 0;
+                const watchLectureVal = payload.watch_lecture ?? 0;
                 setCards([
                     { name: "Management", value: `${Number(managementVal)}` },
                     { name: "Total Credits", value: totalCreditsDisplay },
                     { name: "Lectures After limit", value: `${Number(postLimitGenerated)}` },
                     { name: "Active Subscription", value: `${toSafeNumber(activeSubsVal)} Days` },
+                    { name: "Watch Lecture", value: `${Number(watchLectureVal)}` },
                 ]);
 
                 setChapterCount(chapterMembers);
@@ -137,7 +140,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
 
     return (
         <div
-            className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900"
+            className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-[#F5F5F9] text-zinc-900"
                 } h-screen transition-colors duration-300`}
         >
             {/* Sidebar */}
@@ -159,9 +162,9 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* Main Section */}
                 <main className="mt-6 flex-1 overflow-y-auto no-scrollbar space-y-6">
                     {/* ---- Stat Cards ---- */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 auto-rows-[minmax(120px,auto)]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-[minmax(120px,auto)]">
                         {cardsLoading
-                            ? Array.from({ length: 4 }).map((_, i) => (
+                            ? Array.from({ length: 5 }).map((_, i) => (
                                 <div
                                     key={i}
                                     className={`${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}

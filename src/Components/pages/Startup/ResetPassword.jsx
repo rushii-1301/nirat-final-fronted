@@ -128,7 +128,7 @@ function ResetPassword() {
         <div
             className={`relative w-full h-screen flex flex-col items-center justify-center overflow-hidden px-4 transition-colors duration-500 ${isDark
                 ? "bg-[#09090b] text-white"
-                : "bg-[#f4f4f5] text-zinc-900"
+                : "bg-[#F5F5F9] text-zinc-900"
                 }`}
         >
             {/* Background Blobs */}

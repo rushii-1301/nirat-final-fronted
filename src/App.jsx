@@ -232,7 +232,7 @@ function App() {
         <Route path="/Admin/AllMembers" element={<AllMembers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
 
         {/* Admin All Member Pages connected */}
-        <Route path="/Admin/Managementlist" element={<ManagementList theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} title="All Member" filterLabel="Management" />} />
+        <Route path="/Admin/Managementlist" element={<ManagementList theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
         <Route path="/Admin/AddMembers" element={<AddMembers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
         <Route path="/Admin/EditMembers" element={<AddMembers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
         <Route path="/Admin/Profile" element={<Profile theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
@@ -241,6 +241,7 @@ function App() {
         <Route path="/Admin/chapter/Dashboard" element={<ChapterManagement theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} addchapter="/Admin/chapter/AddChapter" />} />
         <Route path="/Admin/student/Dashboard" element={<StudentDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
         <Route path="/Admin/lecture/Dashboard" element={<LectureDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/lecture/Alllectures" element={<LectureHome theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
         <Route path="/Admin/reset-password" element={<ResetPassword theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
 
         {/* chapter Management */}

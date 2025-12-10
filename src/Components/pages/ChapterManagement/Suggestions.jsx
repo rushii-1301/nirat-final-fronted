@@ -4,6 +4,7 @@ import Header from "../../Tools/Header";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets";
+import { ArrowLeft } from "lucide-react";
 
 
 
@@ -154,11 +155,23 @@ function Suggestions({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebard
         <main className="mt-4 sm:mt-6 flex-1 overflow-y-auto no-scrollbar">
           <div className="w-full mx-auto space-y-4">
             {/* Toolbar row (sticky) */}
-            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90 shadow-sm`}>
-              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-medium`}>Add Chapter Management</div>
+            <div className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent sticky top-0 z-30 rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}>
+              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-medium`}>
+                <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
+                  <button
+                    onClick={() => navigate(-1)}
+                    className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <h2 className={`text-lg font-semibold transition-colors duration-300 ${isDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                    Add Chapter Management
+                  </h2>
+                </div>
+              </div>
               <div className="flex gap-2 w-[200px] justify-center items-center">
                 <button
-                  onClick={() => navigate(backto)}
+                  onClick={() => setSelectedIds([])}
                   className={`${isDark ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700 border border-zinc-700' : 'bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-300'} w-full cursor-pointer px-4 py-1.5 flex items-center justify-center rounded-md text-sm`}
                 >
                   Cancel
@@ -179,7 +192,7 @@ function Suggestions({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebard
 
             {/* Suggestions panel */}
             <div
-              className={`rounded-2xl border shadow-sm px-5 sm:px-7 py-5 sm:py-6 transition-colors duration-300 ${isDark ? "bg-[#111111] border-zinc-800" : "bg-white border-zinc-200"
+              className={`rounded-2xl px-5 sm:px-7 py-5 sm:py-6 transition-colors duration-300 border border-transparent ${isDark ? "bg-[#111111]" : "bg-white"
                 }`}
             >
               {/* Heading */}
@@ -229,9 +242,9 @@ function Suggestions({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebard
                           // optional: card click could also toggle selection in future
                         }}
                         className={`${isDark
-                          ? "bg-[#181818] border border-zinc-800 text-gray-100"
-                          : "bg-white border-zinc-200 text-zinc-900"
-                          } rounded-3xl px-5 sm:px-6 py-4 sm:py-5 shadow-sm flex flex-col justify-between`}
+                          ? "bg-[#181818] text-gray-100"
+                          : "bg-[#F5F5F9] text-zinc-900"
+                          } border border-transparent rounded-3xl px-5 sm:px-6 py-4 sm:py-5 flex flex-col justify-between`}
                       >
                         <div className="flex items-start justify-between gap-4 mb-3">
                           <div className="space-y-1">

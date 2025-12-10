@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { RotateCcw, X, ChevronDown, ChevronUp } from "lucide-react";
+import { RotateCcw, X, ChevronDown, ChevronUp, CloudUpload, ArrowLeft } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_API_URL, handlesuccess } from "../../../utils/assets";
@@ -166,10 +166,10 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
         console.log('Transformed recent books:', transformedBooks);
         setRecentBooks(transformedBooks);
       }
+      setIsLoadingBooks(false);
     } catch (error) {
       console.error('Error fetching recent books:', error);
       setRecentBooks([]);
-    } finally {
       setIsLoadingBooks(false);
     }
   };
@@ -259,7 +259,7 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
 
   return (
     <div
-      className={`flex ${isDark ? "bg-black text-gray-100" : "bg-white text-zinc-900"
+      className={`flex ${isDark ? "bg-black text-gray-100" : "bg-[#F5F5F9] text-zinc-900"
         } h-screen overflow-hidden transition-colors duration-300`}
     >
       {/* Sidebar */}
@@ -276,8 +276,20 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
         <main className="mt-4 sm:mt-6 flex-1 overflow-hidden">
           <div className="w-full mx-auto h-full flex flex-col space-y-4">
             {/* Toolbar row (sticky) */}
-            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90 shadow-sm`}>
-              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-medium`}>Upload Chapter</div>
+            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}>
+              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-medium`}>
+                <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-md font-semibold flex items-center`}>
+                  <button
+                    onClick={() => navigate(-1)}
+                    className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <h2 className={`text-md font-semibold transition-colors duration-300 ${isDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                    Upload Chapter
+                  </h2>
+                </div>
+              </div>
               <div className="flex gap-2 w-[200px] justify-center items-center">
                 <button
                   onClick={() => navigate(backto)}
@@ -311,7 +323,7 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
 
             {/* Upload Chapter content panel */}
             <div
-              className={`rounded-2xl mb-2 border shadow-sm px-5 sm:px-7 py-5 sm:py-6 transition-colors duration-300 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
+              className={`rounded-2xl mb-2 border px-5 sm:px-7 py-5 sm:py-6 transition-colors duration-300 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
                 }`}
             >
               {/* Heading + description */}
@@ -335,21 +347,31 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
               {shouldShowAddBook() && (
                 <div className="mb-6 flex flex-col gap-2">
                   {!uploadedFile && (
-                    <button
-                      type="button"
+                    <div
                       onClick={() => {
                         if (fileInputRef.current) {
                           fileInputRef.current.click();
                         }
                       }}
-                      className={`cursor-pointer inline-flex items-center justify-center gap-1 px-4 py-2 rounded-[10px] text-xs sm:text-sm font-medium transition-colors w-32 sm:w-36 ${isDark
-                        ? "bg-zinc-800 text-gray-100 hover:bg-zinc-700"
-                        : "bg-[#696CFF] text-white hover:bg-[#5a5de6]"
+                      className={`cursor-pointer border-2 border-dashed rounded-xl px-6 py-12 flex flex-col items-center justify-center gap-3 transition-colors ${isDark
+                        ? "border-zinc-700 hover:border-zinc-600 bg-zinc-900/30"
+                        : "border-[#696CFF] hover:border-[#696CFF]/80 bg-zinc-50/50"
                         }`}
                     >
-                      <span>Add Chapter</span>
-                      <span>+</span>
-                    </button>
+                      {/* Upload Icon */}
+                      <CloudUpload className="text-[#696CFF] w-8 h-8 mb-2" />
+
+                      {/* Text */}
+                      <div className="text-center">
+                        <p className="text-sm">
+                          <span className="text-[#696CFF] font-medium">Click to upload</span>
+                          <span className={`${isDark ? 'text-gray-400' : 'text-gray-500'}`}> or drag and drop PDF</span>
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                          (Max 50MB)
+                        </p>
+                      </div>
+                    </div>
                   )}
 
                   {uploadedFile && (
@@ -401,9 +423,9 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
                       <div
                         key={book.id}
                         className={`rounded-md px-4 py-3 flex flex-col gap-1 text-xs sm:text-sm ${isDark
-                          ? "bg-zinc-800 border border-zinc-700 text-gray-100"
-                          : "bg-transparent border-0 text-zinc-900"
-                          }`}
+                          ? "bg-zinc-800 border text-gray-100"
+                          : "bg-[#F5F5F9] text-zinc-900"
+                          } border border-transparent`}
                       >
                         <div className="font-medium">
                           {book.title}

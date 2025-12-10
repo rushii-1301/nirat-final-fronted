@@ -71,7 +71,11 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
         const token = localStorage.getItem('access_token');
         if (!token) {
           handleerror('You are not logged in.');
-          localStorage.clear();
+          Object.keys(localStorage).forEach(key => {
+            if (key !== "theme") {
+              localStorage.removeItem(key);
+            }
+          });
           navigate('/login');
           return;
         }
@@ -88,13 +92,21 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
         );
         if (response.status === 200) {
           handlesuccess(response.data?.message || 'Logged out successfully');
-          localStorage.clear();
+          Object.keys(localStorage).forEach(key => {
+            if (key !== "theme") {
+              localStorage.removeItem(key);
+            }
+          });
           navigate("/login");
         } else {
           handleerror('Failed to logout. Please try again.');
         }
 
-        localStorage.clear();
+        Object.keys(localStorage).forEach(key => {
+          if (key !== "theme") {
+            localStorage.removeItem(key);
+          }
+        });
         navigate('/login');
         return;
       }
@@ -104,7 +116,11 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
         const token = localStorage.getItem('token');
         if (!token) {
           handleerror('You are not logged in.');
-          localStorage.clear();
+          Object.keys(localStorage).forEach(key => {
+            if (key !== "theme") {
+              localStorage.removeItem(key);
+            }
+          });
           navigate('/StudentPortel/Login');
           return;
         }
@@ -123,7 +139,11 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
 
           if (response.status === 200) {
             handlesuccess(response.data?.message || 'Logged out successfully');
-            localStorage.clear();
+            Object.keys(localStorage).forEach(key => {
+              if (key !== "theme") {
+                localStorage.removeItem(key);
+              }
+            });
             navigate("StudentPortel/Login");
           } else {
             handleerror('Failed to logout. Please try again.');
@@ -134,19 +154,31 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
           handleerror(msg);
         }
 
-        localStorage.clear();
+        Object.keys(localStorage).forEach(key => {
+          if (key !== "theme") {
+            localStorage.removeItem(key);
+          }
+        });
         navigate('/StudentPortel/Login');
         return;
       }
 
       // Fallback: clear and go home if no specific portal matched
-      localStorage.clear();
+      Object.keys(localStorage).forEach(key => {
+        if (key !== "theme") {
+          localStorage.removeItem(key);
+        }
+      });
       navigate('/');
     } catch (error) {
       console.error('Error during logout:', error);
       const msg = error.response?.data?.detail || error.response?.data?.message || 'Error during logout';
       handleerror(msg);
-      localStorage.clear();
+      Object.keys(localStorage).forEach(key => {
+        if (key !== "theme") {
+          localStorage.removeItem(key);
+        }
+      });
       navigate('/');
     }
   };
@@ -164,7 +196,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
       {/* ===== Sidebar ===== */}
       <aside
         className={`${isDark ? 'bg-zinc-900 text-gray-200' : 'bg-white text-zinc-700'} flex flex-col justify-between fixed top-0 left-0 z-40 h-screen ${isMounted ? 'transition-all duration-300 ease-in-out' : ''}
-        ${isMobileMenu ? "translate-x-0 w-64" : "-translate-x-full"}
+        ${isMobileMenu ? "translate-x-0 w-64 h-[89vh]" : "-translate-x-full"}
         md:translate-x-0 ${isSidebarOpen ? "md:w-64" : "md:w-15"} lg:w-72`}
         style={{ contain: 'layout style paint' }}
       >
@@ -241,7 +273,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
                 {isSidebarOpen && <span>Logout</span>}
               </button>
               {isTablet && !isSidebarOpen && (
-                <span className={`pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap text-xs ${isDark ? 'bg-zinc-800 text-gray-200' : 'bg-white text-zinc-700'} border ${isDark ? 'border-zinc-700' : 'border-zinc-200'} rounded px-2 py-1 opacity-0 group-hover:opacity-100 shadow`}>Logout</span>
+                <span className={`pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap text-xs ${isDark ? 'bg-zinc-800 text-gray-200' : 'bg-white text-zinc-700'} border ${isDark ? 'border-zinc-700' : 'border-zinc-200'} rounded px-2 py-1 opacity-0 shadow`}>Logout</span>
               )}
             </div>
           </div>

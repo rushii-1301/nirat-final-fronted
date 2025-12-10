@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
   const navigate = useNavigate();
   return (
-    <div className={`flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-zinc-50 text-zinc-900'} h-screen transition-colors duration-300`}>
+    <div className={`flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-[#F5F5F9] text-zinc-900'} h-screen transition-colors duration-300`}>
       {/* Sidebar */}
       <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
@@ -22,11 +22,11 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
         </div>
 
         {/* ===== Main Section (scrollable) ===== */}
-        <main className="mt-6 overflow-y-auto no-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-7">
+        <main className="mt-6 overflow-y-auto no-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-7">
           {/* Chapter Management */}
           <div
             onClick={() => navigate("/Admin/chapter/Dashboard")}
-            className={`${isDark ? 'bg-zinc-900 border-zinc-800 hover:border-yellow-500' : 'bg-white border-zinc-200 hover:border-yellow-400'} border rounded-2xl p-5 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}>
+            className={`border border-transparent ${isDark ? 'bg-zinc-900 hover:border-[#F2C100]' : 'bg-white hover:border-[#F2C100]'} rounded-2xl p-5 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}>
             <img
               src={isDark ? getAsset('chapter_dark') : getAsset('chapter_light')}
               alt="INAI Logo"
@@ -39,7 +39,7 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
 
           {/* Student Management */}
           <div onClick={() => navigate("/Admin/student/Dashboard")}
-            className={`${isDark ? 'bg-zinc-900 border-zinc-800 hover:border-purple-500' : 'bg-white border-zinc-200 hover-border-purple-400'} border rounded-2xl p-6 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}>
+            className={`border border-transparent ${isDark ? 'bg-zinc-900 hover:border-[#8779CA]' : 'bg-white hover:border-[#8779CA]'} rounded-2xl p-6 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}>
             <img
               src={getAsset('student')}
               alt="INAI Logo"
@@ -53,7 +53,7 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
           {/* Lecture Management */}
           <div
             onClick={() => navigate("/Admin/lecture/Dashboard")}
-            className={`${isDark ? 'bg-zinc-900 border-zinc-800 hover:border-teal-500' : 'bg-white border-zinc-200 hover-border-teal-400'} border rounded-2xl p-6 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}>
+            className={`border border-transparent ${isDark ? 'bg-zinc-900 hover:border-[#4FBCA5]' : 'bg-white hover:border-[#4FBCA5]'} rounded-2xl p-6 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}>
             <img
               src={getAsset('lecture')}
               alt="INAI Logo"
@@ -68,10 +68,10 @@ function AllMembers({ theme, isDark, toggleTheme, sidebardata }) {
           {/* <div className={`${isDark ? 'bg-zinc-900 border-zinc-800 hover-border-pink-500' : 'bg-white border-zinc-200 hover-border-pink-400'} border rounded-2xl p-6 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}> */}
           <div
             onClick={() => navigate("/Admin/Managementlist")}
-            className={`${isDark
-              ? "bg-zinc-900 border-zinc-800 hover:border-pink-500"
-              : "bg-white border-zinc-200 hover:border-pink-400"
-              } border rounded-2xl p-6 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}
+            className={`border border-transparent ${isDark
+              ? "bg-zinc-900 hover:border-[#B25CC1]"
+              : "bg-white hover:border-[#B25CC1]"
+              } rounded-2xl p-6 flex flex-col gap-3.5 items-center justify-center transition h-[140px] cursor-pointer`}
           >
             <img
               src={getAsset('Add')}
