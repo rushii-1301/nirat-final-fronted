@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
 import { ChevronDown, RotateCcw, MoreVertical, ArrowLeft, ArrowRight } from "lucide-react";
@@ -6,6 +7,7 @@ import { BACKEND_API_URL } from "../../../utils/assets.js";
 import axios from "axios";
 
 function TotalLecture({ isDark, toggleTheme, sidebardata, addchapter }) {
+    const navigate = useNavigate();
     // State for lectures data
     const [lectures, setLectures] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -159,15 +161,30 @@ function TotalLecture({ isDark, toggleTheme, sidebardata, addchapter }) {
                         <div className={`w-full max-w-7xl rounded p-0 md:px-0 lg:px-0 overflow-x-auto transition-colors duration-300 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border-none`}>
 
                             {/* Table Header/Title */}
-                            <h2 className={`text-base font-medium leading-none capitalize pl-6 pt-6 ${isDark ? 'text-white' : 'text-zinc-700'}`}>
-                                Watched Lecture List
-                            </h2>
+                            <div className={`flex items-center gap-3 pl-6 pt-6`}>
+                                <button
+                                    onClick={() => navigate('/Student/Dashboard')}
+                                    className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-zinc-800 text-gray-300' : 'hover:bg-zinc-100 text-zinc-700'}`}
+                                >
+                                    <ArrowLeft className="w-5 h-5" />
+                                </button>
+                                <h2
+  className={`text-[16px] font-medium leading-none tracking-normal capitalize ${
+    isDark ? 'text-white' : 'text-zinc-700'
+  }`}
+>
+  Watched Lecture List
+</h2>
+                            </div>
 
                             {/* Table itself */}
-                            <div className="p-6 pt-0 mt-3 max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-auto no-scrollbar">
+                            <div className="p-6 pt-0 mt-3 max-h-[calc(100vh-245px)] overflow-y-auto overflow-x-auto no-scrollbar">
                                 <table className={`min-w-full divide-y ${isDark ? 'divide-zinc-800' : 'divide-zinc-200'}`}>
-                                    <thead className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700'} sticky top-0 z-10`}>
-                                        <tr className={`text-left text-xs font-semibold leading-none capitalize`}>
+                                   <thead
+  className={`text-[12px] font-semibold leading-none tracking-normal capitalize ${
+    isDark ? 'bg-zinc-800 text-white' : 'bg-blue-50 text-zinc-700'
+  } sticky top-0 z-10`}
+>   <tr className={`text-left text-xs font-semibold leading-none capitalize`}>
                                             <th className="px-6 py-3 tracking-wider">Lecture Title</th>
                                             <th className="px-6 py-3 tracking-wider">Subject</th>
                                             <th className="px-6 py-3 tracking-wider">Chapter Name</th>
@@ -201,8 +218,7 @@ function TotalLecture({ isDark, toggleTheme, sidebardata, addchapter }) {
                                             paginatedData.map((lecture, index) => (
                                                 <tr
                                                     key={index}
-                                                    // ZEBRA STRIPING LOGIC:
-                                                    className={`${index % 2 === 0 ? oddRowClass : evenRowClass} ${hoverClass} transition-colors duration-150`}
+                                                    className={`${index % 2 === 0 ? oddRowClass : evenRowClass}`}
                                                 >
                                                     <td className="px-6 py-4 whitespace-nowrap">{lecture.title}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap">{lecture.subject}</td>

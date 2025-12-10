@@ -382,6 +382,11 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                   onChange={handleChange}
                   placeholder="Enter Class | Stream"
                   className={inputCls}
+                  disabled
+                  readOnly
+                  style={{ pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                  tabIndex="-1"
+                  autoComplete="off"
                 />
               </div>
 
@@ -400,6 +405,11 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                   onChange={handleChange}
                   placeholder="Enter Division"
                   className={inputCls}
+                  disabled
+                  readOnly
+                  style={{ pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                  tabIndex="-1"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -439,6 +449,11 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                   onChange={handleChange}
                   placeholder="Enter Enrollment Number"
                   className={inputCls}
+                  disabled
+                  readOnly
+                  style={{ pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                  tabIndex="-1"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -498,6 +513,11 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                 onChange={handleChange}
                 placeholder="Enter Email address"
                 className={inputCls}
+                disabled
+                readOnly
+                style={{ pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                tabIndex="-1"
+                autoComplete="off"
               />
             </div>
 

@@ -13,6 +13,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
     const [error, setError] = useState(null);
     const [messagesByChat, setMessagesByChat] = useState({});
     const [typingStatus, setTypingStatus] = useState({}); // peerEnrollment -> boolean
+    const [onlineStatus, setOnlineStatus] = useState({}); // peerEnrollment -> boolean
     const socketRef = useRef(null);
     const [searchValue, setSearchValue] = useState("");
 
@@ -68,6 +69,14 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
 
         socketRef.current.on("typing", (data) => {
             handleTypingStatus(data);
+        });
+
+        socketRef.current.on("user:online", (data) => {
+            handleOnlineStatus(data, true);
+        });
+
+        socketRef.current.on("user:offline", (data) => {
+            handleOnlineStatus(data, false);
         });
 
         return () => {
@@ -136,6 +145,20 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
         }
     };
 
+    const handleOnlineStatus = (payload, isOnline) => {
+        try {
+            const { enrollment } = payload;
+            if (enrollment) {
+                setOnlineStatus(prev => ({
+                    ...prev,
+                    [enrollment]: isOnline
+                }));
+            }
+        } catch (e) {
+            console.error("Error handling online status:", e);
+        }
+    };
+
     // Fetch Peers
     useEffect(() => {
         const fetchPeers = async () => {
@@ -159,6 +182,12 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
 
                 if (peersList.length > 0) {
                     setPeers(peersList);
+                    // Initialize online status for peers
+                    const initialOnlineStatus = {};
+                    peersList.forEach(peer => {
+                        initialOnlineStatus[peer.enrollment_number || peer.id] = peer.is_online || false;
+                    });
+                    setOnlineStatus(prev => ({ ...prev, ...initialOnlineStatus }));
                 } else {
                     setError('No chats found');
                 }
@@ -350,18 +379,19 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                 }
             );
         } catch (error) {
-            console.error("Failed to send message via fallback", error);
+            console.error("Failed to fetch messages", error);
         }
     };
 
     const handleInputChange = (e) => {
-        setInput(e.target.value);
+        const newValue = e.target.value;
+        setInput(newValue);
 
         // Emit typing status
         if (selectedId && socketRef.current && socketRef.current.connected) {
             socketRef.current.emit('typing', {
                 peer_enrollment: selectedId,
-                typing: e.target.value.length > 0
+                typing: newValue.length > 0
             });
         }
     };
@@ -388,7 +418,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
     border-t-0 border-l-0 border-b-0
     ${isDark ? "border-zinc-800" : "border-zinc-200"} 
     overflow-hidden flex flex-col min-h-0`}
-                    >   
+                    >
                         <div className="flex-1 overflow-y-auto no-scrollbar h-full">
                             {loading ? (
                                 <div className="flex items-center justify-center h-32">
@@ -413,16 +443,23 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                                         className={`px-4 py-4 flex items-center gap-3 border-b ${isDark ? "border-zinc-800" : "border-zinc-200"} cursor-pointer ${selectedId === c.id ? (isDark ? 'bg-white/5' : 'bg-zinc-100') : (isDark ? 'hover:bg-white/5' : 'hover:bg-zinc-50')}`}
                                     >
                                         <img
-                                            src={c.profileImageUrl || "https://i.pravatar.cc/40?img=3"}
+                                            src={c.profileImageUrl || "https://th.bing.com/th/id/OIP.0d1FCIFCaY4lhteJjVR1nQHaHw?w=189&h=197&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3"}
                                             alt="avatar"
                                             className="h-10 w-10 rounded-full object-cover"
                                         />
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between">
-                                                <div className="truncate text-sm font-medium">{c.title}</div>
-                                                <div className="text-xs opacity-70 whitespace-nowrap">{c.time}</div>
+                                                <div
+                                                    className="truncate font-bold text-[15px] leading-none capitalize"
+                                                    style={{ fontFamily: 'Inter' }}
+                                                >
+                                                    {c.title}
+                                                </div><div className="flex items-center gap-2">
+                                                    <div className="text-xs opacity-70 whitespace-nowrap">{c.time}</div>
+                                                </div>
                                             </div>
                                             <div className="truncate text-xs opacity-80">{c.subtitle}</div>
+
                                         </div>
                                         {c.unread > 0 && (
                                             <span className="ml-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-zinc-700 text-white text-xs px-2">{c.unread}</span>
@@ -450,22 +487,34 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                             </div>
                         ) : (
                             <>
-                                <div className={`${paneBg} rounded-xl border ${isDark ? "border-zinc-800" : "border-zinc-200"} p-4 flex items-center gap-3 shadow-sm`}>
+                                <div className={`ml-2 mt-2 rounded-lg mr-2 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"} p-4 flex items-center gap-3 shadow-sm`}>
                                     <button onClick={() => setShowListMobile(true)} className={`lg:hidden ${isDark ? "bg-zinc-800" : "bg-zinc-100"} h-9 w-9 rounded-full flex items-center justify-center cursor-pointer`}> <CircleArrowLeft /></button>
                                     <img
-                                        src={selectedChat?.profileImageUrl || "https://i.pravatar.cc/40?img=5"}
+                                        src={selectedChat?.profileImageUrl || "https://th.bing.com/th/id/OIP.0d1FCIFCaY4lhteJjVR1nQHaHw?w=189&h=197&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3"}
                                         alt="avatar"
                                         className="h-10 w-10 rounded-full object-cover"
                                     />
                                     <div className="flex-1">
-                                        <div className="text-sm font-medium">{selectedChat?.title}</div>
+                                        <div
+                                            className="capitalize leading-none"
+                                            style={{
+                                                fontFamily: 'Inter',
+                                                fontWeight: 400,
+                                                fontSize: '20px'
+                                            }}
+                                        >
+                                            {selectedChat?.title}
+                                        </div>
+
                                         <div className="mt-0.5 flex items-center gap-2 text-xs">
-                                            <span className={`h-2 w-2 rounded-full ${isDark ? 'bg-emerald-400' : 'bg-emerald-500'} animate-pulse`}></span>
-                                            <span className={isDark ? 'text-zinc-400' : 'text-zinc-500'}>Online</span>
+                                            <div className={`w-2 h-2 rounded-full ${onlineStatus[selectedId] ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                            <span className={isDark ? 'text-zinc-400' : 'text-zinc-500'}>
+                                                {onlineStatus[selectedId] ? 'Online' : 'Offline'}
+                                            </span>
                                         </div>
                                     </div>
-                                    <button className={`${isDark ? "bg-zinc-800" : "bg-zinc-100"} h-9 w-9 rounded-full flex items-center justify-center`}>📞</button>
-                                    <button className={`${isDark ? "bg-zinc-800" : "bg-zinc-100"} h-9 w-9 rounded-full flex items-center justify-center`}>📎</button>
+                                    {/* <button className={`${isDark ? "bg-zinc-800" : "bg-zinc-100"} h-9 w-9 rounded-full flex items-center justify-center`}>📞</button>
+                                    <button className={`${isDark ? "bg-zinc-800" : "bg-zinc-100"} h-9 w-9 rounded-full flex items-center justify-center`}>📎</button> */}
                                 </div>
 
                                 <div ref={listRef} className="mt-4 flex-1 min-h-0 overflow-y-auto no-scrollbar px-2">
@@ -480,7 +529,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                                                     <div className={`flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}>
                                                         {m.from === 'other' && (
                                                             <img
-                                                                src={selectedChat?.profileImageUrl || "https://i.pravatar.cc/32?img=1"}
+                                                                src={selectedChat?.profileImageUrl || "https://th.bing.com/th/id/OIP.0d1FCIFCaY4lhteJjVR1nQHaHw?w=189&h=197&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3"}
                                                                 alt="av"
                                                                 className="h-8 w-8 rounded-full mr-2 self-end object-cover"
                                                             />
@@ -490,7 +539,7 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                                                             : (m.from === 'me' ? 'bg-white border border-zinc-200 text-zinc-900' : 'bg-zinc-200 text-zinc-900')
                                                             } rounded-full px-4 py-2 max-w-[75%] shadow-sm`}>{m.text}</div>
                                                         {m.from === 'me' && (
-                                                            <img src="https://i.pravatar.cc/32?img=2" alt="av" className="h-8 w-8 rounded-full ml-2 self-end" />
+                                                            <img src="https://th.bing.com/th/id/OIP.0d1FCIFCaY4lhteJjVR1nQHaHw?w=189&h=197&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3" alt="av" className="h-8 w-8 rounded-full ml-2 self-end" />
                                                         )}
                                                     </div>
                                                     <div className={`text-xs ${isDark ? 'opacity-60' : 'text-zinc-500'} ${m.from === 'me' ? 'text-right pr-10' : 'text-left pl-10'}`}>{m.time}</div>
@@ -501,16 +550,14 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                                     {isTyping && (
                                         <div className="mt-3 flex items-end justify-start">
                                             <img
-                                                src={selectedChat?.profileImageUrl || "https://i.pravatar.cc/32?img=1"}
+                                                src={selectedChat?.profileImageUrl || "https://www.neuroartsresourcecenter.com/_next/static/media/profile.a227a6b3.png"}
                                                 alt="typing avatar"
                                                 className="h-7 w-7 rounded-full mr-2 object-cover"
                                             />
                                             <div
                                                 className={`${isDark ? 'bg-zinc-800 text-white' : 'bg-zinc-200 text-zinc-900'} rounded-full px-3 py-2 inline-flex items-center gap-1 shadow-sm`}
                                             >
-                                                <span className={`h-1.5 w-1.5 rounded-full ${isDark ? 'bg-zinc-300' : 'bg-zinc-500'} animate-bounce`}></span>
-                                                <span className={`h-1.5 w-1.5 rounded-full ${isDark ? 'bg-zinc-500' : 'bg-zinc-400'} animate-bounce [animation-delay:120ms]`}></span>
-                                                <span className={`h-1.5 w-1.5 rounded-full ${isDark ? 'bg-zinc-700' : 'bg-zinc-300'} animate-bounce [animation-delay:240ms]`}></span>
+                                                <span className="text-sm">Typing...</span>
                                             </div>
                                         </div>
                                     )}
@@ -521,15 +568,15 @@ function OpenChart({ theme, isDark, toggleTheme, sidebardata }) {
                                         className={`${isDark ? 'border-zinc-800' : 'border-zinc-200'
                                             } px-4 py-3`}
                                     >
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
                                             {/* AI Button */}
-                                            <button
+                                            {/* <button
                                                 className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors duration-200 ${isDark
 
                                                     }`}
                                             >
                                                 <img src={getAsset('Ai_dark')} alt="AI" className={`h-5 w-5 object-contain ${!isDark ? 'invert' : ''}`} />
-                                            </button>
+                                            </button> */}
 
                                             {/* Input Field */}
                                             <input

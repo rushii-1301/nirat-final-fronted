@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Portalheader from "../../Tools/Portalheader.jsx";
-import { Calendar, Eye, Download, CreditCard, ShoppingBag, TrendingUp, X } from 'lucide-react';
+import { Calendar, Eye, Download, CreditCard, ShoppingBag, TrendingUp, X, Package } from 'lucide-react';
 
 export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
   const shellBg = isDark ? "bg-black text-[#E5E7EB]" : "bg-[#F5F7FB] text-[#0F172A]";
-  const panelBg = isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200";
+  const panelBg = isDark ? "bg-[#131313] border-zinc-800" : "bg-white border-zinc-200";
   const chipBg = isDark ? "bg-zinc-800 text-zinc-300" : "bg-zinc-100 text-zinc-700";
   const subText = isDark ? "text-zinc-400" : "text-zinc-600";
-  const iconWrap = isDark ? "bg-zinc-800 text-zinc-100" : "bg-zinc-100 text-zinc-700";
+  const iconWrap = isDark ? "bg-zinc-800 text-zinc-100" : "bg-white text-blue-600";
   const viewBtn = isDark
     ? "bg-white text-zinc-900 hover:bg-zinc-100"
-    : "bg-indigo-600 text-white hover:bg-indigo-500";
+    : "bg-[#696CFF] text-white hover:bg-indigo-500";
 
   const [stats] = useState({
     totalSpent: 1798.42,
@@ -21,10 +21,10 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
   });
 
   const [purchaseItems] = useState([
-    { id: 1, title: 'Complete Mathematics Course - Class 12', type: 'Course', typeColor: 'bg-pink-100', typeTextColor: 'text-pink-700', date: '12/11/25', price: 2999 },
-    { id: 2, title: 'Complete Mathematics Course - Class 10', type: 'Chapter', typeColor: 'bg-green-100', typeTextColor: 'text-green-700', date: '12/11/25', price: 2999 },
-    { id: 3, title: 'Complete Mathematics Course - Class 11', type: 'Exam', typeColor: 'bg-blue-100', typeTextColor: 'text-blue-700', date: '12/11/25', price: 3000 },
-    { id: 4, title: 'Complete Mathematics Course - Class 13', type: 'Course', typeColor: 'bg-pink-100', typeTextColor: 'text-pink-700', date: '12/11/25', price: 2999 },
+    { id: 1, title: 'Complete Mathematics Course - Class 12', type: 'Course', typeColor: 'bg-red-300', typeTextColor: 'text-black', date: '12/11/25', price: 2999 },
+    { id: 2, title: 'Complete Mathematics Course - Class 10', type: 'Chapter', typeColor: 'bg-green-300', typeTextColor: 'text-black', date: '12/11/25', price: 2999 },
+    { id: 3, title: 'Complete Mathematics Course - Class 11', type: 'Exam', typeColor: 'bg-blue-300', typeTextColor: 'text-black', date: '12/11/25', price: 3000 },
+    { id: 4, title: 'Complete Mathematics Course - Class 13', type: 'Tests', typeColor: 'bg-gray-300', typeTextColor: 'text-black', date: '12/11/25', price: 2999 },
   ]);
 
   const [activeInvoice, setActiveInvoice] = useState(null);
@@ -53,16 +53,20 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
         <main className="mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
           <div className="flex flex-col min-h-0 h-full">
             {/* Title + subtitle */}
-            <h2 className="text-xl font-semibold">Purchase History</h2>
-            <p className={`mt-1 text-xs sm:text-sm ${subText}`}>
-              View all your transactions and downloads
-            </p>
+           <h2 className="text-[26px] font-bold leading-none tracking-normal">
+  Purchase History
+</h2>
+<p className={`mt-1 text-[15px] font-normal leading-none tracking-normal ${subText}`}>
+  View all your transactions and downloads
+</p>
+
 
             {/* Top stats row */}
+            <div className={`${isDark ? 'bg-[#131313]' : 'bg-white'} rounded-lg pl-4 pr-4 mt-4 mb-3`}> 
             <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
               {/* Total Spent */}
-              <div className={`${panelBg} rounded-xl border p-4 flex items-center gap-3`}>
-                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${iconWrap}`}>
+              <div className={`${isDark ? 'bg-zinc-800' : 'bg-gray-100'} rounded-xl p-4 flex items-center gap-3`}>
+                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-zinc-800 text-white' : ' text-black'}`}>
                   <CreditCard size={18} />
                 </div>
                 <div>
@@ -74,9 +78,9 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
               </div>
 
               {/* Total Orders */}
-              <div className={`${panelBg} rounded-xl border p-4 flex items-center gap-3`}>
-                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${iconWrap}`}>
-                  <ShoppingBag size={18} />
+              <div className={`${isDark ? 'bg-zinc-800' : 'bg-gray-100'} rounded-xl p-4 flex items-center gap-3`}>
+                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-zinc-800 text-white' : ' text-black'}`}>
+                  <Package size={20} />
                 </div>
                 <div>
                   <p className={`text-xs ${subText}`}>Total Orders</p>
@@ -85,15 +89,16 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
               </div>
 
               {/* Avg Order Value */}
-              <div className={`${panelBg} rounded-xl border p-4 flex items-center gap-3`}>
-                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${iconWrap}`}>
-                  <TrendingUp size={18} />
+              <div className={`${isDark ? 'bg-zinc-800' : 'bg-gray-100'} rounded-xl p-4 flex items-center gap-3`}>
+                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-zinc-800 text-white' : 'white text-black'}`}>
+                 <TrendingUp size={18} />
                 </div>
                 <div>
                   <p className={`text-xs ${subText}`}>Avg Order Value</p>
                   <p className="text-lg font-semibold mt-1">₹{stats.avgOrderValue.toFixed(2)}</p>
                 </div>
               </div>
+            </div>
             </div>
 
             {/* Purchase List */}
@@ -234,8 +239,8 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
                   <button
                     className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium cursor-pointer ${
                       isDark
-                        ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100'
-                        : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900'
+                        ? ' border border-zinc-700 text-white'
+                        : 'bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700'
                     }`}
                   >
                     Contact Support
@@ -243,8 +248,8 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
                   <button
                     className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-medium cursor-pointer ${
                       isDark
-                        ? 'bg-red-600 hover:bg-red-500 text-white'
-                        : 'bg-gray-400 hover:bg-gray-500 text-black'
+                        ? 'bg-red-900 hover:bg-red-900 text-white'
+                        : 'bg-red-100 hover:bg-red-200 text-red-700'
                     }`}
                   >
                     Request Refund
@@ -272,8 +277,8 @@ export default function PuchaseHistory({ isDark, toggleTheme, sidebardata }) {
                       <button
                         className={`mt-2 w-full rounded-md py-1.5 text-xs font-medium cursor-pointer ${
                           isDark
-                            ? 'bg-white text-zinc-900 hover:bg-zinc-100'
-                            : 'bg-gray-400 text-black hover:bg-gray-500'
+                            ? 'border border-zinc-600 text-zinc-100 hover:bg-zinc-600'
+                            : 'bg-gray-100 border border-gray-300 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
                         Buy Now

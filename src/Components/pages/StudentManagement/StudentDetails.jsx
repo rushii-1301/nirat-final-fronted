@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
-import { Handbag } from "lucide-react";
+import { Handbag, ArrowLeft } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BACKEND_API_URL, handleerror } from "../../../utils/assets.js";
 import axios from "axios";
@@ -82,7 +82,7 @@ const TransactionDetailsModal = ({ transaction, isDark, onClose }) => {
             >
                 <div className="flex justify-between items-start mb-5">
                     <h2 className="text-[20px] md:text-[22px] font-semibold leading-tight tracking-[-0.01em]">Transaction Details</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors cursor-pointer">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -165,7 +165,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             transactionID: "TXN20251025143001",
             transactionType: "Course Purchase",
             description: "Complete 10th Grade Science Course Package",
-            amount: "₹2,999",
+            amount: "2,999",
             status: "Completed",
         },
         {
@@ -174,7 +174,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             transactionID: "TXN20251025143002",
             transactionType: "Study Material",
             description: "Advanced Physics eBook and Notes",
-            amount: "₹2,999",
+            amount: "2,999",
             status: "Completed",
         },
         {
@@ -183,7 +183,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             transactionID: "TXN20251025143003",
             transactionType: "Test Series",
             description: "Monthly Mock Test Subscription",
-            amount: "₹3,999",
+            amount: "3,999",
             status: "Not Completed",
         },
         {
@@ -192,7 +192,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             transactionID: "TXN20251025143004",
             transactionType: "Course Purchase",
             description: "Advanced Mathematics Module",
-            amount: "₹2,999",
+            amount: "2,999",
             status: "Completed",
         },
         {
@@ -201,7 +201,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             transactionID: "TXN20251025143005",
             transactionType: "Test Series",
             description: "Premium Test Series Subscription",
-            amount: "₹3,999",
+            amount: "3,999",
             status: "Not Completed",
         },
         {
@@ -210,7 +210,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             transactionID: "TXN20251025143006",
             transactionType: "Course Purchase",
             description: "English Grammar & Writing Course",
-            amount: "₹2,999",
+            amount: "2,999",
             status: "Completed",
         },
         {
@@ -219,7 +219,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             transactionID: "TXN20251025143007",
             transactionType: "Live Class",
             description: "Weekly Doubt Clearing Session Pass",
-            amount: "₹2,999",
+            amount: "2,999",
             status: "Not Completed",
         },
     ]);
@@ -253,15 +253,15 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             if (response.data?.status && Array.isArray(response.data?.data?.cards)) {
                 const cards = response.data.data.cards;
                 const totalLectures = cards.length;
-                
+
                 // Calculate progress based on watched lectures
                 const completedVideos = cards.filter(card => {
                     const [watched, total] = card.progress.split('/').map(Number);
                     return watched > 0;
                 }).length;
-                
-                const overallProgress = totalLectures > 0 
-                    ? Math.round((completedVideos / totalLectures) * 100) 
+
+                const overallProgress = totalLectures > 0
+                    ? Math.round((completedVideos / totalLectures) * 100)
                     : 0;
 
                 // Calculate total watched minutes
@@ -287,7 +287,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                     date: card.watched_date || new Date().toLocaleDateString('en-GB'),
                     summary: card.summary || 'No summary available',
                 }));
-                
+
                 setLectures(formattedLectures);
             } else {
                 setLecturesError('No watched lectures data found');
@@ -392,8 +392,8 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
     return (
         <div
             className={`flex overflow-x-hidden ${isDark
-                    ? "bg-zinc-950 text-gray-100"
-                    : "bg-zinc-50 text-zinc-900"
+                ? "bg-zinc-950 text-gray-100"
+                : "bg-zinc-50 text-zinc-900"
                 } h-screen transition-colors duration-300`}
         >
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
@@ -403,7 +403,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                 className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 overflow-x-hidden transition-all duration-300 ${isModalOpen ? 'backdrop-blur-sm pointer-events-none' : '' // Use isModalOpen
                     }`}
             >
-                <div className="sticky top-0 z-20 pointer-events-auto"> {/* Header remains clickable */}
+                <div className="pointer-events-auto"> {/* Header remains clickable */}
                     <Header
                         title="Student Management"
                         isDark={isDark}
@@ -423,9 +423,17 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                         </div>
                     ) : student ? (
                         <div className={`${isDark ? 'bg-zinc-900 border-zinc-800 text-gray-100' : 'bg-white border-zinc-200 text-zinc-900 shadow-sm'} border rounded-xl p-6`}>
-                            <h2 className="text-base md:text-lg font-semibold mb-3">
-                                Student Details
-                            </h2>
+                            <div className="flex items-center -mt-3.5 -ml-3 mb-3">
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:text-white text-gray-300' : 'hover:text-zinc-700 text-black'}`}
+                                >
+                                    <ArrowLeft className="w-5 h-5" />
+                                </button>
+                                <h2 className="font-inter text-[22px] font-medium leading-none tracking-normal capitalize">
+                                    Student Details
+                                </h2>
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-[13px] md:text-sm">
                                 <div>
                                     <span className={`${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Name:</span>{" "}
@@ -446,7 +454,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                     ) : null}
 
                     {/* Tabs */}
-                    <div className={`flex items-center justify-between sticky top-0 z-10 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-100 border-zinc-200'} p-2 border-b rounded-4xl`}>
+                    <div className={`flex items-center justify-between ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-100 border-zinc-200'} p-2 border-b rounded-4xl`}>
                         <div className="relative flex w-full text-[13px] md:text-sm font-medium">
                             <div
                                 className={`absolute cursor-pointer inset-y-0 w-1/2 ${isDark ? 'bg-zinc-800' : 'bg-[#696CFF]'} rounded-full transition-transform duration-300 ease-in-out`}
@@ -460,18 +468,18 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
 
                             <button
                                 onClick={() => setActiveTab("history")}
-                                className={`relative flex-1 px-4 py-2 rounded-full transition-colors z-10 ${activeTab === 'history'
-                                        ? `${isDark ? 'text-white' : 'text-white'}`
-                                        : `${isDark ? 'text-gray-400' : 'text-zinc-600'}`
+                                className={`relative flex-1 px-4 py-2 rounded-full transition-colors z-10 cursor-pointer ${activeTab === 'history'
+                                    ? `${isDark ? 'text-white' : 'text-white'}`
+                                    : `${isDark ? 'text-gray-400' : 'text-black'}`
                                     }`}
                             >
                                 History
                             </button>
                             <button
                                 onClick={() => setActiveTab("old")}
-                                className={`relative flex-1 px-4 py-2 rounded-full transition-colors z-10 ${activeTab === 'old'
-                                        ? `${isDark ? 'text-white' : 'text-white'}`
-                                        : `${isDark ? 'text-gray-400' : 'text-zinc-600'}`
+                                className={`relative flex-1 px-4 py-2 rounded-full transition-colors z-10 cursor-pointer ${activeTab === 'old'
+                                    ? `${isDark ? 'text-white' : 'text-white'}`
+                                    : `${isDark ? 'text-gray-400' : 'text-black'}`
                                     }`}
                             >
                                 Old Purchase
@@ -492,7 +500,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                     <span className={`${isDark ? 'text-[#AAAAAA]' : 'text-zinc-500'}`}>
                                         Overall Progress
                                     </span>
-                                    <span className={`text-lg md:text-xl font-bold ${isDark ? 'text-[#AAAAAA]' : 'text-zinc-900/40'}`}>
+                                    <span className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-[#3498db]'}`}>
                                         {progressData.overallProgress.toFixed(2)}%
                                     </span>
                                 </div>
@@ -649,9 +657,9 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
 
                     {/* Old Purchase Tab Content */}
                     {activeTab === "old" && (
-                        <div className={`border rounded-lg overflow-hidden mb-6 sticky top-0 z-10 ${isDark ? 'border-zinc-800 bg-zinc-950' : 'border-zinc-200 bg-white shadow-sm rounded-xl'}`}>
+                        <div className={`rounded-lg overflow-hidden mb-6 ${isDark ? 'border-zinc-800 bg-zinc-950' : 'border-zinc-200 bg-white shadow-sm'}`}>
                             {/* Header */}
-                            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-100 border-zinc-200'} p-4 flex items-center justify-between border-b rounded-xl`}>
+                            <div className={`${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} p-4 flex items-center justify-between`}>
                                 <div className="flex items-center gap-2">
                                     <Handbag className={`w-6 h-6 ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`} />
                                     <h2 className="text-base md:text-lg font-semibold">
@@ -667,7 +675,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                             {/* Table */}
                             <div className="overflow-x-auto no-scrollbar">
                                 <table className="w-full text-[13px] md:text-sm text-left border-collapse" style={{ minWidth: 960 }}>
-                                    <thead className={`${isDark ? 'text-[#AAAAAA] bg-zinc-900/80 border-zinc-800' : 'text-zinc-900/80 bg-zinc-50 border-zinc-200'} border-b`}>
+                                    <thead className={`${isDark ? 'text-white' : 'text-zinc-900/80'} border-b ${isDark ? 'border-zinc-800/50' : 'border-zinc-200'}`}>
                                         <tr>
                                             <th className="py-3 px-6 font-medium whitespace-nowrap">Date</th>
                                             <th className="py-3 px-4 font-medium whitespace-nowrap">Time</th>
@@ -686,12 +694,12 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                 <td className="py-3 md:py-4 px-6 whitespace-nowrap">{purchase.date}</td>
                                                 <td className="py-3 md:py-4 px-4 whitespace-nowrap">{purchase.time}</td>
                                                 <td className="py-3 md:py-4 px-4 whitespace-nowrap">{purchase.transactionType}</td>
-                                                <td className="py-3 md:py-4 px-4 font-medium whitespace-nowrap">{purchase.amount}</td>
+                                                <td className="py-3 md:py-4 px-4 font-medium whitespace-nowrap">₹{purchase.amount}</td>
                                                 <td className="py-3 md:py-4 px-4 whitespace-nowrap">
                                                     <span
                                                         className={`${purchase.status === "Completed"
-                                                                ? "text-[#0CFF00]"
-                                                                : "text-red-500"
+                                                            ? "text-[#0CFF00]"
+                                                            : "text-white"
                                                             }`}
                                                     >
                                                         {purchase.status}
@@ -700,7 +708,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                 <td className="py-3 md:py-4 px-4 whitespace-nowrap">
                                                     <button
                                                         onClick={() => handleViewDetails(purchase)}
-                                                        className={`cursor-pointer transition-colors pointer-events-auto ${isDark ? 'text-blue-500 hover:text-blue-400' : 'text-[#696CFF] hover:opacity-80'}`}
+                                                        className={`cursor-pointer transition-colors pointer-events-auto ${isDark ? 'text-white' : 'text-[#696CFF] hover:opacity-80'}`}
                                                     >
                                                         View Details
                                                     </button>

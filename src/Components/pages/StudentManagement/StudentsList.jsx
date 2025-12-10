@@ -3,7 +3,7 @@ import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
 import { BACKEND_API_URL, getAsset, handleerror, handlesuccess } from "../../../utils/assets.js";
 import axios from "axios";
-import { Inbox, Loader2 } from 'lucide-react';
+import { Inbox, Loader2, ArrowLeft, MoveLeft } from 'lucide-react';
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 
 function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
@@ -329,9 +329,21 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
 
                         {/* Desktop Filter Panel (always visible) */}
                         <div className={`hidden md:block w-full p-3 md:p-4 rounded-xl shadow-lg border ${isDark ? 'bg-zinc-900 text-gray-100 border-zinc-800' : 'bg-white text-zinc-800 border-zinc-200'}`}>
-                            <h2 className={`text-base font-semibold mb-2 ${isDark ? 'text-gray-100' : 'text-[#696CFF]'}`}>Students List</h2>
+                            <div className="flex items-center gap-2 mb-2">
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-zinc-800 text-gray-300' : 'hover:bg-zinc-100 text-zinc-700'}`}
+                                >
+                                    <ArrowLeft className="w-5 h-5" />
+                                </button>
+                                <h2
+                                    className={`text-[22px] font-medium leading-none tracking-normal capitalize ${isDark ? 'text-gray-100' : 'text-black'
+                                        }`}
+                                >
+                                    Students List
+                                </h2></div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8" style={{maxWidth: '600px'}}>
                                 {/* Class/Stream */}
                                 <div className="flex flex-col space-y-1">
                                     <label className={`text-sm ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Class/Stream</label>
@@ -340,7 +352,13 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                         onChange={(e) => handleClassChange(e.target.value)}
                                         className={`${isDark ? 'bg-zinc-800 text-gray-300' : 'bg-zinc-100 text-black'} p-2 rounded-md w-full focus:outline-none border cursor-pointer ${isDark ? 'border-zinc-700' : 'border-zinc-200'}`}
                                     >
-                                        <option value="All Classes">All Classes</option>
+                                        <option
+                                            value="All Classes"
+                                            className="text-[14px] font-normal leading-none tracking-normal capitalize"
+                                        >
+                                            All Classes
+                                        </option>
+
                                         {uniqueClasses.map((className, index) => (
                                             <option key={index} value={className}>{className}</option>
                                         ))}
@@ -355,7 +373,7 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                         onChange={(e) => setSelectedDivision(e.target.value)}
                                         className={`${isDark ? 'bg-zinc-800 text-gray-300' : 'bg-zinc-100 text-black'} p-2 rounded-md w-full focus:outline-none border cursor-pointer ${isDark ? 'border-zinc-700' : 'border-zinc-200'}`}
                                     >
-                                        <option value="All Division">All Division</option>
+                                        <option value="All Division" className="text-[14px] font-normal leading-none tracking-normal capitalize">All Division</option>
                                         {uniqueDivisions.map((division, index) => (
                                             <option key={index} value={division}>{division}</option>
                                         ))}
@@ -370,7 +388,7 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                 <div onClick={(e) => e.stopPropagation()} className={`${isDark ? 'bg-zinc-900 text-gray-100' : 'bg-white text-zinc-900'} p-6 rounded-xl shadow-2xl w-11/12 max-w-md relative animate-fadeIn border ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
                                     <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-100' : 'text-[#696CFF]'}`}>Students List</h2>
 
-                                    <div className="grid grid-cols-1 gap-4">
+                                    <div className="grid grid-cols-1 gap-6">
                                         {/* Class/Stream */}
                                         <div className="flex flex-col space-y-1 cursor-pointer">
                                             <label className={`text-sm ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Class/Stream</label>
@@ -450,24 +468,35 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                             filteredStudents.map((s, i) => (
                                 <div
                                     key={`${s.enrollment_number}-${i}`}
-                                    className={`p-4 rounded-lg border transition-colors ${
-                                        highlightedRows.includes(s.enrollment_number)
-                                            ? isDark
-                                                ? 'bg-blue-900/50 border-blue-500'
-                                                : 'bg-blue-50 border-blue-500'
-                                            : isDark
+                                    className={`p-4 rounded-lg border transition-colors ${highlightedRows.includes(s.enrollment_number)
+                                        ? isDark
+                                            ? 'bg-blue-900/50 border-blue-500'
+                                            : 'bg-blue-50 border-blue-500'
+                                        : isDark
                                             ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800'
                                             : 'bg-white border-zinc-200 hover:bg-zinc-50'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="space-y-3">
                                         <div>
                                             <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Name</p>
-                                            <NavLink to={`/Student/getdetails`} state={{ enrollmentNumber: s.enrollment_number }}>
+                                            <NavLink
+                                                to={`/Student/getdetails`}
+                                                state={{ enrollmentNumber: s.enrollment_number }}
+                                                target="_self"
+                                                onClick={(e) => {
+                                                    if (!s.enrollment_number) {
+                                                        e.preventDefault();
+                                                        handleerror('Invalid enrollment number for this student');
+                                                        console.log('Student data:', s);
+                                                    }
+                                                }}
+                                                onContextMenu={(e) => e.preventDefault()}
+                                            >
                                                 <p className={`font-semibold cursor-pointer hover:underline ${isDark ? 'text-blue-400' : 'text-[#696CFF]'}`}>{s.name}</p>
                                             </NavLink>
                                         </div>
-                                        
+
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Enrollment</p>
@@ -591,7 +620,19 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                                     `}
                                                 >
                                                     <td className={`px-4 py-3 h-12 align-middle cursor-pointer hover:underline whitespace-nowrap overflow-hidden text-ellipsis ${isDark ? 'text-blue-400' : 'text-[#696CFF]'}`}>
-                                                        <NavLink to={`/Student/getdetails`} state={{ enrollmentNumber: s.enrollment_number }}>
+                                                        <NavLink
+                                                            to={`/Student/getdetails`}
+                                                            state={{ enrollmentNumber: s.enrollment_number }}
+                                                            target="_self"
+                                                            onClick={(e) => {
+                                                                if (!s.enrollment_number) {
+                                                                    e.preventDefault();
+                                                                    handleerror('Invalid enrollment number for this student');
+                                                                    console.log('Student data:', s);
+                                                                }
+                                                            }}
+                                                            onContextMenu={(e) => e.preventDefault()}
+                                                        >
                                                             {s.name}
                                                         </NavLink>
                                                     </td>

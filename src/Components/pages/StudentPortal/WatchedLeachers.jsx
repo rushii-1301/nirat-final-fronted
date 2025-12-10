@@ -2,84 +2,84 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Portalheader from "../../Tools/Portalheader.jsx";
 import { CalendarDays, Clock3, Play, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
-import {BACKEND_API_URL } from "../../../utils/assets.js"; 
+import { BACKEND_API_URL } from "../../../utils/assets.js";
 // API implementation
 const API_BASE_URL = `${BACKEND_API_URL}/school-portal`;
 
 const getAuthToken = () => {
-  return localStorage.getItem('token');
+    return localStorage.getItem('token');
 };
 
 const formatTime = (seconds) => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
 const formatDuration = (seconds) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
 };
 
 const fetchWatchedLectures = async () => {
-  try {
-    const token = getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}/watched-lectures`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+        const token = getAuthToken();
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch(`${API_BASE_URL}/watched-lectures`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.status) {
+            throw new Error(data.message || 'Failed to fetch watched lectures');
+        }
+
+        const transformedData = {
+            summary: {
+                watchedVideos: data.data.summary.watched_videos,
+                totalWatchTime: formatDuration(data.data.summary.total_watch_seconds),
+                completedVideos: data.data.summary.completed_videos,
+                totalRecords: data.data.summary.total_records,
+            },
+            lectures: data.data.videos.map(video => ({
+                id: video.id,
+                title: video.title,
+                chapter: video.chapter_name,
+                subject: video.subject,
+                watchedDate: new Date(video.user_last_watched_at).toLocaleDateString('en-GB'),
+                completion: video.user_watch_duration_seconds > 0
+                    ? `${Math.min(100, Math.round((video.user_watch_duration_seconds / video.duration_seconds) * 100))}% Complete`
+                    : '0% Complete',
+                currentTime: formatTime(video.user_watch_duration_seconds),
+                duration: formatTime(video.duration_seconds),
+                thumb: video.thumbnail_url,
+                videoUrl: video.video_url,
+                liked: video.user_liked,
+                subscribed: video.user_subscribed,
+                totalLikes: video.total_likes,
+                totalComments: video.total_comments,
+            }))
+        };
+
+        return transformedData;
+    } catch (error) {
+        console.error('Error fetching watched lectures:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    
-    if (!data.status) {
-      throw new Error(data.message || 'Failed to fetch watched lectures');
-    }
-
-    const transformedData = {
-      summary: {
-        watchedVideos: data.data.summary.watched_videos,
-        totalWatchTime: formatDuration(data.data.summary.total_watch_seconds),
-        completedVideos: data.data.summary.completed_videos,
-        totalRecords: data.data.summary.total_records,
-      },
-      lectures: data.data.videos.map(video => ({
-        id: video.id,
-        title: video.title,
-        chapter: video.chapter_name,
-        subject: video.subject,
-        watchedDate: new Date(video.user_last_watched_at).toLocaleDateString('en-GB'),
-        completion: video.user_watch_duration_seconds > 0 
-          ? `${Math.min(100, Math.round((video.user_watch_duration_seconds / video.duration_seconds) * 100))}% Complete`
-          : '0% Complete',
-        currentTime: formatTime(video.user_watch_duration_seconds),
-        duration: formatTime(video.duration_seconds),
-        thumb: video.thumbnail_url,
-        videoUrl: video.video_url,
-        liked: video.user_liked,
-        subscribed: video.user_subscribed,
-        totalLikes: video.total_likes,
-        totalComments: video.total_comments,
-      }))
-    };
-
-    return transformedData;
-  } catch (error) {
-    console.error('Error fetching watched lectures:', error);
-    throw error;
-  }
 };
 
 function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
@@ -123,7 +123,7 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
     // Filter lectures based on search value
     const filteredLectures = data ? data.lectures.filter(lec => {
         if (!searchValue.trim()) return true;
-        
+
         const search = searchValue.toLowerCase().trim();
         return (
             lec.title.toLowerCase().includes(search) ||
@@ -149,29 +149,31 @@ function WatchedLeachers({ isDark, toggleTheme, sidebardata }) {
                 {/* ===== Main Section ===== */}
                 <main className="mt-6 flex-1 flex flex-col min-h-0 px-4 md:px-8">
                     <div className="flex flex-col min-h-0 h-full">
-                        <h2 className="text-xl font-semibold">Watched lecture</h2>
+                        <h2 className="text-[26px] font-bold leading-none tracking-normal">
+  Watched lecture
+</h2>
 
                         {/* Stats row */}
-                        <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {stats.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className={`${panelBg} rounded-2xl border px-4 py-4 flex items-center gap-3`}
-                                    >
+                        <div className={`${isDark ? 'bg-[#131313]' : 'bg-white'} rounded-lg p-4 mt-4`}>
+                            <div className="flex flex-col md:flex-row gap-4">
+                                {stats.map((item) => {
+                                    const Icon = item.icon;
+                                    return (
                                         <div
-                                            className="p-2"
+                                            key={item.id}
+                                            className={`${isDark ? 'bg-zinc-800' : 'bg-gray-100'} flex-1 rounded-2xl px-4 py-3 flex items-center gap-4`}
                                         >
-                                            <Icon className="w-6 h-6" />
+                                            <div className="p-2">
+                                                <Icon className={`${isDark ? 'text-white' : 'text-black'} w-6 h-6`} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <div className={`${isDark ? 'text-zinc-400' : 'text-zinc-600'} text-sm`}>{item.label}</div>
+                                                <div className={`${isDark ? 'text-white' : 'text-black'} mt-1 text-xl font-semibold`}>{item.value}</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div className={`text-xs ${subText}`}>{item.label}</div>
-                                            <div className="mt-1 text-sm sm:text-base font-semibold">{item.value}</div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         {/* Loading State */}

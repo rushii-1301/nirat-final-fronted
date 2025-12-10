@@ -367,13 +367,13 @@ function PortalDetails() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Class Head</label>
+                <label className={labelCls}>Facutity</label>
                 <input
                   type="text"
                   name="classHead"
                   value={formData.classHead}
                   onChange={handleChange}
-                  placeholder="Enter Class Head"
+                  placeholder="Enter Facutity Name"
                   className={inputCls}
                 />
               </div>

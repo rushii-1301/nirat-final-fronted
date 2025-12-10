@@ -3,8 +3,27 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { ChevronDown, ArrowLeft, ArrowRight, User, LockKeyhole, Hash } from "lucide-react";
+import { ChevronDown, ArrowLeft, ArrowRight, User, LockKeyhole, Hash, Copy } from "lucide-react";
 import { getAsset, BACKEND_API_URL } from "../../../utils/assets";
+
+// Add CSS animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+if (!document.head.querySelector('style[data-fade-in]')) {
+    style.setAttribute('data-fade-in', 'true');
+    document.head.appendChild(style);
+}
 
 function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
     // API states
@@ -14,6 +33,32 @@ function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
     
     // Search state
     const [searchValue, setSearchValue] = useState('');
+
+    // Copy message state
+    const [copyMessage, setCopyMessage] = useState('');
+    const [copyMessageIndex, setCopyMessageIndex] = useState(null);
+
+    // Copy function
+    const handleCopyPassword = async (password, index) => {
+        console.log('Copy clicked for index:', index); // Debug log
+        try {
+            await navigator.clipboard.writeText(password);
+            setCopyMessage('Copied!');
+            setCopyMessageIndex(index);
+            setTimeout(() => {
+                setCopyMessage('');
+                setCopyMessageIndex(null);
+            }, 2000); // Hide after 2 seconds
+        } catch (err) {
+            console.log('Copy failed:', err); // Debug log
+            setCopyMessage('Failed');
+            setCopyMessageIndex(index);
+            setTimeout(() => {
+                setCopyMessage('');
+                setCopyMessageIndex(null);
+            }, 2000);
+        }
+    };
 
     // Fetch student credentials from API
     useEffect(() => {
@@ -160,28 +205,33 @@ function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
                                     {/* Scroll area aligned with TotalLecture/TotalPaid */}
                                     <div className="p-6 pt-0 mt-3 max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-auto no-scrollbar">
                                         <table
-                                            className={`min-w-full table-fixed divide-y text-sm ${isDark ? 'divide-zinc-800' : 'divide-zinc-200'
+                                            className={`table-fixed divide-y text-sm ${isDark ? 'divide-zinc-800' : 'divide-zinc-200'
                                                 }`}
+                                            style={{ columnGap: '60px', width: 'auto' }}
                                         >
                                             <thead
                                                 className={`${isDark
-                                                    ? 'bg-zinc-900 text-white'
+                                                    ? 'bg-zinc-800 text-white'
                                                     : 'bg-[#EEF0FF] text-[#4F46E5]'
                                                     } text-left text-xs font-semibold sticky top-0 z-10`}
                                             >
                                                 <tr>
-                                                    <th className="px-6 py-3">
+                                                    <th className="px-4 py-3" style={{ width: '200px' }}>
                                                         <div className="flex items-center space-x-2">
                                                             <Hash className="h-4 w-4" />
                                                             <span>Enrolment Number</span>
                                                         </div>
                                                     </th>
-                                                    <th className="px-6 py-3">
+                                                    <th className="px-4 py-3" style={{ width: '150px' }}>
                                                         <div className="flex items-center space-x-2">
                                                             <LockKeyhole className="h-4 w-4" />
                                                             <span>Password</span>
                                                         </div>
                                                     </th>
+                                                    <th className="px-4 py-3" style={{ width: '150px' }}>
+
+                                                    </th>
+                                                    
                                                 </tr>
                                             </thead>
 
@@ -194,12 +244,12 @@ function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
                                                 {paginatedData.map((user, index) => (
                                                     <tr
                                                         key={index}
-                                                        className={`${index % 2 === 1
+                                                        className={`${index % 2 === 0
                                                             ? oddRowClass
                                                             : evenRowClass
                                                             } ${hoverClass}`}
                                                     >
-                                                        <td className="px-6 py-3 whitespace-nowrap">
+                                                        <td className="px-4 py-3 whitespace-nowrap">
                                                             <div className="flex items-center gap-2">
                                                                 
                                                                 <Hash className="h-4 w-4" />
@@ -208,10 +258,38 @@ function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
                                                                 </span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-3 whitespace-nowrap text-[13px] md:text-sm">
-                                                            {/* {"*".repeat(user.password?.length || 6)} */}
-                                                            {user.password}
-
+                                                        <td className="px-4 py-3 whitespace-nowrap text-[13px] md:text-sm">
+                                                            <span className="text-[13px] md:text-sm">
+                                                                {"*".repeat(user.password?.length || 6)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-[13px] md:text-sm">
+                                                            <div className="flex items-center gap-2 relative justify-end">
+                                                                <button
+                                                                    onClick={() => handleCopyPassword(user.password, index)}
+                                                                    className={`p-1 rounded transition-colors cursor-pointer ${isDark ? 'hover:bg-zinc-700 text-gray-400 hover:text-white' : 'hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700'}`}
+                                                                    title="Copy password"
+                                                                >
+                                                                    <Copy className="h-4 w-4" />
+                                                                </button>
+                                                                {copyMessageIndex === index && (
+                                                                    <span 
+                                                                        className={`absolute top-0 left-full ml-2 text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                                                                            copyMessage === 'Copied!' 
+                                                                                ? 'bg-green-500 text-white' 
+                                                                                : 'bg-red-500 text-white'
+                                                                        }`}
+                                                                        style={{
+                                                                            animation: 'fadeIn 0.3s ease-in-out',
+                                                                            minWidth: '60px',
+                                                                            textAlign: 'center',
+                                                                            fontSize: '11px'
+                                                                        }}
+                                                                    >
+                                                                        {copyMessage}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -299,7 +377,7 @@ function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
                                     {userData.map((user, index) => (
                                         <div
                                             key={index}
-                                            className={`p-4 rounded-lg shadow-md ${isDark ? 'bg-zinc-800' : 'bg-white'}`}
+                                            className={`p-4 rounded-2xl shadow-md ${isDark ? 'bg-zinc-800' : 'bg-white'}`}
                                         >
                                             <div className="grid grid-cols-2 gap-y-1 text-sm">
                                                 <div className={`font-medium truncate ${isDark ? "text-white" : "text-zinc-900"}`}>Username:</div>
@@ -307,8 +385,34 @@ function GenerateStudent({ isDark, toggleTheme, sidebardata }) {
                                                     {user.username}
                                                 </div>
                                                 <div className={`font-medium truncate ${isDark ? "text-white" : "text-zinc-900"}`}>Password:</div>
-                                                <div className={`${isDark ? 'text-white/70' : 'text-zinc-900/70'}`}>
-                                                    {"•".repeat(user.password?.length || 6)}
+                                                <div className={`${isDark ? 'text-white/70' : 'text-zinc-900/70'} flex items-center gap-2`}>
+                                                    <span>{"•".repeat(user.password?.length || 6)}</span>
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => handleCopyPassword(user.password, index)}
+                                                            className={`p-1 rounded transition-colors cursor-pointer ${isDark ? 'hover:bg-zinc-700 text-gray-400 hover:text-white' : 'hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700'}`}
+                                                            title="Copy password"
+                                                        >
+                                                            <Copy className="h-4 w-4" />
+                                                        </button>
+                                                        {copyMessageIndex === index && (
+                                                            <span 
+                                                                className={`absolute top-0 left-full ml-2 text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                                                                    copyMessage === 'Copied!' 
+                                                                        ? 'bg-green-500 text-white' 
+                                                                        : 'bg-red-500 text-white'
+                                                                }`}
+                                                                style={{
+                                                                    animation: 'fadeIn 0.3s ease-in-out',
+                                                                    minWidth: '60px',
+                                                                    textAlign: 'center',
+                                                                    fontSize: '11px'
+                                                                }}
+                                                            >
+                                                                {copyMessage}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
