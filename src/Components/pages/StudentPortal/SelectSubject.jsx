@@ -210,7 +210,7 @@ text-center snap-center transition-colors duration-150 ${isDark
                                                     ? "bg-zinc-800 text-white"
                                                     : "text-white/80"
                                                 : activeIndex === i
-                                                    ? "bg-indigo-500 text-white"
+                                                    ? "bg-[#696cff] text-white"
                                                     : "text-zinc-800"
                                             }`}
                                     >
@@ -245,7 +245,7 @@ text-center snap-center transition-colors duration-150 ${isDark
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
                                     {filtered.map((item) => (
                                         <div key={item.id} className={`${isDark ? "bg-zinc-900" : "bg-white"} rounded-xl overflow-hidden border ${isDark ? "border-zinc-800" : "border-zinc-200"}`}>
-                                            <div className="relative aspect-16/10 overflow-hidden cursor-pointer" onClick={() => navigate('/StudentPortel/Videos', { state: { video: item } })}>
+                                            <div className="relative aspect-16/10 overflow-hidden cursor-pointer" onClick={() => navigate('/StudentPortal/Videos', { state: { video: item } })}>
                                                 {imageErrors[item.id] || !item.thumb ? (
                                                     <div className={`h-full w-full flex flex-col items-center justify-center ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
                                                         <ImageOff className={`w-8 h-8 ${isDark ? 'text-zinc-600' : 'text-zinc-400'} mb-2`} />

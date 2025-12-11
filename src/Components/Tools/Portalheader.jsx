@@ -13,7 +13,7 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
     const isLecturePath = /^\/lecture\//i.test(pathname);
     const isStudentPath = /^\/student\//i.test(pathname);
     const isChapterPath = /^\/chapter\//i.test(pathname);
-    const isStudentPortalPath = /^\/StudentPortel\//i.test(pathname);
+    const isStudentPortalPath = /^\/StudentPortal\//i.test(pathname);
     const navigate = useNavigate();
 
     const [isMobile, setIsMobile] = useState(false);
@@ -147,7 +147,7 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
         if (isStudentPortalPath) {
             const ok = studentPortalAuth("student");
             if (!ok) {
-                navigate('/StudentPortel/Login');
+                navigate('/StudentPortal/Login');
             }
         }
     }
@@ -158,7 +158,7 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
         } else if (isLecturePath) {
             return "/lecture/Profile";
         } else if (isStudentPortalPath) {
-            return "/StudentPortel/profile";
+            return "/StudentPortal/profile";
         }
         return "/Admin/Profile";
     }
@@ -167,12 +167,12 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
         <header className={`${isDark ? 'bg-[#111111] border-zinc-800' : 'bg-white border-zinc-200'} flex items-center ${isMobile && !isSearchbar ? 'justify-end' : 'justify-between'} py-3 px-3 transition-colors duration-300`}>
             {/* Left: Title */}
             {!isMobile && (
-                <h1 className={`header-1 font-semibold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{`Welcome Back,${studentName}`}</h1>
+                <h1 className={`header-1 font-semibold whitespace-nowrap ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{`Welcome Back,${studentName}`}</h1>
             )}
 
             {/* Center: Search Bar */}
             {isSearchbar && (
-                <div className="relative flex items-center w-full max-w-md mx-4">
+                <div className="relative flex items-center w-full max-w-md mx-4 ">
                     <Search className="absolute left-3 text-zinc-400" size={20} />
                     <input
                         type="text"
@@ -187,8 +187,8 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
             {/* Right: Icons */}
             <div className={`flex items-center space-x-1`}>
                 {/* Dark / Light toggle */}
-                <button onClick={toggleTheme} className={`p-1 rounded-lg transition cursor-pointer ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`} aria-label="Toggle theme">
-                    {isDark ? <Sun size={18} className="text-gray-300" /> : <Moon size={18} className="text-zinc-700" />}
+                <button onClick={toggleTheme} className={`p-1 rounded-lg transition cursor-pointer mr-4 ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`} aria-label="Toggle theme">
+                    {isDark ? <Sun size={20} className="text-gray-300" /> : <Moon size={18} className="text-zinc-700" />}
                 </button>
 
                 {/* Notifications - only navigates on lecture routes */}

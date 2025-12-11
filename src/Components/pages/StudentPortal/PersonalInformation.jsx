@@ -86,7 +86,7 @@ function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
     }, []);
 
     const Field = ({ icon: Icon, label, value }) => (
-        <div className={`${isDark ? 'bg-zinc-800' : panelBg} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200`}>
+        <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-100'} rounded-xl p-4 shadow-sm transition-shadow duration-200`}>
             <div className="flex items-center gap-3">
                 <Icon className={`w-6 h-6 ${inputText}`} />
                 <div className="flex-1 min-w-0">

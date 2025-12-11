@@ -62,7 +62,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
   }, []);
 
   const isAdminPath = location?.pathname?.toLowerCase().startsWith("/admin");
-  const isStudentPortalPath = location?.pathname?.toLowerCase().startsWith("/studentportel");
+  const isStudentPortalPath = location?.pathname?.toLowerCase().startsWith("/StudentPortal");
 
   const handleLogout = async () => {
     try {
@@ -111,7 +111,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
         return;
       }
 
-      // Student portal logout (/StudentPortel...)
+      // Student portal logout (/StudentPortal...)
       if (isStudentPortalPath) {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -121,7 +121,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
               localStorage.removeItem(key);
             }
           });
-          navigate('/StudentPortel/Login');
+          navigate('/StudentPortal/Login');
           return;
         }
 
@@ -144,7 +144,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
                 localStorage.removeItem(key);
               }
             });
-            navigate("StudentPortel/Login");
+            navigate("StudentPortal/Login");
           } else {
             handleerror('Failed to logout. Please try again.');
           }
@@ -159,7 +159,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
             localStorage.removeItem(key);
           }
         });
-        navigate('/StudentPortel/Login');
+        navigate('/StudentPortal/Login');
         return;
       }
 
@@ -188,7 +188,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
       {/* ===== Mobile Toggle Button ===== */}
       <button
         onClick={() => setMobileMenu(!isMobileMenu)}
-        className={`md:hidden fixed top-6 left-4 cursor-pointer z-50 ${isDark ? 'bg-zinc-900 text-gray-200 hover:bg-zinc-800' : 'bg-transparent text-zinc-700 hover:bg-zinc-100'} ${!isMobileMenu && "p-2 rounded-lg"}  transition`}
+        className={`md:hidden fixed ${isStudentPortalPath ? "top-[13px] left-[13px]" : "top-6 left-4"} cursor-pointer z-50 ${isDark ? 'text-white hover:text-white/80' : 'bg-transparent text-zinc-700 hover:text-zinc-800'} ${!isMobileMenu && "p-2 rounded-lg"}  transition`}
       >
         {!isMobileMenu && <Menu size={22} />}
       </button>

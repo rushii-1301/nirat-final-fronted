@@ -34,7 +34,7 @@ function RoleFeatures({ theme, isDark, toggleTheme, sidebardata }) {
                             </div>
                         </div>
                         {/* Student Card */}
-                        <div onClick={() => navigate('/StudentPortel/login')} className={`relative rounded-2xl overflow-hidden border ${isDark ? 'bg-zinc-900/70 border-blue-400' : 'bg-white border-blue-500'} p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer`}>
+                        <div onClick={() => navigate('/StudentPortal/login')} className={`relative rounded-2xl overflow-hidden border ${isDark ? 'bg-zinc-900/70 border-blue-400' : 'bg-white border-blue-500'} p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer`}>
                             <div className="flex items-center gap-4">
                                 <img src={getAsset('student_login')} alt="Student" className="w-20 h-20 object-contain" />
                                 <div className="min-w-0">
@@ -116,10 +116,10 @@ function RoleFeatures({ theme, isDark, toggleTheme, sidebardata }) {
 
                         {/* Student Card - Horizontal content layout, blue border */}
                         <div
-                            onClick={() => navigate('/StudentPortel/login')}
+                            onClick={() => navigate('/StudentPortal/login')}
                             role="button"
                             tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === 'Enter') navigate('/StudentPortel/login') }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') navigate('/StudentPortal/login') }}
                             className={`relative rounded-3xl overflow-hidden border-2 ${isDark ? 'bg-zinc-900/70 border-blue-400' : 'bg-white border-blue-500'} px-10 py-8 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl cursor-pointer focus:outline-none focus:ring-2 ${isDark ? 'focus:ring-blue-400/60' : 'focus:ring-blue-500/60'}`}
                         >
                             {/* Card Content - Horizontal Layout */}

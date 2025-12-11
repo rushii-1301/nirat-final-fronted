@@ -35,7 +35,8 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
   const [error, setError] = useState(null);
   const [bookData, setBookData] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [viewMode, setViewMode] = useState('single'); // 'single' or 'continuous'
+  const [viewMode, setViewMode] = useState('continuous'); // 'single' or 'continuous'
+  const [pdfNotFound, setPdfNotFound] = useState(false);
 
   // Get book ID from navigation state
   const bookId = location.state?.bookId;
@@ -44,12 +45,7 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
   useEffect(() => {
     const fetchBookById = async () => {
       if (!bookId) {
-        // If no bookId, use fallback data
-        setBookData({
-          pdfUrl: "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf",
-          title: "PDF Viewer",
-          totalPages: 150
-        });
+        // If no bookId, show empty state
         setLoading(false);
         return;
       }
@@ -94,20 +90,12 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
             totalPages: 150
           });
         } else {
-          console.log('Book not found, using fallback');
-          setBookData({
-            pdfUrl: "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf",
-            title: "PDF Viewer",
-            totalPages: 150
-          });
+          console.log('Book not found');
+          // Don't set fallback PDF, let it show empty state
         }
       } catch (error) {
         console.error('Failed to fetch book data:', error);
-        setBookData({
-          pdfUrl: "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf",
-          title: "PDF Viewer",
-          totalPages: 150
-        });
+        // Don't set fallback PDF on error
       } finally {
         setLoading(false);
       }
@@ -120,12 +108,12 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
   console.log('Book ID:', bookId);
   console.log('Book Data:', bookData);
 
-  // If API PDF URL is provided but backend is not accessible, fallback to local PDF
-  let finalPdfUrl = bookData?.pdfUrl || "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf";
-  if (finalPdfUrl.includes('192.168.1.53')) {
-    // Backend not accessible, use local fallback PDF
-    finalPdfUrl = "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf";
-    console.log('Backend not accessible, using local PDF fallback');
+  // If no PDF URL, don't set fallback
+  let finalPdfUrl = bookData?.pdfUrl;
+  if (finalPdfUrl && finalPdfUrl.includes('192.168.1.53')) {
+    // Backend not accessible, don't use fallback
+    finalPdfUrl = null;
+    console.log('Backend not accessible, no PDF available');
   }
 
   // Debug: Log the final PDF URL being used
@@ -144,9 +132,25 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
           const pdf = await loadingTask.promise;
           setTotalPages(pdf.numPages);
           console.log(`PDF loaded with ${pdf.numPages} pages`);
+          setPdfNotFound(false);
         }
       } catch (error) {
         console.error('Error detecting PDF pages:', error);
+        // Check if it's a backend "Not Found" response - if so, don't show error UI
+        const isBackendNotFound = error.message && (
+          error.message.includes('Not Found') || 
+          error.message.includes('404') ||
+          error.name === 'InvalidPDFException'
+        );
+        
+        if (isBackendNotFound) {
+          console.log('Backend returned Not Found, using fallback PDF silently');
+          setPdfNotFound(false); // Ensure error UI is not shown
+        } else {
+          // For other PDF errors, show the error UI
+          setPdfNotFound(true);
+          console.log('PDF not found, showing error UI');
+        }
         // Fallback to default page count
         setTotalPages(bookData?.totalPages || 150);
       } finally {
@@ -292,6 +296,47 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
               <p className="text-sm font-medium">Loading PDF...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Show PDF not found UI if PDF failed to load
+  if (pdfNotFound) {
+    return (
+      <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-100 text-zinc-900"} h-screen transition-colors duration-300`}>
+        {/* Conditionally render sidebar based on fullscreen state */}
+        {!isFullscreen && <Sidebar isDark={isDark} sidebardata={sidebardata} />}
+        
+        <div className={`flex flex-col min-h-0 min-w-0 h-screen w-full ${isFullscreen ? 'px-0 pb-0' : 'md:ml-15 lg:ml-72 px-0 pb-0'} transition-all duration-300`}>
+          <div className="sticky top-0 z-20">
+            <Portalheader title="PDF Not Found" isDark={isDark} toggleTheme={toggleTheme} />
+          </div>
+          <main className={`${isFullscreen ? '' : 'mt-4'} flex-1 flex items-center justify-center min-h-0 p-8`}>
+            <div className="text-center max-w-md">
+              <div className={`w-20 h-20 ${isDark ? 'bg-red-900/20' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-6`}>
+                <FileText className="w-10 h-10 text-red-500" />
+              </div>
+              <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                PDF Not Found
+              </h2>
+              <p className={`${isDark ? 'text-gray-400' : 'text-black'} mb-6`}>
+                The PDF file you're looking for could not be loaded. Please check if the file exists or try again later.
+              </p>
+              <div className={`p-4 rounded-lg ${isDark ? 'bg-zinc-800' : 'bg-white'} mb-6`}>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-black'}`}>
+                  <strong>File attempted:</strong><br />
+                  <span className="text-xs font-mono break-all">{pdfFile}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => window.location.reload()}
+                className={`px-6 py-2 ${isDark ? 'bg-white hover:bg-gray-100 text-gray-900' : 'bg-[#3498db] hover:bg-purple-700 text-white'} cursor-pointer rounded-lg transition-colors`}
+              >
+                Try Again
+              </button>
             </div>
           </main>
         </div>
@@ -843,6 +888,415 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
 //             </div>
 //           </div>
 //         </main>
+//       </div>
+//     </div>
+//   );
+// }
+
+// import React, { useState, useEffect } from 'react';
+// import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw, Download, Upload, FileText } from 'lucide-react';
+
+// export default function PDFViewer() {
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [scale, setScale] = useState(1.2);
+//   const [rotation, setRotation] = useState(0);
+//   const [numPages, setNumPages] = useState(0);
+//   const [loading, setLoading] = useState(true);
+//   const [pdfDoc, setPdfDoc] = useState(null);
+//   const [pdfLoaded, setPdfLoaded] = useState(false);
+//   const [viewMode, setViewMode] = useState('continuous'); // 'single' or 'continuous'
+
+//   // Auto-load the English_Syllabus.pdf on component mount
+//   useEffect(() => {
+//     loadDefaultPDF();
+//   }, []);
+
+//   const loadDefaultPDF = async () => {
+//     setLoading(true);
+//     try {
+//       // Load PDF.js from CDN first - try a different version
+//       if (!window.pdfjsLib) {
+//         const script = document.createElement('script');
+//         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+//         script.async = true;
+        
+//         script.onload = async () => {
+//           console.log('PDF.js loaded, version:', window.pdfjsLib.version);
+//           window.pdfjsLib.GlobalWorkerOptions.workerSrc = 
+//             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+//           await loadPDFFile();
+//         };
+        
+//         document.body.appendChild(script);
+//       } else {
+//         await loadPDFFile();
+//       }
+//     } catch (error) {
+//       console.error('Error loading default PDF:', error);
+//       setLoading(false);
+//     }
+//   };
+
+//   const loadPDFFile = async () => {
+//     try {
+//       // Wait a moment for PDF.js to be fully ready
+//       await new Promise(resolve => setTimeout(resolve, 500));
+      
+//       // Load the GSEB textbook PDF file
+//       console.log('Loading PDF from: /PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf');
+//       const pdf = await window.pdfjsLib.getDocument('/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf').promise;
+//       console.log('PDF loaded successfully, pages:', pdf.numPages);
+//       setPdfDoc(pdf);
+//       setNumPages(pdf.numPages);
+//       setCurrentPage(1);
+//       setPdfLoaded(true);
+//       setLoading(false);
+//     } catch (error) {
+//       console.error('Error loading PDF file:', error);
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleFileUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (!file || file.type !== 'application/pdf') {
+//       alert('Please select a valid PDF file');
+//       return;
+//     }
+
+//     setLoading(true);
+//     const fileReader = new FileReader();
+    
+//     fileReader.onload = async function() {
+//       const typedarray = new Uint8Array(this.result);
+      
+//       try {
+//         const pdf = await window.pdfjsLib.getDocument(typedarray).promise;
+//         setPdfDoc(pdf);
+//         setNumPages(pdf.numPages);
+//         setCurrentPage(1);
+//         setPdfLoaded(true);
+//         setLoading(false);
+//       } catch (error) {
+//         console.error('Error loading PDF:', error);
+//         alert('Failed to load PDF. Please try another file.');
+//         setLoading(false);
+//       }
+//     };
+    
+//     fileReader.readAsArrayBuffer(file);
+//   };
+
+//   const handlePrevPage = () => {
+//     console.log('Previous page clicked, current page:', currentPage);
+//     if (currentPage > 1) {
+//       setCurrentPage(currentPage - 1);
+//     }
+//   };
+
+//   const handleNextPage = () => {
+//     console.log('Next page clicked, current page:', currentPage, 'total pages:', numPages);
+//     if (currentPage < numPages) {
+//       setCurrentPage(currentPage + 1);
+//     }
+//   };
+
+//   const handleZoomIn = () => {
+//     setScale(prev => Math.min(prev + 0.2, 3.0));
+//   };
+
+//   const handleZoomOut = () => {
+//     setScale(prev => Math.max(prev - 0.2, 0.5));
+//   };
+
+//   const handleRotate = () => {
+//     setRotation(prev => (prev + 90) % 360);
+//   };
+
+//   const toggleViewMode = () => {
+//     setViewMode(prev => (prev === 'single' ? 'continuous' : 'single'));
+//   };
+
+//   useEffect(() => {
+//     if (pdfDoc && pdfLoaded) {
+//       renderPage();
+//     }
+//   }, [currentPage, scale, rotation, pdfDoc, pdfLoaded, viewMode]);
+
+//   const renderPage = async () => {
+//     if (!pdfDoc) return;
+
+//     try {
+//       console.log('Rendering in', viewMode, 'mode');
+//       const canvas = document.getElementById('pdf-canvas');
+      
+//       if (!canvas) {
+//         console.error('Canvas not found!');
+//         return;
+//       }
+      
+//       const context = canvas.getContext('2d');
+//       console.log('Canvas found:', canvas.width, 'x', canvas.height);
+//       console.log('Context:', context);
+
+//       // Test canvas with a simple rectangle first
+//       canvas.width = 800;
+//       canvas.height = 600;
+//       context.fillStyle = 'red';
+//       context.fillRect(50, 50, 200, 100);
+//       context.fillStyle = 'black';
+//       context.font = '20px Arial';
+//       context.fillText('Canvas Test - If you see this, canvas works!', 50, 200);
+      
+//       // Wait a moment to see the test
+//       await new Promise(resolve => setTimeout(resolve, 1000));
+
+//       if (viewMode === 'single') {
+//         // Single page mode - render only current page
+//         console.log('Rendering single page:', currentPage, 'of', numPages);
+//         const page = await pdfDoc.getPage(currentPage);
+//         const viewport = page.getViewport({ scale: scale, rotation: rotation });
+        
+//         console.log('Viewport dimensions:', viewport.width, 'x', viewport.height);
+        
+//         canvas.height = viewport.height;
+//         canvas.width = viewport.width;
+        
+//         // Clear canvas before rendering
+//         context.fillStyle = 'white';
+//         context.fillRect(0, 0, canvas.width, canvas.height);
+
+//         const renderContext = {
+//           canvasContext: context,
+//           viewport: viewport
+//         };
+
+//         console.log('Starting single page render...');
+//         await page.render(renderContext).promise;
+//         console.log('Single page rendered successfully:', currentPage);
+//       } else {
+//         // Continuous mode - render all pages
+//         console.log('Rendering all pages for continuous scroll');
+        
+//         // Calculate total dimensions needed
+//         let totalHeight = 0;
+//         let maxWidth = 0;
+//         const pageData = [];
+
+//         for (let i = 1; i <= numPages; i++) {
+//           const page = await pdfDoc.getPage(i);
+//           const viewport = page.getViewport({ scale: scale, rotation: rotation });
+//           pageData.push({ page, viewport });
+//           totalHeight += viewport.height + 20; // Add 20px spacing between pages
+//           if (viewport.width > maxWidth) {
+//             maxWidth = viewport.width;
+//           }
+//         }
+
+//         console.log('Total canvas size:', maxWidth, 'x', totalHeight);
+        
+//         // Set canvas size for all pages
+//         canvas.height = totalHeight;
+//         canvas.width = maxWidth;
+        
+//         // Clear canvas before rendering
+//         context.fillStyle = 'white';
+//         context.fillRect(0, 0, canvas.width, canvas.height);
+
+//         // Render all pages
+//         let yOffset = 0;
+//         for (let i = 0; i < pageData.length; i++) {
+//           const { page, viewport } = pageData[i];
+//           console.log(`Rendering page ${i + 1} at offset ${yOffset}`);
+          
+//           const renderContext = {
+//             canvasContext: context,
+//             viewport: viewport,
+//             transform: [1, 0, 0, 1, 0, yOffset]
+//           };
+
+//           await page.render(renderContext).promise;
+//           yOffset += viewport.height + 20; // Add spacing between pages
+//         }
+        
+//         console.log('All pages rendered successfully in continuous mode');
+//       }
+//     } catch (err) {
+//       console.error('Error rendering page:', err);
+//     }
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+//         <div className="text-center">
+//           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+//           <p className="text-gray-700 text-lg font-medium">Loading PDF...</p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   if (!pdfLoaded) {
+//     return (
+//       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+//         <div className="bg-white p-10 rounded-2xl shadow-2xl max-w-md w-full mx-4">
+//           <div className="text-center mb-6">
+//             <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+//               <Upload className="w-10 h-10 text-blue-600" />
+//             </div>
+//             <h2 className="text-2xl font-bold text-gray-800 mb-2">PDF Viewer</h2>
+//             <p className="text-gray-600">Upload a PDF file to view</p>
+//           </div>
+
+//           <label className="block">
+//             <input
+//               type="file"
+//               accept="application/pdf"
+//               onChange={handleFileUpload}
+//               className="hidden"
+//               id="pdf-upload"
+//             />
+//             <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+//               <Upload className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+//               <p className="text-gray-700 font-medium mb-1">Click to upload PDF</p>
+//               <p className="text-sm text-gray-500">or drag and drop</p>
+//             </div>
+//           </label>
+
+//           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+//             <p className="text-sm text-gray-600 text-center">
+//               📄 Supports standard PDF files<br />
+//               🔒 Files are processed locally in your browser
+//             </p>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+//       {/* Header */}
+//       <div className="bg-white shadow-lg">
+//         <div className="px-6 py-3 border-b border-gray-200 flex items-center justify-between">
+//           <div>
+//             <h1 className="text-xl font-bold text-gray-800">📄 PDF Viewer</h1>
+//             <p className="text-sm text-gray-500">{numPages} pages loaded</p>
+//           </div>
+//           <label className="cursor-pointer">
+//             <input
+//               type="file"
+//               accept="application/pdf"
+//               onChange={handleFileUpload}
+//               className="hidden"
+//             />
+//             <div className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center gap-2">
+//               <Upload className="w-4 h-4" />
+//               Upload New PDF
+//             </div>
+//           </label>
+//         </div>
+        
+//         {/* Controls Bar */}
+//         <div className="p-4 flex items-center justify-between flex-wrap gap-4">
+//           <div className="flex items-center gap-2">
+//             <button
+//               onClick={handlePrevPage}
+//               disabled={currentPage === 1}
+//               className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition bg-white border border-gray-300"
+//               title="Previous Page"
+//             >
+//               <ChevronLeft className="w-5 h-5" />
+//             </button>
+            
+//             <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
+//               <input
+//                 type="number"
+//                 value={currentPage}
+//                 onChange={(e) => {
+//                   const page = parseInt(e.target.value);
+//                   if (page >= 1 && page <= numPages) {
+//                     setCurrentPage(page);
+//                   }
+//                 }}
+//                 className="w-16 text-center border border-gray-300 rounded px-2 py-1 text-sm font-medium"
+//                 min="1"
+//                 max={numPages}
+//               />
+//               <span className="text-sm font-medium text-gray-600">
+//                 / {numPages}
+//               </span>
+//             </div>
+
+//             <button
+//               onClick={handleNextPage}
+//               disabled={currentPage === numPages}
+//               className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition bg-white border border-gray-300"
+//               title="Next Page"
+//             >
+//               <ChevronRight className="w-5 h-5" />
+//             </button>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <button
+//               onClick={handleZoomOut}
+//               className="p-2 rounded-lg hover:bg-gray-100 transition bg-white border border-gray-300"
+//               title="Zoom Out"
+//             >
+//               <ZoomOut className="w-5 h-5" />
+//             </button>
+            
+//             <span className="text-sm font-medium px-3 py-2 bg-white rounded-lg border border-gray-300 min-w-[70px] text-center">
+//               {Math.round(scale * 100)}%
+//             </span>
+
+//             <button
+//               onClick={handleZoomIn}
+//               className="p-2 rounded-lg hover:bg-gray-100 transition bg-white border border-gray-300"
+//               title="Zoom In"
+//             >
+//               <ZoomIn className="w-5 h-5" />
+//             </button>
+
+//             <button
+//               onClick={handleRotate}
+//               className="p-2 rounded-lg hover:bg-gray-100 transition bg-white border border-gray-300 ml-2"
+//               title="Rotate"
+//             >
+//               <RotateCw className="w-5 h-5" />
+//             </button>
+
+//             <button
+//               onClick={toggleViewMode}
+//               className="p-2 rounded-lg hover:bg-gray-100 transition bg-white border border-gray-300 ml-2"
+//               title={`View Mode: ${viewMode === 'single' ? 'Single Page' : 'Continuous Scroll'}`}
+//             >
+//               <FileText className="w-5 h-5" />
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* PDF Display Area */}
+//       <div className="flex-1 overflow-auto p-6">
+//         <div className="flex justify-center">
+//           <div className="bg-white shadow-2xl">
+//             <canvas 
+//               id="pdf-canvas" 
+//               className="max-w-full h-auto"
+//             />
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Footer */}
+//       <div className="bg-white border-t border-gray-200 px-6 py-3">
+//         <div className="flex items-center justify-between text-sm text-gray-600">
+//           <span>Use arrow buttons or scroll to navigate</span>
+//           <span>Zoom: {Math.round(scale * 100)}% • Page: {currentPage}/{numPages}</span>
+//         </div>
 //       </div>
 //     </div>
 //   );

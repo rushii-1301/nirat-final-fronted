@@ -168,42 +168,42 @@ function App() {
   const StudentpoartalSidebar = [
     {
       label: "Home",
-      to: "/StudentPortel/home",
+      to: "/StudentPortal/home",
       icon: ["home_tranperent_dark", "home_tranperent_light"]
     },
     {
       label: "Book",
-      to: "/StudentPortel/chapter",
+      to: "/StudentPortal/chapter",
       icon: ["book_dark", "book_light"]
     },
     {
       label: "Chat",
-      to: "/StudentPortel/OpenChart",
+      to: "/StudentPortal/OpenChart",
       icon: ["chat_dark", "chat_light"]
     },
     {
       label: "Watched Lecture",
-      to: "/StudentPortel/WatchedLeachers",
+      to: "/StudentPortal/WatchedLeachers",
       icon: ["video_dark", "video_light"]
     },
     {
       label: "Purchase History",
-      to: "/StudentPortel/PuchaseHistory",
+      to: "/StudentPortal/PuchaseHistory",
       icon: ["puchase_dark", "puchase_light"]
     },
     {
       label: "Saved Videos",
-      to: "/StudentPortel/SavedVideos",
+      to: "/StudentPortal/SavedVideos",
       icon: ["saved_dark", "saved_light"]
     },
     {
       label: "Setting",
-      to: "/StudentPortel/Settings",
+      to: "/StudentPortal/Settings",
       icon: ["settings_dark", "settings_light"]
     },
     {
       label: "Profile",
-      to: "/StudentPortel/profile",
+      to: "/StudentPortal/profile",
       icon: ["profile_dark", "profile_light"]
     },
 
@@ -290,21 +290,21 @@ function App() {
         <Route path="/student/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={studentSidebar} />} />
 
 
-        <Route path="/StudentPortel" element={<Navigate to="/StudentPortel/login" />} />
-        <Route path="/StudentPortel/login" element={<PortalSignUp theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/PortalDetails" element={<PortalDetails theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/home" element={<SelectSubject theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/Chapter" element={<Chapter theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/ChapterTitle" element={<ChapterTitle theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/OpenChart" element={<OpenChart theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/WatchedLeachers" element={<WatchedLeachers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/PuchaseHistory" element={<PuchaseHistory theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/SavedVideos" element={<SavedVideos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/profile" element={<PersonalInformation theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/Videos" element={<Videos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/Videos/:id" element={<Videos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/Settings" element={<Settings theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
-        <Route path="/StudentPortel/desplaypdf" element={<PDFSlideViewer theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal" element={<Navigate to="/StudentPortal/login" />} />
+        <Route path="/StudentPortal/login" element={<PortalSignUp theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/PortalDetails" element={<PortalDetails theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/home" element={<SelectSubject theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/Chapter" element={<Chapter theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/ChapterTitle" element={<ChapterTitle theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/OpenChart" element={<OpenChart theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/WatchedLeachers" element={<WatchedLeachers theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/PuchaseHistory" element={<PuchaseHistory theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/SavedVideos" element={<SavedVideos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/profile" element={<PersonalInformation theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/Videos" element={<Videos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/Videos/:id" element={<Videos theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/Settings" element={<Settings theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
+        <Route path="/StudentPortal/desplaypdf" element={<PDFSlideViewer theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={StudentpoartalSidebar} />} />
 
 
 

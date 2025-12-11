@@ -602,7 +602,7 @@ function VideosS({ isDark, toggleTheme, sidebardata }) {
                                     <h3 className="text-sm font-semibold mb-3">Related Video</h3>
                                     <div className="space-y-3">
                                         {pageData.relatedVideos.map((rv)=> (
-                                            <div key={rv.id} onClick={() => navigate(`/StudentPortel/Videos/${rv.id}`, { state: { video: rv }, replace: true })} className={`flex gap-3 items-center rounded-lg border ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'} p-2 cursor-pointer hover:opacity-80 transition-opacity`}>
+                                            <div key={rv.id} onClick={() => navigate(`/StudentPortal/Videos/${rv.id}`, { state: { video: rv }, replace: true })} className={`flex gap-3 items-center rounded-lg border ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'} p-2 cursor-pointer hover:opacity-80 transition-opacity`}>
                                                 <div className="w-24 h-16 rounded-md overflow-hidden bg-zinc-800/60">
                                                     {rv.thumb ? (
                                                         <div className={`w-full h-full bg-cover bg-center`} style={{ backgroundImage: `url('${rv.thumb}')` }} />

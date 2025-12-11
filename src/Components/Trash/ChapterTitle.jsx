@@ -93,7 +93,7 @@ export default function ChapterTitle({ isDark, toggleTheme, sidebardata }) {
                     </p>
                   </div>
                   <button
-                    onClick={() => navigate("/StudentPortel/desplaypdf")}
+                    onClick={() => navigate("/StudentPortal/desplaypdf")}
                     className={`${isDark ? 'bg-white text-black' : 'bg-[#3498db] text-white'} px-5 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-gray-100 transition shadow-sm w-[25vh] cursor-pointer`}
                   >
                     Start Reading

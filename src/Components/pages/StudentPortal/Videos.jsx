@@ -1073,7 +1073,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                 {pageData.relatedVideos.map((rv) => (
                                                     <div
                                                         key={rv.id}
-                                                        onClick={() => navigate(`/StudentPortel/Videos/${rv.id}`, { state: { video: rv }, replace: true })}
+                                                        onClick={() => navigate(`/StudentPortal/Videos/${rv.id}`, { state: { video: rv }, replace: true })}
                                                         className={`flex gap-2 md:gap-3 items-center rounded-lg border ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'} p-2 cursor-pointer hover:opacity-80 transition-opacity`}
                                                     >
                                                         <div className="w-24 h-16 rounded-md overflow-hidden bg-zinc-800/60">

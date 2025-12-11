@@ -211,7 +211,7 @@ nirat-final-fronted/
 - `/Student/lectures` - Student lectures
 - `/Student/paid` - Payment info
 
-### 5. **Student Portal** (`/StudentPortel/*`)
+### 5. **Student Portal** (`/StudentPortal/*`)
 **Purpose:** Student-facing interface for learning
 
 **Key Components:**
@@ -246,19 +246,19 @@ nirat-final-fronted/
 - Profile customization
 
 **Routes:**
-- `/StudentPortel/login` - Student login
-- `/StudentPortel/PortalDetails` - Enter details
-- `/StudentPortel/home` - Subject selection
-- `/StudentPortel/Chapter` - Chapter listing
-- `/StudentPortel/Videos` - Video player
-- `/StudentPortel/Videos/:id` - Specific video
-- `/StudentPortel/desplaypdf` - PDF viewer
-- `/StudentPortel/OpenChart` - Chat interface
-- `/StudentPortel/WatchedLeachers` - Watch history
-- `/StudentPortel/PuchaseHistory` - Purchases
-- `/StudentPortel/SavedVideos` - Saved videos
-- `/StudentPortel/profile` - Profile
-- `/StudentPortel/Settings` - Settings
+- `/StudentPortal/login` - Student login
+- `/StudentPortal/PortalDetails` - Enter details
+- `/StudentPortal/home` - Subject selection
+- `/StudentPortal/Chapter` - Chapter listing
+- `/StudentPortal/Videos` - Video player
+- `/StudentPortal/Videos/:id` - Specific video
+- `/StudentPortal/desplaypdf` - PDF viewer
+- `/StudentPortal/OpenChart` - Chat interface
+- `/StudentPortal/WatchedLeachers` - Watch history
+- `/StudentPortal/PuchaseHistory` - Purchases
+- `/StudentPortal/SavedVideos` - Saved videos
+- `/StudentPortal/profile` - Profile
+- `/StudentPortal/Settings` - Settings
 
 ### 6. **Authentication & Startup** (`/Startup/*`)
 **Purpose:** User authentication and onboarding

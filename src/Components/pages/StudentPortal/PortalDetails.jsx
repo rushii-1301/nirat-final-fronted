@@ -266,7 +266,7 @@ function PortalDetails() {
           console.error('Failed to persist student details completion flag:', e);
         }
 
-        navigate('/StudentPortel/home');
+        navigate('/StudentPortal/home');
       } else {
         handleerror('Failed to save profile');
       }
@@ -283,17 +283,17 @@ function PortalDetails() {
   };
 
   // Dynamic classes based on theme
-  const containerCls = `min-h-screen flex flex-col md:flex-row ${theme === 'dark' ? 'bg-black' : 'bg-white'}`;
-  const formContainerCls = `w-full max-w-3xl rounded-2xl p-6 md:p-8 shadow-2xl ${theme === 'dark' ? 'bg-zinc-900' : 'bg-white'}`;
+  const containerCls = `min-h-screen flex flex-col md:flex-row ${theme === 'dark' ? 'bg-black' : 'bg-zinc-100'}`;
+  const formContainerCls = `w-full max-w-3xl rounded-2xl p-6 md:p-8 ${theme === 'dark' ? 'bg-zinc-900' : 'bg-white'}`;
   const inputCls = `w-full rounded-md px-3 py-2 text-sm border ${theme === 'dark' 
     ? 'bg-zinc-800 border-[#2A2A2A] text-white placeholder-gray-500 focus:border-[#3A3A3A]' 
-    : 'bg-[#F5F5F5] border-[#E0E0E0] text-[#333333] placeholder-[#999999] focus:border-[#4A4AFF]'} focus:outline-none`;
+    : 'bg-[#F5F5F5] border-[#E0E0E0] text-black placeholder-[#999999] focus:border-[#4A4AFF]'} focus:outline-none`;
   const labelCls = `block mb-2 text-[14px] font-medium leading-[100%] capitalize mb-1 font-[Inter] ${theme === 'dark' ? 'text-white' : 'text-black'}`;
   const headingCls = `text-[32px] font-bold leading-[100%] capitalize mb-4 font-[Inter] ${theme === 'dark' ? 'text-white' : 'text-[#333333]'}`;
 
   return (
     <div className={`w-full ${containerCls}`}>
-      <div className={`w-full md:w-2/3 flex items-center justify-center p-6 ${theme === 'dark' ? 'bg-black' : 'bg-white'}`}>
+      <div className={`w-full md:w-2/3 flex items-center justify-center p-6 ${theme === 'dark' ? 'bg-black' : 'bg-zinc-100'}`}>
         <div className="text-center">
           <div className="flex flex-col items-center">
             <img
