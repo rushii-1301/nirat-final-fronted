@@ -4,6 +4,7 @@ import Header from "../../Tools/Header";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets";
+import { ArrowLeft } from "lucide-react";
 
 function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter/Narration" }) {
   const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
@@ -66,10 +67,10 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
     }
   };
 
-  const cardCls = `${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"} border rounded-2xl p-4 sm:p-5 shadow-sm transition-colors duration-200`;
+  const cardCls = `${isDark ? "bg-zinc-900" : "bg-white"} border border-transparent rounded-2xl p-4 sm:p-5 transition-colors duration-200`;
 
   return (
-    <div className={`flex ${isDark ? "bg-black text-gray-100" : "bg-zinc-50 text-zinc-900"} h-screen overflow-hidden transition-colors duration-300`}>
+    <div className={`flex ${isDark ? "bg-black text-gray-100" : "bg-[#F5F5F9] text-zinc-900"} h-screen overflow-hidden transition-colors duration-300`}>
       {/* Sidebar */}
       <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
@@ -85,17 +86,28 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
           <div className="w-full mx-auto space-y-4">
             {/* Toolbar row */}
             <div
-              className={`${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"} sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90 shadow-sm`}
+              className={`${isDark ? "bg-zinc-900" : "bg-white"} sticky top-0 z-30 border border-transparent rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}
             >
-              <div className={`${isDark ? "text-white" : "text-zinc-900"} text-base sm:text-lg font-medium`}>
-                Add Chapter Management
+              <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
+                <button
+                  onClick={() => navigate(-1)}
+                  className={`mr-3 rounded-full transition-all cursor-pointer ${isDark ? 'text-gray-200 hover:text-white' : 'text-zinc-800 hover:text-zinc-900'}`}
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <h2 className={`text-md font-semibold transition-colors duration-300 ${isDark ? 'text-gray-200' : 'text-[#696CFF]'}`}>
+                  Add Chapter Management
+                </h2>
               </div>
               <div className="flex gap-2 w-[200px] justify-center items-center">
                 <button
-                  onClick={() => navigate(backto)}
+                  onClick={() => {
+                    setMinutes("");
+                    setLanguage("");
+                  }}
                   className={`${isDark
-                      ? "bg-zinc-800 text-gray-300 hover:bg-zinc-700 border border-zinc-700"
-                      : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-300"
+                    ? "bg-zinc-800 text-gray-300 hover:bg-zinc-700 border border-zinc-700"
+                    : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-300"
                     } w-full cursor-pointer px-4 py-1.5 flex items-center justify-center rounded-md text-sm`}
                 >
                   Cancel
@@ -104,8 +116,8 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                   onClick={handleNext}
                   disabled={!minutes || !["30", "45", "60"].includes(minutes) || !language}
                   className={`${isDark
-                      ? "bg-white text-black hover:bg-zinc-100 disabled:bg-zinc-300 disabled:text-zinc-600"
-                      : "bg-[#696CFF] text-white hover:bg-[#696CFF]/90 disabled:bg-zinc-300 disabled:text-zinc-500"
+                    ? "bg-white text-black hover:bg-zinc-100 disabled:bg-zinc-300 disabled:text-zinc-600"
+                    : "bg-[#696CFF] text-white hover:bg-[#696CFF]/90 disabled:bg-zinc-300 disabled:text-zinc-500"
                     } w-full cursor-pointer px-4 py-1.5 flex items-center justify-center rounded-md text-sm disabled:cursor-not-allowed disabled:opacity-70`}
                 >
                   Next
@@ -131,8 +143,8 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                     value={minutes}
                     onChange={(e) => setMinutes(e.target.value)}
                     className={`${isDark
-                        ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
-                        : "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
+                      ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-[#696CFF]"
+                      : "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-[#696CFF]"
                       }`}
                   >
                     <option value="">Select Minute</option>
@@ -162,8 +174,8 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
                     className={`${isDark
-                        ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
-                        : "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
+                      ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-[#696CFF]"
+                      : "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-[#696CFF]"
                       }`}
                   >
                     <option value="">Enter Language</option>

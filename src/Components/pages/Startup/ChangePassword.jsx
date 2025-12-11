@@ -108,7 +108,7 @@ function ChangePassword({ theme = 'dark', isDark: isDarkProp, toggleTheme }) {
                     {/* Back Button */}
                     <button
                         onClick={() => navigate('/Admin/Profile')}
-                        className={`mb-4 flex items-center gap-2 text-sm font-medium transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                        className={`mb-4 flex items-center cursor-pointer gap-2 text-sm font-medium transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
                         <ArrowLeft className="w-4 h-4" />
@@ -151,9 +151,9 @@ function ChangePassword({ theme = 'dark', isDark: isDarkProp, toggleTheme }) {
                                     aria-label={showOldPassword ? "Hide password" : "Show password"}
                                 >
                                     {showOldPassword ? (
-                                        <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    ) : (
                                         <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    ) : (
+                                        <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
                                     )}
                                 </button>
                             </div>
@@ -185,9 +185,9 @@ function ChangePassword({ theme = 'dark', isDark: isDarkProp, toggleTheme }) {
                                     aria-label={showNewPassword ? "Hide password" : "Show password"}
                                 >
                                     {showNewPassword ? (
-                                        <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    ) : (
                                         <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    ) : (
+                                        <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
                                     )}
                                 </button>
                             </div>
@@ -219,9 +219,9 @@ function ChangePassword({ theme = 'dark', isDark: isDarkProp, toggleTheme }) {
                                     aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
                                 >
                                     {showConfirmNewPassword ? (
-                                        <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
-                                    ) : (
                                         <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    ) : (
+                                        <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
                                     )}
                                 </button>
                             </div>
@@ -234,7 +234,7 @@ function ChangePassword({ theme = 'dark', isDark: isDarkProp, toggleTheme }) {
                         <div className="pt-1 sm:pt-2">
                             <button
                                 type="submit"
-                                className={(isDark ? "bg-white text-black hover:bg-gray-100 active:bg-gray-200" : "bg-gray-900 text-white hover:bg-black active:bg-black/90") + " w-full font-bold text-xs sm:text-sm md:text-base lg:text-lg uppercase tracking-wider rounded-lg py-2 sm:py-2.5 md:py-3 transition-colors touch-manipulation"}
+                                className={(isDark ? "bg-white text-black hover:bg-gray-100 active:bg-gray-200" : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80") + " cursor-pointer w-full font-bold text-xs sm:text-sm md:text-base lg:text-lg uppercase tracking-wider rounded-lg py-2 sm:py-2.5 md:py-3 transition-colors touch-manipulation"}
                             >
                                 Submit
                             </button>

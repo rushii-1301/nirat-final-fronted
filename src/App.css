@@ -163,3 +163,7 @@ select:-webkit-autofill:focus {
     height: 10px;
   }
 }
+
+*:focus {
+  outline: none;
+}

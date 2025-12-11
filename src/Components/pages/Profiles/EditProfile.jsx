@@ -28,7 +28,7 @@ function EditProfile({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebard
         })
         if (data.photo) {
           const normalizedPhoto = data.photo.replace(/\\/g, '/');
-          setPhotoUrl(`${BACKEND_API_URL}/${normalizedPhoto}`)
+          setPhotoUrl(normalizedPhoto)
           localStorage.setItem('admin_profile_image', normalizedPhoto)
         }
       } catch (err) {
@@ -91,7 +91,7 @@ function EditProfile({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebard
       <Sidebar isDark={isDark} sidebardata={sidebardata} />
       <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 transition-all duration-300`}>
         <div className="sticky top-0 z-20">
-          <Header title="Edit Profile" isDark={isDark} toggleTheme={toggleTheme} />
+          <Header title="Edit Profile" isDark={isDark} toggleTheme={toggleTheme} isBack={true} backPath={"/Admin/Profile"} />
         </div>
 
         <main className="mt-6 overflow-y-auto no-scrollbar pr-1">
@@ -140,8 +140,10 @@ function EditProfile({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebard
               </div>
 
               <div className="flex items-center gap-3 pt-1">
-                <button type="button" onClick={() => navigate('/Admin/Profile')} className={(isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-gray-200 text-gray-900 hover:bg-gray-300") + " px-5 py-2 rounded-md font-semibold cursor-pointer"}>Cancel</button>
-                <button type="submit" disabled={isSubmitting} className={(isDark ? "bg-white text-black hover:bg-gray-200" : "bg-gray-900 text-white hover:bg.black") + " px-5 py-2 rounded-md font-semibold cursor-pointer disabled:opacity-60"}>{isSubmitting ? 'Saving...' : 'Submit'}</button>
+                {/* <button type="button" onClick={() => navigate('/Admin/Profile')} className={(isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-gray-200 text-gray-900 hover:bg-gray-300") + " px-5 py-2 rounded-md font-semibold cursor-pointer"}>
+                  Cancel
+                </button> */}
+                <button type="submit" disabled={isSubmitting} className={(isDark ? "bg-white text-black hover:bg-gray-200" : "bg-[#696CFF] text-white hover:bg.black") + " px-5 py-2 rounded-md font-semibold cursor-pointer disabled:opacity-60"}>{isSubmitting ? 'Saving...' : 'Submit'}</button>
               </div>
             </form>
           </div>

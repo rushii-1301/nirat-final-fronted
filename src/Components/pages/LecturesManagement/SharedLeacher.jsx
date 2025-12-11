@@ -41,7 +41,7 @@ const LectureListItem = ({ lecture, isDark, onDelete }) => {
                     </button> */}
                     <button
                         onClick={() => onDelete && onDelete(lecture)}
-                        className={`${isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-gray-200' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'} inline-flex cursor-pointer items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition`}>
+                        className={`${isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-gray-200' : 'bg-white hover:bg-white/90 text-zinc-700'} inline-flex cursor-pointer items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition`}>
                         <span>Remove</span>
                         <Trash2 size={14} />
                     </button>
@@ -159,7 +159,7 @@ function SharedLeacher({ theme, isDark, toggleTheme, sidebardata }) {
     };
 
     return (
-        <div className={`flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-zinc-50 text-zinc-900'} h-screen transition-colors duration-300`}>
+        <div className={`flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-[#F5F5F9] text-zinc-900'} h-screen transition-colors duration-300`}>
             {/* Sidebar */}
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
@@ -180,7 +180,7 @@ function SharedLeacher({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* ===== Main Section (only list scrolls) ===== */}
                 <main className="mt-6 flex-1 flex flex-col min-h-0">
                     {/* Heading */}
-                    <div className={`shrink-0 text-base md:text-lg w-full font-semibold px-4 py-3 inline-block rounded ${isDark ? 'bg-zinc-900 text-white border border-zinc-800' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'} mb-5`}>
+                    <div className={`shrink-0 text-base md:text-lg w-full font-semibold px-4 py-3 inline-block rounded border border-transparent ${isDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700'} mb-5`}>
                         Shared lecture
                     </div>
 
@@ -191,7 +191,7 @@ function SharedLeacher({ theme, isDark, toggleTheme, sidebardata }) {
                                 {[...Array(6)].map((_, index) => (
                                     <div
                                         key={index}
-                                        className={`flex items-start justify-between gap-4 p-4 animate-pulse ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}
+                                        className={`flex items-start justify-between gap-4 p-4 animate-pulse`}
                                     >
                                         {/* Thumbnail skeleton */}
                                         <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} w-28 h-20 md:w-[320px] md:h-[150px] rounded-xl`} />
@@ -231,7 +231,7 @@ function SharedLeacher({ theme, isDark, toggleTheme, sidebardata }) {
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className={`w-full max-w-md rounded-2xl p-6 shadow-xl transform transition-all scale-100 ${isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white'}`}>
+                    <div className={`w-full max-w-md rounded-2xl p-6 transform transition-all scale-100 border border-transparent ${isDark ? 'bg-zinc-900' : 'bg-white'}`}>
                         <div className="flex flex-col items-center text-center">
                             <div className={`p-3 rounded-full mb-4 ${isDark ? 'bg-red-500/10 text-red-500' : 'bg-red-100 text-red-600'}`}>
                                 <Trash2 className="w-8 h-8" />

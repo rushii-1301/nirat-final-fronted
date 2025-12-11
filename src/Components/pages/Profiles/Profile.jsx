@@ -55,7 +55,7 @@ function Profile({ theme, isDark: isDarkProp, toggleTheme, sidebardata }) {
             <div className="flex flex-col items-center mb-6">
               <div className="relative">
                 {profile?.photo ? (
-                  <img src={`${BACKEND_API_URL}/${profile.photo}`} alt="Profile" className="h-24 w-24 rounded-full object-cover ring-2 ring-white/10" />
+                  <img src={`${profile.photo}`} alt="Profile" className="h-24 w-24 rounded-full object-cover ring-2 ring-white/10" />
                 ) : (
                   <div className="h-24 w-24 rounded-full ring-2 ring-white/10 flex items-center justify-center bg-zinc-800">
                     <User size={64} className="text-gray-300" />

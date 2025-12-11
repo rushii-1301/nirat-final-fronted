@@ -13,7 +13,7 @@ const LectureCard = ({ lecture, isDark }) => {
     return (
         <div
             onClick={() => navigate("/lecture/LectureVideo", { state: { lecturejson: lecture.lecture_url } })}
-            className={`rounded-lg overflow-hidden shadow ${isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-zinc-200'} cursor-pointer h-full transition-all duration-200 hover:shadow-xl`}
+            className={`rounded-lg overflow-hidden ${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent cursor-pointer h-full transition-all duration-200`}
         >
             {/* Video Thumbnail/Player Area (placeholder block, no real image) */}
             <div className={`relative ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} h-[150px] mx-auto overflow-hidden`}>
@@ -101,7 +101,7 @@ function Playedleacher({ theme, isDark, toggleTheme, sidebardata }) {
     }, [searchValue, lectureData]);
 
     return (
-        <div className={`flex ${resolvedDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900"} h-screen transition-colors duration-300`}>
+        <div className={`flex ${resolvedDark ? "bg-zinc-950 text-gray-100" : "bg-[#F5F5F9] text-zinc-900"} h-screen transition-colors duration-300`}>
             {/* Sidebar */}
             <Sidebar isDark={resolvedDark} sidebardata={sidebardata} />
 
@@ -122,7 +122,7 @@ function Playedleacher({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* ===== Main Section (only grid scrolls) ===== */}
                 <main className="mt-6 flex-1 flex flex-col min-h-0">
                     {/* Played Lecture Heading (non-scrolling) */}
-                    <div className={`shrink-0 text-base md:text-lg w-full font-semibold px-4 py-3 inline-flex items-center justify-between rounded ${resolvedDark ? 'bg-zinc-900 text-white border border-zinc-800' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'} mb-5`}>
+                    <div className={`shrink-0 text-base md:text-lg w-full font-semibold px-4 py-3 inline-flex items-center justify-between border border-transparent rounded ${resolvedDark ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-700'} mb-5`}>
                         <span>Played Lectures</span>
                         {totalCount > 0 && (
                             <span className={`text-sm font-normal ${resolvedDark ? 'text-gray-400' : 'text-zinc-600'}`}>
@@ -136,7 +136,7 @@ function Playedleacher({ theme, isDark, toggleTheme, sidebardata }) {
                         {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[1fr] items-stretch">
                                 {[...Array(6)].map((_, index) => (
-                                    <div key={index} className={`rounded-lg overflow-hidden shadow ${resolvedDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-zinc-200'} h-full animate-pulse`}>
+                                    <div key={index} className={`rounded-lg overflow-hidden ${resolvedDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent h-full animate-pulse`}>
                                         <div className={`${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'} h-[150px]`}></div>
                                         <div className="p-3 space-y-2">
                                             <div className={`h-4 w-3/4 rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>

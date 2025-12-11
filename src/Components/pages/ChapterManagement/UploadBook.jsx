@@ -1,10 +1,19 @@
 import React, { useRef, useState, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { RotateCcw, X, ChevronDown, ChevronUp, CloudUpload, ArrowLeft } from "lucide-react";
+import { RotateCcw, X, ChevronDown, ChevronUp, CloudUpload, ArrowLeft, FileText, Trash2, Check } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_API_URL, handlesuccess } from "../../../utils/assets";
+
+function formatBytes(bytes, decimals = 2) {
+  if (!+bytes) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
 
 function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardata, suggestion = true, backto }) {
   const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
@@ -21,6 +30,7 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
   const [isUploading, setIsUploading] = useState(false);
   const [hasUploadedFile, setHasUploadedFile] = useState(false); // Track if file was uploaded successfully
   const [uploadedMaterialIds, setUploadedMaterialIds] = useState([]); // Store uploaded material IDs
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Decide whether to show suggestions:
   // 1) If navigation provided its own suggestion flag, always respect that.
@@ -58,6 +68,8 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+
     try {
       const token = localStorage.getItem('access_token');
 
@@ -83,6 +95,10 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
             'accept': 'application/json',
             'Authorization': `Bearer ${token}`,
             // Don't set Content-Type, let axios set it with boundary for FormData
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
           }
         }
       );
@@ -276,7 +292,7 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
         <main className="mt-4 sm:mt-6 flex-1 overflow-hidden">
           <div className="w-full mx-auto h-full flex flex-col space-y-4">
             {/* Toolbar row (sticky) */}
-            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} sticky top-0 z-30 border rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}>
+            <div className={`${isDark ? 'bg-zinc-900' : 'bg-white'} sticky top-0 z-30 border border-transparent rounded-lg px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}>
               <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-base sm:text-lg font-medium`}>
                 <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-md font-semibold flex items-center`}>
                   <button
@@ -323,7 +339,7 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
 
             {/* Upload Chapter content panel */}
             <div
-              className={`rounded-2xl mb-2 border px-5 sm:px-7 py-5 sm:py-6 transition-colors duration-300 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
+              className={`rounded-2xl mb-2 border border-transparent px-5 sm:px-7 py-5 sm:py-6 transition-colors duration-300 ${isDark ? "bg-zinc-900" : "bg-white"
                 }`}
             >
               {/* Heading + description */}
@@ -375,27 +391,98 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
                   )}
 
                   {uploadedFile && (
-                    <div
-                      className={`inline-flex items-center gap-2 max-w-sm rounded-full px-3.5 py-1.5 text-[11px] sm:text-xs border ${isDark
-                        ? "bg-zinc-900/60 border-zinc-700 text-gray-100"
-                        : "bg-zinc-50 border-zinc-300 text-zinc-800"
-                        }`}
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span className="truncate flex-1">
-                        {uploadedFile.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setUploadedFile(null)}
-                        className={`cursor-pointer flex items-center justify-center w-5 h-5 rounded-full text-[10px] transition-colors shrink-0 ${isDark
-                          ? "bg-zinc-800 text-gray-200 hover:bg-white hover:text-black"
-                          : "bg-zinc-200 text-zinc-700 hover:bg-[#5a5de6] hover:text-white"
-                          }`}
-                        aria-label="Remove uploaded file"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                    <div className="w-full">
+                      {!isUploading ? (
+                        // Static File Card View (Image 1 Style)
+                        <div className={`relative group flex items-center p-4 rounded-xl border transition-all duration-200 ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-white border-[#ecebf1] hover:border-[#696CFF]"
+                          }`}>
+                          {/* File Icon */}
+                          <div className={`shrink-0 h-12 w-12 rounded-lg flex items-center justify-center ${isDark ? "bg-[#352e18]" : "bg-[#FFF4D6]"
+                            }`}>
+                            <FileText className={`w-6 h-6 ${isDark ? "text-[#ffd454]" : "text-[#FFB400]"}`} />
+                          </div>
+
+                          {/* Content */}
+                          <div className="ml-4 flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${isDark ? "text-gray-100" : "text-[#141522]"
+                              }`}>
+                              {uploadedFile.name}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatBytes(uploadedFile.size)} • PDF
+                            </p>
+                          </div>
+
+                          {/* Delete Action */}
+                          <button
+                            type="button"
+                            onClick={() => setUploadedFile(null)}
+                            className={`ml-4 p-2 rounded-full transition-colors cursor-pointer ${isDark
+                              ? "hover:bg-zinc-700 text-gray-400 hover:text-red-400"
+                              : "hover:bg-red-50 text-gray-400 hover:text-red-500"
+                              }`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        // Progress/Uploading View (Image 2 Style)
+                        <div className={`relative p-4 rounded-xl border ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-white border-[#ecebf1]"
+                          }`}>
+                          <div className="flex items-start gap-4">
+                            {/* Thumbnail with Check overlay */}
+                            <div className="relative">
+                              <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${isDark ? "bg-[#352e18]" : "bg-[#FFF4D6]"
+                                }`}>
+                                <FileText className={`w-6 h-6 ${isDark ? "text-[#ffd454]" : "text-[#FFB400]"}`} />
+                              </div>
+                              {/* Success Check Overlay */}
+                              {uploadProgress === 100 && (
+                                <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-white dark:border-zinc-800">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              {/* Header Row */}
+                              <div className="flex items-center justify-between mb-1">
+                                <p className={`text-sm font-medium truncate ${isDark ? "text-gray-100" : "text-[#141522]"
+                                  }`}>
+                                  {uploadedFile.name}
+                                </p>
+                                <div className="flex items-center gap-3">
+                                  <span className={`text-xs font-medium ${isDark ? "text-gray-400" : "text-gray-500"
+                                    }`}>
+                                    {uploadProgress}%
+                                  </span>
+                                  <button
+                                    type="button"
+                                    // onClick={() =>  cancel upload logic if needed }
+                                    className={`cursor-pointer ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Size info */}
+                              <p className="text-xs text-gray-400 mb-3">
+                                {formatBytes(uploadedFile.size)}
+                              </p>
+
+                              {/* Progress Bar */}
+                              <div className={`h-1.5 w-full rounded-full overflow-hidden ${isDark ? "bg-zinc-700" : "bg-gray-100"
+                                }`}>
+                                <div
+                                  className="h-full bg-emerald-500 transition-all duration-300 ease-out rounded-full"
+                                  style={{ width: `${uploadProgress}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

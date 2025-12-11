@@ -16,8 +16,8 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
     const navigate = useNavigate();
 
     // Circle math (match AdminDashboard)
-    const outerRadius = 100;
-    const innerRadius = 70;
+    const outerRadius = 115;
+    const innerRadius = 85;
     const outerCirc = 2 * Math.PI * outerRadius;
     const innerCirc = 2 * Math.PI * innerRadius;
 
@@ -42,8 +42,12 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
         const fetchDashboard = async () => {
             setLoading(true);
             try {
+                const url = isAdminPath
+                    ? `${BACKEND_API_URL}/admin-portal/student-management/dashboard`
+                    : `${BACKEND_API_URL}/dashboard/student`;
+
                 const res = await axios.get(
-                    `${BACKEND_API_URL}/dashboard/student`,
+                    url,
                     {
                         headers: {
                             accept: "application/json",
@@ -54,26 +58,30 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
 
                 const root = res.data || {};
                 const data = root.data || root;
+                // API response has student_metrics at root.data level based on user JSON
                 const metrics = data.student_metrics || {};
                 const progress = metrics.progress || {};
 
-                const total_students = metrics.total_students ?? 0;
-                const totalLectures = metrics.total_lectures ?? 0;
+                // Extract values directly from metrics object based on the new JSON structure
+                const total_students_val = metrics.total_students ?? 0;
+                const total_lectures_val = metrics.total_lectures ?? 0;
+                const total_paid_val = metrics.total_paid ?? 0;
+
                 const completedLectures = progress.completed_lectures ?? 0;
-                const totalAvailableLectures =
-                    progress.total_available_lectures ?? totalLectures ?? 0;
+                const totalAvailableLectures = progress.total_available_lectures ?? 0;
 
                 const progressPercent = progress.progress_percentage ?? 0;
-                const completionPercent =
-                    totalAvailableLectures > 0
-                        ? (Number(completedLectures) / Number(totalAvailableLectures)) * 100
-                        : 0;
 
-                setTotalStudent(Number(total_students) || 0);
-                setTotalWatchedLecture(Number(totalLectures) || 0);
-                setTotalPaid(Number(completedLectures) || 0);
-                setPlayedPercent(Number(progressPercent) || 0);
-                setSharedPercent(Number(completionPercent) || 0);
+                // Calculate completion percent for second ring
+                const completionPercent = totalAvailableLectures > 0
+                    ? (Number(completedLectures) / Number(totalAvailableLectures)) * 100
+                    : 0;
+
+                setTotalStudent(Number(total_students_val));
+                setTotalWatchedLecture(Number(total_lectures_val));
+                setTotalPaid(Number(total_paid_val));
+                setPlayedPercent(Number(progressPercent));
+                setSharedPercent(Number(completionPercent));
             } catch (error) {
                 console.error("Failed to fetch student dashboard", error);
                 handleerror("Failed to load student dashboard");
@@ -83,7 +91,7 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
         };
 
         fetchDashboard();
-    }, []);
+    }, [isAdminPath]);
 
     useEffect(() => {
         setProgressFactor(0);
@@ -110,7 +118,7 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
     };
 
     return (
-        <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900"} h-screen transition-colors duration-300`}>
+        <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-[#F5F5F9] text-zinc-900"} h-screen transition-colors duration-300`}>
             {/* Sidebar */}
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
@@ -122,148 +130,159 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 </div>
 
                 {/* ===== Main Section (scrollable) ===== */}
-                <main className="mt-6 flex-1 overflow-y-auto no-scrollbar">
-                    <div className="w-full mx-auto space-y-8">
-                        {/* ---- Stat Cards (Top Row) ---- */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 auto-rows-[minmax(140px,auto)] w-full mt-1 mx-auto px-1">
-                            {loading ? (
-                                // Loading skeleton cards
-                                [...Array(4)].map((_, i) => (
-                                    <div key={`skeleton-${i}`} className={`${isDark ? 'bg-[#0D0D11] border-[#1c1c24]' : 'bg-white border-[#E4E7F2]'} border rounded-3xl shadow px-5 py-6 flex flex-col justify-between`}>
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-4 h-4 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
-                                            <div className={`h-4 w-24 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
-                                        </div>
-                                        <div className={`mt-3 h-8 w-16 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse`}></div>
+                <main className="mt-6 flex-1 overflow-y-auto no-scrollbar space-y-6">
+                    {/* ---- Stat Cards (Top Row) ---- */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 auto-rows-[minmax(90px,auto)]">
+                        {loading ? (
+                            // Loading skeleton cards
+                            [...Array(4)].map((_, i) => (
+                                <div key={`skeleton-${i}`} className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] animate-pulse`}>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-4 h-4 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                        <div className={`h-3 w-24 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
                                     </div>
-                                ))
-                            ) : (
-                                [
-                                    { title: 'Total Student', value: totalStudent, to: '/student/list' },
-                                    { title: 'Total Lectures List', value: totalWatchedLecture, to: '/student/lectures' },
-                                    { title: 'Total Paid', value: totalPaid, to: '/student/paid' },
-                                    { title: 'Add Student', value: 'none', to: '/student/Add' },
-                                ].map((card, i) => {
-                                    const cardClass = `${isDark ? 'bg-[#0D0D11] border-[#1c1c24]' : 'bg-white border-[#E4E7F2]'} border rounded-[24px] shadow px-5 py-6 flex flex-col justify-between transition ${isAdminPath ? 'cursor-default' : 'cursor-pointer hover:-translate-y-0.5'}`;
-                                    const content = (
-                                        <>
-                                            <div className="flex items-center gap-2">
-                                                <img src={isDark ? getAsset('Eyes_dark') : getAsset('Eyes_light')} alt="icon" className="w-4 h-4" />
-                                                <div className={`text-[12px] md:text-sm font-medium ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{card.title}</div>
-                                            </div>
-                                            {card.value !== 'none'
-                                                ? <div className={`mt-3 text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{card.value}</div>
-                                                :
+                                    <div className={`mt-4 h-6 w-16 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                </div>
+                            ))
+                        ) : (
+                            [
+                                { title: 'Total Student', value: totalStudent, to: '/student/list' },
+                                { title: 'Total Lectures List', value: totalWatchedLecture, to: '/student/lectures' },
+                                { title: 'Total Paid', value: totalPaid, to: '/student/paid' },
+                                { title: 'Add Student', value: 'none', to: '/student/Add' },
+                            ].map((card, i) => {
+                                const cardClass = `${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] transition ${isAdminPath ? 'cursor-default' : 'cursor-pointer'}`;
+                                const content = (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <img src={isDark ? getAsset('Eyes_dark') : getAsset('Eyes_light')} alt="icon" className="w-4 h-4" />
+                                            <div className={`text-[12px] md:text-sm font-medium ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{card.title}</div>
+                                        </div>
+                                        {card.value !== 'none'
+                                            ? <div className={`mt-3 text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{card.value}</div>
+                                            :
+                                            <div className="mt-3">
                                                 <UserPlus className={`w-6 h-6 ${isDark ? 'text-white' : 'text-zinc-900'}`} />
-                                            }
-                                        </>
-                                    );
-
-                                    if (isAdminPath) {
-                                        return (
-                                            <div key={i} className={cardClass}>
-                                                {content}
                                             </div>
-                                        );
-                                    }
+                                        }
+                                    </>
+                                );
 
+                                if (isAdminPath) {
                                     return (
-                                        <div onClick={() => navigate(card.to)} key={i} className={cardClass}>
+                                        <div key={i} className={cardClass}>
                                             {content}
                                         </div>
                                     );
-                                })
-                            )}
-                        </div>
+                                }
 
-                        {/* ---- Total Lecture Chart (Second Row) ---- */}
-                        {/* ---- History ---- */}
-                        <div className="space-y-4 mx-auto px-1">
-                            <h2 className={`text-base md:text-lg font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>History</h2>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.1fr_0.6fr_0.5fr] gap-6">
-                                <div className={`${lectureCardClass} border p-5 pb-4 sm:p-8 sm:pb-3 mb-2 rounded-4xl shadow-xl flex flex-col gap-6 md:col-span-2 lg:col-span-2 xl:col-span-1`}>
-                                    <h3 className="text-lg font-medium">Student Progress</h3>
-
-                                    {/* SVG Rounded Rings */}
-                                    <div className="grid place-items-center">
-                                        {loading ? (
-                                            <div className="relative w-[200px] h-[200px] md:w-[260px] md:h-[260px] flex items-center justify-center">
-                                                <Loader2 className={`w-12 h-12 animate-spin ${isDark ? 'text-white' : 'text-zinc-900'}`} />
-                                            </div>
-                                        ) : (
-                                            <div className="relative w-[200px] h-[200px] md:w-[260px] md:h-[260px]">
-                                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
-                                                    <circle cx="110" cy="110" r={outerRadius} stroke={isDark ? '#27272a' : '#eef0f5'} strokeWidth="10" fill="none" />
-                                                    <circle cx="110" cy="110" r={innerRadius} stroke={isDark ? '#27272a' : '#f1f5f9'} strokeWidth="10" fill="none" />
-
-                                                    <circle
-                                                        cx="110"
-                                                        cy="110"
-                                                        r={outerRadius}
-                                                        stroke={isDark ? '#9BDCF2' : '#C3EBFA'}
-                                                        strokeWidth="10"
-                                                        strokeLinecap="round"
-                                                        fill="none"
-                                                        strokeDasharray={outerCirc}
-                                                        strokeDashoffset={outerOffset}
-                                                        style={{ transition: 'stroke-dashoffset 1s ease' }}
-                                                    />
-
-                                                    <circle
-                                                        cx="110"
-                                                        cy="110"
-                                                        r={innerRadius}
-                                                        stroke={isDark ? '#F7D64A' : '#FEE55A'}
-                                                        strokeWidth="10"
-                                                        strokeLinecap="round"
-                                                        fill="none"
-                                                        strokeDasharray={innerCirc}
-                                                        strokeDashoffset={innerOffset}
-                                                        style={{ transition: 'stroke-dashoffset 1s ease' }}
-                                                        transform={`rotate(${innerRotation} 110 110)`}
-                                                    />
-                                                </svg>
-                                            </div>
-                                        )}
+                                return (
+                                    <div onClick={() => navigate(card.to)} key={i} className={cardClass}>
+                                        {content}
                                     </div>
+                                );
+                            })
+                        )}
+                    </div>
 
-                                    {/* Bottom Labels */}
-                                    <div className="w-full mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        {[{
-                                            key: 'pending',
-                                            label: 'Student Progress',
-                                            icon: isDark ? getAsset('student_progress_dark') : getAsset('student_progress_light'),
-                                        }, {
-                                            key: 'all',
-                                            label: 'Student Active',
-                                            icon: isDark ? getAsset('student_active_dark') : getAsset('student_active_light'),
-                                        }].map((chip) => (
-                                            <div
-                                                key={chip.key}
-                                                className={`${legendCardClass} flex flex-wrap md:flex-nowrap items-center justify-between gap-3 sm:gap-5 rounded-2xl px-4 py-4 transition-colors w-full`}
-                                            >
-                                                <div className="flex items-center gap-3 text-sm font-medium">
-                                                    <span className={`w-9 h-9 rounded-full grid place-items-center ${isDark ? 'bg-[#262732]' : 'bg-white'}`}>
-                                                        <img src={chip.icon} alt={chip.label} className="w-4 h-4" />
-                                                    </span>
-                                                    <span>{chip.label}</span>
+                    {/* ---- Total Lecture Chart (Second Row) ---- */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.1fr_0.6fr_0.5fr] gap-2">
+                        <div className={`${isDark ? "bg-zinc-900" : "bg-white"} border border-transparent p-6 pb-0 rounded-2xl flex flex-col gap-0 md:col-span-2 xl:col-span-1`}>
+                            <h3 className={`text-2xl font-semibold ${isDark ? "text-white" : "text-[#141522]"}`}>History</h3>
+
+                            {/* Chart Container */}
+                            <div className="grid place-items-center mt-4 mb-4">
+                                {loading ? (
+                                    <div className="flex flex-col items-center w-full animate-pulse">
+                                        <div className={`rounded-full w-40 h-40 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                                        <div className="w-full mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            {Array.from({ length: 2 }).map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`flex items-center w-fit justify-between gap-4 rounded-2xl px-4 py-3 border border-transparent ${isDark ? "bg-zinc-800" : "bg-[#F5F5F9]"}`}
+                                                >
+                                                    <div className="flex items-center gap-2 text-sm font-medium">
+                                                        <span className={`w-8 h-8 rounded-full grid place-items-center ${isDark ? 'bg-zinc-800' : 'bg-white'}`}>
+                                                            <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} w-4 h-4 rounded-full`} />
+                                                        </span>
+                                                        <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} h-3 w-20 rounded-full`} />
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-5 sm:gap-3">
-                                                    <span className={`h-9 w-0.5 rounded-full ${isDark ? 'bg-white/25' : 'bg-zinc-900/30'}`}></span>
-                                                    <span className={`w-3.5 h-3.5 rounded-full ${legendDotColors[chip.key]}`}></span>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="w-full">
+                                        <div className="relative w-full max-w-[300px] aspect-square mx-auto">
+                                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="150" cy="150" r={outerRadius} stroke={isDark ? '#3f3f46' : '#e4e4e7'} strokeWidth="14" fill="none" />
+                                                <circle cx="150" cy="150" r={innerRadius} stroke={isDark ? '#3f3f46' : '#e4e4e7'} strokeWidth="14" fill="none" />
 
-                                {/* placeholders only on large screens to balance grid */}
-                                <div className="hidden lg:block"></div>
-                                <div className="hidden lg:block"></div>
+                                                <circle
+                                                    cx="150"
+                                                    cy="150"
+                                                    r={outerRadius}
+                                                    stroke={isDark ? '#9BDCF2' : '#C3EBFA'}
+                                                    strokeWidth="14"
+                                                    strokeLinecap="round"
+                                                    fill="none"
+                                                    strokeDasharray={outerCirc}
+                                                    strokeDashoffset={outerOffset}
+                                                    style={{ transition: 'stroke-dashoffset 1s ease' }}
+                                                />
+
+                                                <circle
+                                                    cx="150"
+                                                    cy="150"
+                                                    r={innerRadius}
+                                                    stroke={isDark ? '#F7D64A' : '#FEE55A'}
+                                                    strokeWidth="14"
+                                                    strokeLinecap="round"
+                                                    fill="none"
+                                                    strokeDasharray={innerCirc}
+                                                    strokeDashoffset={innerOffset}
+                                                    style={{ transition: 'stroke-dashoffset 1s ease' }}
+                                                    transform={`rotate(${innerRotation} 150 150)`}
+                                                />
+                                            </svg>
+                                        </div>
+
+                                        {/* Bottom Labels */}
+                                        <div className="w-full my-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            {[{
+                                                key: 'pending',
+                                                label: 'Student Progress',
+                                                icon: isDark ? getAsset('student_progress_dark') : getAsset('student_progress_light'),
+                                            }, {
+                                                key: 'all',
+                                                label: 'Student Active',
+                                                icon: isDark ? getAsset('student_active_dark') : getAsset('student_active_light'),
+                                            }].map((chip) => (
+                                                <div
+                                                    key={chip.key}
+                                                    className={`flex items-center justify-between rounded-2xl px-4 py-3 border border-transparent ${isDark ? "bg-zinc-800" : "bg-[#F5F5F9]"}`}
+                                                >
+                                                    <div className="flex items-center gap-2 text-sm font-medium">
+                                                        <span className={`w-8 h-8 rounded-full grid place-items-center ${isDark ? 'bg-[#262732]' : 'bg-white'}`}>
+                                                            <img src={chip.icon} alt={chip.label} className="w-4 h-4" />
+                                                        </span>
+                                                        <span>{chip.label}</span>
+                                                    </div>
+                                                    <div className={`${isDark ? 'text-white/50' : 'text-zinc-900'}`}>|</div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-3.5 h-3.5 rounded-full ${legendDotColors[chip.key]}`}></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
+                        {/* placeholders only on large screens to balance grid */}
+                        <div className="hidden lg:block"></div>
+                        <div className="hidden lg:block"></div>
                     </div>
                 </main>
             </div>

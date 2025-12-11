@@ -159,7 +159,10 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
             >
                 {/* Dark / Light toggle */}
                 <button onClick={toggleTheme} className={`p-2 rounded-lg transition cursor-pointer ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`} aria-label="Toggle theme">
-                    {isDark ? <Sun size={18} className="text-gray-300" /> : <Moon size={18} className="text-zinc-700" />}
+                    {isDark
+                        ? <Moon size={18} className="text-gray-300" />
+                        : <Sun size={18} className="text-zinc-700" />
+                    }
                 </button>
 
                 {/* Notifications - only navigates on lecture routes */}
@@ -181,7 +184,7 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
                     >
                         {adminProfileImage
                             ? <img
-                                src={adminProfileImage ? `${BACKEND_API_URL}/${adminProfileImage}` : "https://i.pravatar.cc/32"}
+                                src={adminProfileImage ? adminProfileImage : "https://i.pravatar.cc/32"}
 
                                 alt="User Avatar"
                                 className={`w-8 h-8 rounded-full border-2 ${isDark ? 'border-zinc-700' : 'border-zinc-300'} transition-colors duration-300`}

@@ -167,8 +167,8 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                             ? Array.from({ length: 5 }).map((_, i) => (
                                 <div
                                     key={i}
-                                    className={`${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}
-                                        border p-5 rounded-2xl  flex flex-col justify-between min-h-[120px] animate-pulse`}
+                                    className={`${isDark ? "bg-zinc-900" : "bg-white"}
+                                        border border-transparent p-5 rounded-2xl  flex flex-col justify-between min-h-[120px] animate-pulse`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -182,8 +182,8 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                             : cards.map((card, i) => (
                                 <div
                                     key={i}
-                                    className={`${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
-                                        } border p-5 rounded-2xl  flex flex-col justify-between min-h-[120px]`}
+                                    className={`${isDark ? "bg-zinc-900" : "bg-white"}
+                                        border border-transparent p-5 rounded-2xl  flex flex-col justify-between min-h-[120px]`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -209,9 +209,9 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                     <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.6fr] gap-6">
                         <div
                             className={`${isDark
-                                ? "bg-zinc-900 border-zinc-800"
-                                : "bg-white border-zinc-200"
-                                } border p-6 pb-0 rounded-2xl  flex flex-col gap-6`}
+                                ? "bg-zinc-900"
+                                : "bg-white"
+                                } border border-transparent p-6 pb-0 rounded-2xl  flex flex-col gap-6`}
                         >
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                 <div>
@@ -231,7 +231,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                         {Array.from({ length: 3 }).map((_, i) => (
                                             <div
                                                 key={i}
-                                                className={`flex items-center justify-between rounded-2xl px-4 py-3 border ${isDark ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-200 bg-zinc-50"}`}
+                                                className={`flex items-center justify-between rounded-2xl px-4 py-3 border border-transparent ${isDark ? "bg-zinc-900/60" : "bg-zinc-50"}`}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} w-10 h-10 rounded-full`} />
@@ -300,10 +300,10 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                         {normalizedSegments.map((segment) => (
                                             <div
                                                 key={segment.key}
-                                                className={`flex items-center justify-between rounded-2xl px-4 py-3 border ${isDark ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-200 bg-zinc-50"}`}
+                                                className={`flex items-center justify-between rounded-2xl px-4 py-3 border border-transparent ${isDark ? "bg-zinc-800" : "bg-[#F5F5F9]"}`}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-semibold ${isDark ? 'bg-zinc-800 text-white' : 'bg-white text-[#141522]'}`}>
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-semibold ${isDark ? 'text-white' : 'text-[#141522]'}`}>
                                                         <User2Icon className="w-full" />
                                                     </div>
                                                     <div>

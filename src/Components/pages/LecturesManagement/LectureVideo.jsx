@@ -304,7 +304,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 {lecturejson && (
                     <iframe
                         ref={videoRef}
-                        src={`https://19hnincmd661.id.wasmer.app/?lectureId=${location.state?.lectureId ||
+                        src={`https://xlhyimcoyqyp.id.wasmer.app/?lectureId=${location.state?.lectureId ||
                             (lecturejson.match(/(\d+)\.json$/) ? lecturejson.match(/(\d+)\.json$/)[1] : '2')
                             }`}
                         className="w-full h-full"

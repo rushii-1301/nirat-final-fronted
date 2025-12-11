@@ -10,7 +10,7 @@ import axios from "axios";
 const ChapterCard = ({ data, isDark, onDelete, onShare }) => {
     const navigate = useNavigate();
     return (
-        <div className={`rounded-lg ${isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-zinc-200'} p-4 shadow-md flex flex-col h-full`}>
+        <div className={`rounded-lg ${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent p-4 flex flex-col h-full`}>
             <div className="flex items-start gap-3 mb-3">
                 <img src={isDark ? getAsset("lectureicon_dark") : getAsset("lectureicon_light")} alt="Chapter" className="w-15 h-15 opacity-90" />
                 <div className="flex-1">
@@ -31,21 +31,21 @@ const ChapterCard = ({ data, isDark, onDelete, onShare }) => {
                     {/* Play Button */}
                     <button
                         onClick={() => navigate("/lecture/LectureVideo", { state: { lectureId: data.lecture_id } })}
-                        className={`cursor-pointer w-[30%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-semibold transition-colors duration-150 ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-[#696CFF] text-white hover:bg-[#575BFF]'}`}>
+                        className={`cursor-pointer w-[30%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-semibold transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}>
                         <span>Play</span>
-                        <Play fill={isDark ? 'black' : 'white'} className="w-4 h-4" />
+                        <Play fill="currentColor" className="w-4 h-4" />
                     </button>
                     {/* Share Button */}
                     <button
                         onClick={() => onShare && onShare(data)}
-                        className={`cursor-pointer w-[35%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-zinc-300 text-zinc-800 hover:bg-zinc-200'}`}>
+                        className={`cursor-pointer w-[35%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}>
                         <span>Share</span>
-                        <Share2 fill={isDark ? 'white' : 'black'} className="w-4 h-4" />
+                        <Share2 fill="currentColor" className="w-4 h-4" />
                     </button>
                     {/* Remove Button */}
                     <button
                         onClick={() => onDelete(data)}
-                        className={`cursor-pointer w-[45%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-zinc-300 text-zinc-800 hover:bg-zinc-200'}`}
+                        className={`cursor-pointer w-[45%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}
                     >
                         <span>Remove</span>
                         <Trash2 className="w-4 h-4" />
@@ -57,7 +57,7 @@ const ChapterCard = ({ data, isDark, onDelete, onShare }) => {
 };
 
 function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
-    const resolvedDark = typeof isDark === 'boolean' ? isDark : theme === 'dark';
+    // const resolvedDark = typeof isDark === 'boolean' ? isDark : theme === 'dark'; // Removed as per user request
     const [showFilter, setShowFilter] = useState(false);
     const [openFilter, setOpenFilter] = useState(null);
 
@@ -259,8 +259,8 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 params: {
-                    std: lectureToDelete.std,
-                    subject: lectureToDelete.subject,
+                    std: encodeURIComponent(lectureToDelete.std),
+                    subject: encodeURIComponent(lectureToDelete.subject),
                     lecture_id: lectureToDelete.lecture_id,
                 },
             });
@@ -359,9 +359,9 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
     }, [searchValue, lectureData]);
 
     return (
-        <div className={`flex ${resolvedDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900"} h-screen transition-colors duration-300`}>
+        <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-[#F5F5F9] text-zinc-900"} h-screen transition-colors duration-300`}>
             {/* Sidebar */}
-            <Sidebar isDark={resolvedDark} sidebardata={sidebardata} />
+            <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
             {/* Main Content (offset for fixed sidebar) */}
             <div className={`flex flex-col min-h-0 h-screen w-full md:ml-15 lg:ml-72 p-2 md:p-7 pb-0 transition-all duration-300`}>
@@ -369,7 +369,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                 <div className="sticky top-0 z-20">
                     <Header
                         title="Lecture Management"
-                        isDark={resolvedDark}
+                        isDark={isDark}
                         toggleTheme={toggleTheme}
                         isSearchbar={true}
                         searchValue={searchValue}
@@ -379,21 +379,21 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
 
                 {/* ===== Main Section ===== */}
                 <main className="mt-6 flex-1 flex flex-col min-h-0">
-                    <div className={`w-full rounded px-4 py-3 text-base md:text-lg flex items-center justify-between mb-2 shrink-0 ${resolvedDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-zinc-100 border border-zinc-200'}`}>
+                    <div className={`w-full rounded px-4 py-3 text-base md:text-lg flex items-center justify-between mb-2 shrink-0 border border-transparent ${isDark ? 'bg-zinc-900' : 'bg-white'}`}>
                         <div className="flex items-center gap-6 select-none">
-                            <span className={`${resolvedDark ? 'text-gray-300' : 'text-zinc-700'}`}><span className="font-bold">Total Lectures:</span> <span className="font-semibold">{filteredLectures.length}</span></span>
+                            <span className={`${isDark ? 'text-gray-300' : 'text-zinc-700'}`}><span className="font-bold">Total Lectures:</span> <span className="font-semibold">{filteredLectures.length}</span></span>
 
                             {selectedClass && (
                                 <>
-                                    <span className={`${resolvedDark ? 'bg-zinc-700' : 'bg-zinc-300'} h-5 w-px`} aria-hidden="true"></span>
-                                    <span className={`${resolvedDark ? 'text-gray-300' : 'text-zinc-700'}`}><span className="font-bold">Class:</span> <span className="font-semibold">{selectedClass}</span></span>
+                                    <span className={`${isDark ? 'bg-zinc-700' : 'bg-zinc-300'} h-5 w-px`} aria-hidden="true"></span>
+                                    <span className={`${isDark ? 'text-gray-300' : 'text-zinc-700'}`}><span className="font-bold">Class:</span> <span className="font-semibold">{selectedClass}</span></span>
                                 </>
                             )}
 
                             {selectedSubject && (
                                 <>
-                                    <span className={`${resolvedDark ? 'bg-zinc-700' : 'bg-zinc-300'} h-5 w-px`} aria-hidden="true"></span>
-                                    <span className={`${resolvedDark ? 'text-gray-300' : 'text-zinc-700'}`}><span className="font-bold">Subject:</span> <span className="font-semibold">{selectedSubject}</span></span>
+                                    <span className={`${isDark ? 'bg-zinc-700' : 'bg-zinc-300'} h-5 w-px`} aria-hidden="true"></span>
+                                    <span className={`${isDark ? 'text-gray-300' : 'text-zinc-700'}`}><span className="font-bold">Subject:</span> <span className="font-semibold">{selectedSubject}</span></span>
                                 </>
                             )}
                         </div>
@@ -406,33 +406,49 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                         </button> */}
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setShowFilter((prev) => !prev);
-                            setOpenFilter(null);
-                        }}
-                        className={`cursor-pointer w-fit inline-flex items-center gap-2 justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 mb-3 ${resolvedDark ? "bg-zinc-900 text-gray-100 hover:bg-zinc-800 border border-zinc-700" : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200 border border-zinc-300"}`}>
-                        <SlidersHorizontal className="w-4 h-4" />
-                        {showFilter ? "Hide Filter" : "Show Filter"}
-                    </button>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowFilter((prev) => !prev);
+                                setOpenFilter(null);
+                            }}
+                            className={`${isDark
+                                ? "bg-zinc-800 text-gray-100"
+                                : "bg-white text-zinc-800"
+                                } border border-transparent cursor-pointer inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 self-start`}
+                        >
+                            <SlidersHorizontal className="mr-2 w-4" />
+                            {showFilter ? "Hide Filter" : "Show Filter"}
+                        </button>
+                    </div>
 
                     {showFilter && (
                         <div
                             ref={filterRef}
-                            className={`mb-5 space-y-3 rounded-2xl border px-3 sm:px-4 py-3 shadow-md transition-all duration-200 ${resolvedDark ? "bg-black/40 border-zinc-800" : "bg-zinc-50 border-zinc-200"}`}>
+                            className={`mb-5 space-y-3 rounded-2xl border border-transparent px-3 sm:px-4 py-3 transition-all duration-200`}
+                        >
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div className={`relative ${openFilter === "class" ? "z-30" : "z-10"}`}>
+                                {/* Class/Standard Dropdown */}
+                                <div className="relative z-30">
                                     <button
                                         type="button"
                                         onClick={() => setOpenFilter((prev) => (prev === "class" ? null : "class"))}
-                                        className={`w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer shadow-sm hover:shadow transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"} ${resolvedDark ? "bg-zinc-900 border-zinc-700 text-gray-100" : "bg-white border-zinc-300 text-zinc-800"}`}>
-                                        <span>{selectedClass || "Class"}</span>
+                                        className={`${isDark
+                                            ? "bg-zinc-900 text-gray-100"
+                                            : "bg-white text-zinc-800"
+                                            } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                    >
+                                        <span className="font-bold text-[16px] leading-[100%]">{selectedClass || "Standard"}</span>
                                         <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
                                     </button>
                                     {openFilter === "class" && (
                                         <div
-                                            className={`relative z-40 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 px-3 py-3 shadow-xl transition-all duration-150 ${resolvedDark ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-zinc-800 border-zinc-300"}`}>
+                                            className={`${isDark
+                                                ? "bg-zinc-900 text-gray-100"
+                                                : "bg-white text-zinc-800"
+                                                } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150`}
+                                        >
                                             <div className="flex flex-wrap gap-2">
                                                 {classOptions.length > 0 ? (
                                                     classOptions.map((item) => (
@@ -443,68 +459,97 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                                                 setSelectedClass(item);
                                                                 setOpenFilter(null);
                                                             }}
-                                                            className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedClass === item ? `${resolvedDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}` : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
+                                                            className={`${selectedClass === item
+                                                                ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                : isDark
+                                                                    ? "bg-zinc-800 text-gray-100"
+                                                                    : "bg-zinc-100 text-zinc-800"
+                                                                } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
+                                                        >
                                                             {item}
                                                         </button>
                                                     ))
                                                 ) : (
-                                                    <p className={`text-xs ${resolvedDark ? 'text-gray-400' : 'text-zinc-500'}`}>No classes available</p>
+                                                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>No classes available</p>
                                                 )}
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
-                                {selectedClass &&
-                                    (
-
-                                        <div className={`relative ${openFilter === "subject" ? "z-30" : "z-10"}`}>
-                                            <button
-                                                type="button"
-                                                onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
-                                                className={`w-full flex items-center justify-between border px-4 py-2 text-xs sm:text-sm cursor-pointer ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"} ${resolvedDark ? "bg-zinc-900 border-zinc-700 text-gray-100" : "bg-white border-zinc-300 text-zinc-800"}`}>
-                                                <span>{selectedSubject || "Subject Name"}</span>
-                                                <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
-                                            </button>
-                                            {openFilter === "subject" && (
-                                                <div
-                                                    className={`relative z-40 -mt-px w-full rounded-b-xl rounded-t-none border border-t-0 px-3 py-3 shadow-lg ${resolvedDark ? "bg-zinc-900 text-gray-100 border-zinc-700" : "bg-white text-zinc-800 border-zinc-300"}`}>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {subjectOptions.length > 0 ? (
-                                                            subjectOptions.map((item) => (
-                                                                <button
-                                                                    key={item}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setSelectedSubject(item);
-                                                                        setOpenFilter(null);
-                                                                    }}
-                                                                    className={`cursor-pointer px-3 py-1 rounded-full text-xs transition-all duration-150 hover:scale-[1.03] ${selectedSubject === item ? `${resolvedDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}` : resolvedDark ? "bg-zinc-800 text-gray-100" : "bg-zinc-100 text-zinc-800"}`}>
-                                                                    {item}
-                                                                </button>
-                                                            ))
-                                                        ) : (
-                                                            <p className={`text-xs ${resolvedDark ? 'text-gray-400' : 'text-zinc-500'}`}>No subjects available</p>
-                                                        )}
-                                                    </div>
+                                {/* Subject Dropdown */}
+                                {selectedClass && (
+                                    <div className="relative z-20">
+                                        <button
+                                            type="button"
+                                            onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
+                                            disabled={!selectedClass}
+                                            className={`${isDark
+                                                ? "bg-zinc-900 text-gray-100"
+                                                : "bg-white text-zinc-800"
+                                                } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                        >
+                                            <span className="font-bold text-[16px] leading-[100%]">{selectedSubject || "Subject Name"}</span>
+                                            <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
+                                        </button>
+                                        {openFilter === "subject" && selectedClass && (
+                                            <div
+                                                className={`${isDark
+                                                    ? "bg-zinc-900 text-gray-100"
+                                                    : "bg-white text-zinc-800"
+                                                    } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150`}
+                                            >
+                                                <div className="flex flex-wrap gap-2">
+                                                    {subjectOptions.length > 0 ? (
+                                                        subjectOptions.map((item) => (
+                                                            <button
+                                                                key={item}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setSelectedSubject(item);
+                                                                    setOpenFilter(null);
+                                                                }}
+                                                                className={`${selectedSubject === item
+                                                                    ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                    : isDark
+                                                                        ? "bg-zinc-800 text-gray-100"
+                                                                        : "bg-zinc-100 text-zinc-800"
+                                                                    } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
+                                                            >
+                                                                {item}
+                                                            </button>
+                                                        ))
+                                                    ) : (
+                                                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>No subjects available</p>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
+                            {/* Reset / Apply Buttons */}
                             {selectedClass && selectedSubject && (
                                 <div className="flex items-center gap-3">
                                     <button
                                         type="button"
                                         onClick={resetFilters}
-                                        className={`cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm ${resolvedDark ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900" : "bg-transparent text-zinc-700 border border-zinc-300 hover:bg-zinc-100"}`}>
+                                        className={`${isDark
+                                            ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900"
+                                            : "bg-transparent text-zinc-800 border border-zinc-300 hover:bg-zinc-100"
+                                            } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
+                                    >
                                         Reset Filter
                                     </button>
                                     <button
                                         type="button"
                                         onClick={applyFilters}
-                                        className={`cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm shadow-sm ${resolvedDark ? "bg-white text-black hover:bg-zinc-100" : "bg-white text-zinc-900 hover:bg-zinc-100"}`}>
+                                        className={`${isDark
+                                            ? "bg-white text-black hover:bg-zinc-100"
+                                            : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80"
+                                            } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
+                                    >
                                         Apply Filter
                                     </button>
                                 </div>
@@ -517,38 +562,38 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                         {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 items-stretch gap-4 auto-rows-[1fr]">
                                 {[...Array(8)].map((_, index) => (
-                                    <div key={index} className={`rounded-lg ${resolvedDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-zinc-200'} p-4 shadow-md flex flex-col h-full animate-pulse`}>
+                                    <div key={index} className={`rounded-lg ${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent p-4 flex flex-col h-full animate-pulse`}>
                                         <div className="flex items-start gap-3 mb-3">
-                                            <div className={`w-15 h-15 rounded-md ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                            <div className={`w-15 h-15 rounded-md ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
                                             <div className="flex-1 space-y-2">
-                                                <div className={`h-4 w-3/4 rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                                                <div className={`h-3 w-1/2 rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                                <div className={`h-4 w-3/4 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                                <div className={`h-3 w-1/2 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
                                             </div>
                                         </div>
                                         <div className="space-y-2 pl-5 mb-3">
-                                            <div className={`h-2 w-full rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                                            <div className={`h-2 w-5/6 rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                                            <div className={`h-2 w-4/6 rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                            <div className={`h-2 w-full rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                            <div className={`h-2 w-5/6 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                            <div className={`h-2 w-4/6 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
                                         </div>
                                         <div className="flex items-center justify-around mt-auto pt-2 gap-2">
-                                            <div className={`h-8 w-full rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                                            <div className={`h-8 w-full rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
-                                            <div className={`h-8 w-full rounded ${resolvedDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                            <div className={`h-8 w-full rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                            <div className={`h-8 w-full rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+                                            <div className={`h-8 w-full rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : filteredLectures.length === 0 ? (
                             <div className="flex items-center justify-center h-64">
-                                <p className={`${resolvedDark ? 'text-gray-400' : 'text-zinc-600'}`}>No lectures found.</p>
+                                <p className={`${isDark ? 'text-gray-400' : 'text-zinc-600'}`}>No lectures found.</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 items-stretch gap-4 auto-rows-[1fr]">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-stretch gap-3 auto-rows-[1fr]">
                                 {filteredLectures.map((item) => (
                                     <ChapterCard
                                         key={item.lecture_id}
                                         data={item}
-                                        isDark={resolvedDark}
+                                        isDark={isDark}
                                         onDelete={handleDeleteClick}
                                         onShare={handleShareClick}
                                     />
@@ -561,21 +606,21 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* Delete Confirmation Modal */}
                 {showDeleteModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <div className={`w-full max-w-md rounded-2xl p-6 shadow-xl transform transition-all scale-100 ${resolvedDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white'}`}>
+                        <div className={`border border-transparent w-full max-w-md rounded-2xl p-6 transform transition-all scale-100 ${isDark ? 'bg-zinc-900' : 'bg-white'}`}>
                             <div className="flex flex-col items-center text-center">
-                                <div className={`p-3 rounded-full mb-4 ${resolvedDark ? 'bg-red-500/10 text-red-500' : 'bg-red-100 text-red-600'}`}>
+                                <div className={`p-3 rounded-full mb-4 ${isDark ? 'bg-red-500/10 text-red-500' : 'bg-red-100 text-red-600'}`}>
                                     <Trash2 className="w-8 h-8" />
                                 </div>
-                                <h3 className={`text-xl font-semibold mb-2 ${resolvedDark ? 'text-white' : 'text-gray-900'}`}>
+                                <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                     Delete Lecture?
                                 </h3>
-                                <p className={`text-sm mb-6 ${resolvedDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Are you sure you want to delete this lecture? This action cannot be undone.
                                 </p>
                                 <div className="flex gap-3 w-full">
                                     <button
                                         onClick={() => setShowDeleteModal(false)}
-                                        className={`flex-1 px-4 py-2.5 cursor-pointer rounded-xl font-medium transition-colors ${resolvedDark ? 'bg-zinc-800 text-white hover:bg-zinc-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                        className={`flex-1 px-4 py-2.5 cursor-pointer rounded-xl font-medium transition-colors ${isDark ? 'bg-zinc-800 text-white hover:bg-zinc-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                                     >
                                         Cancel
                                     </button>
@@ -595,10 +640,10 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* Share Lecture Modal */}
                 {showShareModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <div className={`w-full max-w-md rounded-2xl p-6 shadow-xl transform transition-all scale-100 ${resolvedDark ? "bg-zinc-900 border border-zinc-800" : "bg-white"}`}>
+                        <div className={`border border-transparent w-full max-w-md rounded-2xl p-6 transform transition-all scale-100 ${isDark ? "bg-zinc-900" : "bg-white"}`}>
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between">
-                                    <h3 className={`text-lg font-semibold ${resolvedDark ? "text-white" : "text-gray-900"}`}>
+                                    <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                                         Share Lecture
                                     </h3>
                                     <button
@@ -608,13 +653,13 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                             setLectureToShare(null);
                                             setShareStd("");
                                         }}
-                                        className={`cursor-pointer text-sm px-2 py-1 rounded-md ${resolvedDark ? "text-gray-300 hover:bg-zinc-800" : "text-gray-600 hover:bg-gray-100"}`}
+                                        className={`cursor-pointer text-sm px-2 py-1 rounded-md ${isDark ? "text-gray-300 hover:bg-zinc-800" : "text-gray-600 hover:bg-gray-100"}`}
                                     >
                                         ✕
                                     </button>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className={`text-sm font-medium ${resolvedDark ? "text-gray-200" : "text-gray-700"}`}>
+                                    <label className={`text-sm font-medium ${isDark ? "text-gray-200" : "text-gray-700"}`}>
                                         Class Number (Std)
                                     </label>
                                     <input
@@ -622,7 +667,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                         value={shareStd}
                                         onChange={(e) => setShareStd(e.target.value)}
                                         placeholder="Enter class (e.g., 10)"
-                                        className={`w-full rounded-md border px-3 py-2 text-sm outline-none ${resolvedDark ? "bg-zinc-900 border-zinc-700 text-gray-100 placeholder:text-gray-500" : "bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400"}`}
+                                        className={`w-full rounded-md border border-transparent px-3 py-2 text-sm outline-none ${isDark ? "bg-zinc-900 text-gray-100 placeholder:text-gray-500" : "bg-white text-zinc-900 placeholder:text-zinc-400"}`}
                                     />
                                 </div>
                                 <div className="flex gap-3 justify-end mt-2">
@@ -633,7 +678,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                             setLectureToShare(null);
                                             setShareStd("");
                                         }}
-                                        className={`px-4 py-2 cursor-pointer rounded-xl text-sm font-medium ${resolvedDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                        className={`px-4 py-2 cursor-pointer rounded-xl text-sm font-medium ${isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                                     >
                                         Cancel
                                     </button>

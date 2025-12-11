@@ -114,7 +114,7 @@ function AddChapter({ theme = 'dark', isDark: isDarkProp, toggleTheme, sidebarda
     return suggestions.slice(0, 2);
   }, [suggestions, showSuggestions]);
   return (
-    <div className={`flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-zinc-50 text-zinc-900'} h-screen overflow-hidden transition-colors duration-300`}>
+    <div className={`flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-[#F5F5F9] text-zinc-900'} h-screen overflow-hidden transition-colors duration-300`}>
       {/* Sidebar */}
       <Sidebar isDark={isDark} sidebardata={sidebardata} />
 

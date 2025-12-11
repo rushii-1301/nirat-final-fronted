@@ -259,7 +259,7 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className={`px-4 py-1 rounded transition-colors duration-300 ${resolvedDark ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200'}`}
+                  className={`px-4 py-1 cursor-pointer rounded transition-colors duration-300 ${resolvedDark ? 'bg-zinc-800 text-gray-300 hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200'}`}
                 >
                   Cancel
                 </button>
@@ -353,13 +353,13 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
                     <button
                       type="button"
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className={`absolute inset-y-0 right-0 flex items-center pr-3 text-sm ${resolvedDark ? 'text-gray-400 hover:text-gray-200' : 'text-zinc-500 hover:text-zinc-700'} transition-colors`}
+                      className={`absolute cursor-pointer inset-y-0 right-0 flex items-center pr-3 text-sm ${resolvedDark ? 'text-gray-400 hover:text-gray-200' : 'text-zinc-500 hover:text-zinc-700'} transition-colors`}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
-                        <EyeClosed className="w-5 h-5" />
-                      ) : (
                         <Eye className="w-5 h-5" />
+                      ) : (
+                        <EyeOff className="w-5 h-5" />
                       )}
                     </button>
                   </div>

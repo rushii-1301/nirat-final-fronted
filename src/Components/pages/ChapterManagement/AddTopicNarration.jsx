@@ -652,12 +652,12 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
 
             {/* Footer Actions */}
             <div className="flex justify-end gap-3 pt-6">
-              <button
+              {/* <button
                 onClick={() => navigate(-1)}
                 className="px-5 py-2 rounded-lg cursor-pointer border border-zinc-800 text-gray-400 text-xs sm:text-sm font-medium transition-colors"
               >
                 Cancel
-              </button>
+              </button> */}
               <button
                 onClick={handleNextClick}
                 className={`px-6 py-2 rounded-lg cursor-pointer text-xs sm:text-sm font-semibold hover:shadow-lg hover:shadow-white/10 transition-all transform active:scale-95 ${isDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'}`}

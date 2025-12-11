@@ -111,12 +111,12 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
     : [];
 
   const handleCreateMergedLecture = async () => {
-    if (!selectedChapters.length) return;
+    if (!confirmedChapters.length) return;
 
     // Build topicSelections payload grouped by material_id
     const grouped = {};
 
-    selectedChapters.forEach((item) => {
+    confirmedChapters.forEach((item) => {
       const mid = item.material_id;
       if (!mid) return;
 
@@ -216,7 +216,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
               className={`${isDark
                 ? "bg-zinc-900"
                 : "bg-white"
-                } sticky top-0 z-30 border border-transparent rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}
+                } sticky top-0 z-30 border border-transparent rounded-lg px-3 sm:px-4 py-3 flex items-center justify-between backdrop-blur bg-opacity-90`}
             >
               <div className={`${isDark ? 'text-white' : 'text-zinc-900'} text-lg font-semibold flex items-center`}>
                 <button
@@ -273,7 +273,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
               <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6">
                 {/* Left: Merge Chapter card */}
                 <div
-                  className={`flex-1 max-h-fit rounded-2xl border border-transparent px-5 sm:px-7 py-5 sm:py-6 ${isDark ? "bg-zinc-950" : "bg-white"
+                  className={`flex-1 max-h-fit rounded-lg border border-transparent px-5 sm:px-7 py-5 sm:py-6 ${isDark ? "bg-zinc-950" : "bg-white"
                     }`}
                 >
                   <div className="mb-2">
@@ -332,7 +332,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                             return (
                               <div
                                 key={chapter.id}
-                                className={`flex items-center gap-3 rounded-xl px-3 sm:px-4 py-2.5 text-xs sm:text-sm ${isDark
+                                className={`flex items-center gap-3 rounded-lg px-3 sm:px-4 py-2.5 text-xs sm:text-sm ${isDark
                                   ? "bg-[#1f1f1f] border border-zinc-800"
                                   : "bg-white border border-[#e9e7fb]"
                                   }`}
@@ -417,7 +417,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                   </div>
 
                   <div
-                    className={`mb-5 rounded-2xl border border-dashed px-4 py-3 ${isDark ? "border-zinc-700 bg-zinc-900" : "border-[#696CFF] bg-[#f9f8ff]"
+                    className={`mb-5 rounded-lg border border-dashed px-4 py-3 ${isDark ? "border-zinc-700 bg-zinc-900" : "border-[#696CFF] bg-[#f9f8ff]"
                       }`}
                   >
                     <p
@@ -432,7 +432,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                     <p className="text-xs sm:text-sm text-gray-400">Selected Chapters:</p>
                     {confirmedChapters.length === 0 ? (
                       <div
-                        className={`rounded-xl border px-3 py-2 text-xs sm:text-sm ${isDark
+                        className={`rounded-lg border px-3 py-2 text-xs sm:text-sm ${isDark
                           ? "border-zinc-800 bg-[#1f1f1f] text-gray-400"
                           : "border-[#e4e2f6] bg-white text-[#7a7cb0]"
                           }`}
@@ -444,7 +444,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                         {confirmedChapters.map((item) => (
                           <div
                             key={`${item.bookId}-${item.chapterId}`}
-                            className={`flex items-start gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm ${isDark
+                            className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm ${isDark
                               ? "bg-[#1f1f1f] border border-zinc-800 text-white"
                               : "bg-white border border-[#e5e3f6] text-[#1f1f3d]"
                               }`}
@@ -495,6 +495,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
 
                   <button
                     type="button"
+                    disabled={confirmedChapters.length === 0}
                     aria-disabled={confirmedChapters.length === 0}
                     onClick={handleCreateMergedLecture}
                     className={`w-full inline-flex items-center justify-center gap-2 rounded-md text-xs sm:text-sm font-medium px-4 py-2.5 cursor-pointer transition-colors ${isDark ? "bg-white text-black hover:bg-zinc-100" : "bg-[#6a6dff] text-white hover:bg-[#585bdf]"

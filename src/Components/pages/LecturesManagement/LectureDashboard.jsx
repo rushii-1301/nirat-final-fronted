@@ -29,10 +29,21 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
             try {
                 const token = localStorage.getItem('access_token') || '';
                 const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const response = await axios.get(`${BACKEND_API_URL}/dashboard/lecture`, { headers });
+
+                // Determine API endpoint based on role/path
+                const apiEndpoint = isAdminPath
+                    ? `${BACKEND_API_URL}/dashboard/admin/lectures`
+                    : `${BACKEND_API_URL}/dashboard/lecture`;
+
+                const response = await axios.get(apiEndpoint, { headers });
 
                 if (response.data?.status && response.data?.data) {
-                    setDashboardData(response.data.data);
+                    // Admin API returns data nested in 'totals', User API returns distinct fields directly
+                    const dataToSet = isAdminPath
+                        ? response.data.data.totals
+                        : response.data.data;
+
+                    setDashboardData(dataToSet);
                 }
             } catch (error) {
                 console.error('Error fetching lecture dashboard:', error);
@@ -42,7 +53,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
         };
 
         fetchDashboardData();
-    }, []);
+    }, [isAdminPath]);
 
     // Color palette
     const palette = isDark
@@ -78,7 +89,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
     ]), [totalLectures, dashboardData.pending_lectures, palette.all, palette.pending]);
 
     // Circle math
-    const baseRadius = 100;
+    const baseRadius = 115;
     const ringSpacing = 30;
     const chartTotalRaw = chartSegments.reduce((acc, seg) => acc + (Number.isFinite(seg.value) ? seg.value : 0), 0);
     const chartTotal = chartTotalRaw > 0 ? chartTotalRaw : 1; // Use 1 instead of 0 to avoid division by zero
@@ -134,7 +145,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
     };
 
     return (
-        <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-zinc-50 text-zinc-900"} h-screen transition-colors duration-300`}>
+        <div className={`flex ${isDark ? "bg-zinc-950 text-gray-100" : "bg-[#F5F5F9] text-zinc-900"} h-screen transition-colors duration-300`}>
             {/* Sidebar */}
             <Sidebar isDark={isDark} sidebardata={sidebardata} />
 
@@ -153,7 +164,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                             ? Array.from({ length: 3 }).map((_, i) => (
                                 <div
                                     key={i}
-                                    className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-2xl shadow-sm p-5 flex flex-col justify-between min-h-[120px] animate-pulse`}
+                                    className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] animate-pulse`}
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -188,7 +199,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                             navigate(items.to);
                                         }
                                     }}
-                                    className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-2xl shadow-sm p-5 flex flex-col justify-between min-h-[120px] ${isAdminPath ? 'cursor-default' : 'cursor-pointer'}`}>
+                                    className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] ${isAdminPath ? 'cursor-default' : 'cursor-pointer'}`}>
                                     <div
                                         className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -209,22 +220,22 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
 
                     {/* ---- Total Lecture Chart (Second Row) ---- */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.1fr_0.6fr_0.5fr] gap-6">
-                        <div className={`${lectureCardClass} border p-6 pb-3 sm:p-8 sm:pb-4 rounded-[32px] shadow-xl flex flex-col gap-6 md:col-span-2 xl:col-span-1`}>
-                            <h3 className="text-xl font-semibold">Total Lecture</h3>
+                        <div className={`${isDark ? "bg-zinc-900" : "bg-white"} border border-transparent p-6 pb-0 rounded-2xl flex flex-col gap-0 md:col-span-2 xl:col-span-1`}>
+                            <h3 className={`text-2xl font-semibold ${isDark ? "text-white" : "text-[#141522]"}`}>Total Lecture</h3>
 
                             {isLoading ? (
                                 <div className="grid place-items-center animate-pulse">
-                                    <div className="relative w-[220px] h-[220px] md:w-[260px] md:h-[260px] flex items-center justify-center">
+                                    <div className="relative w-full max-w-[220px] aspect-square mx-auto flex items-center justify-center">
                                         <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} rounded-full w-40 h-40`} />
                                     </div>
                                     <div className="w-full mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         {Array.from({ length: 2 }).map((_, i) => (
                                             <div
                                                 key={i}
-                                                className={`flex items-center w-fit justify-between gap-4 rounded-2xl px-4 py-3 ${isDark ? 'bg-[#1B1C22] border border-[#2A2B32]' : 'bg-[#F6F7FC] border border-[#E4E7F2]'}`}
+                                                className={`flex items-center w-fit justify-between gap-4 rounded-2xl px-4 py-3 border border-transparent ${isDark ? "bg-zinc-900" : "bg-[#F5F5F9]"}`}
                                             >
                                                 <div className="flex items-center gap-2 text-sm font-medium">
-                                                    <span className={`w-8 h-8 rounded-full grid place-items-center ${isDark ? 'bg-[#262732]' : 'bg-white'}`}>
+                                                    <span className={`w-8 h-8 rounded-full grid place-items-center ${isDark ? 'bg-zinc-800' : 'bg-white'}`}>
                                                         <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} w-4 h-4 rounded-full`} />
                                                     </span>
                                                     <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} h-3 w-20 rounded-full`} />
@@ -241,62 +252,55 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                             ) : (
                                 <>
                                     {/* SVG Rounded Rings (Admin style) */}
-                                    <div className="grid place-items-center">
-                                        <div className="relative w-[220px] h-[220px] md:w-[260px] md:h-[260px]">
-                                            <svg
-                                                className="w-full h-full transform -rotate-90"
-                                                viewBox="0 0 220 220"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                {normalizedSegments.map((segment) => {
-                                                    const animatedDashOffset = segment.circumference - (segment.circumference * segment.percent * progressFactor) / 100;
-
-                                                    return (
-                                                        <g key={segment.key}>
-                                                            <circle
-                                                                cx="110"
-                                                                cy="110"
-                                                                r={segment.radius}
-                                                                stroke={palette.track}
-                                                                strokeWidth="14"
-                                                                fill="none"
-                                                                opacity="1"
-                                                            />
-                                                            <circle
-                                                                cx="110"
-                                                                cy="110"
-                                                                r={segment.radius}
-                                                                stroke={segment.color}
-                                                                strokeWidth="14"
-                                                                strokeLinecap="round"
-                                                                fill="none"
-                                                                strokeDasharray={segment.circumference}
-                                                                strokeDashoffset={animatedDashOffset}
-                                                                transform={`rotate(${segment.rotation} 110 110)`}
-                                                                style={{
-                                                                    transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                                                                    opacity: 1
-                                                                }}
-                                                            />
-                                                        </g>
-                                                    );
-                                                })}
-                                            </svg>
-
-                                            {/* Center Text - Total Lectures */}
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                                <h2 className="text-3xl md:text-4xl font-semibold">
-                                                    {dashboardData.total_lectures || 0}
-                                                </h2>
-                                                <p className={`text-xs mt-1 uppercase tracking-wide ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                                                    Total
-                                                </p>
-                                            </div>
+                                    <div className="relative w-full max-w-[300px] aspect-square mx-auto">
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                            <h2 className="text-3xl md:text-4xl font-semibold">
+                                                {dashboardData.total_lectures || 0}
+                                            </h2>
                                         </div>
+                                        <svg
+                                            className="w-full h-full transform -rotate-90"
+                                            viewBox="0 0 300 300"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            {normalizedSegments.map((segment) => {
+                                                const animatedDashOffset = segment.circumference - (segment.circumference * segment.percent * progressFactor) / 100;
+
+                                                return (
+                                                    <g key={segment.key}>
+                                                        <circle
+                                                            cx="150"
+                                                            cy="150"
+                                                            r={segment.radius}
+                                                            stroke={palette.track}
+                                                            strokeWidth="14"
+                                                            fill="none"
+                                                            opacity="1"
+                                                        />
+                                                        <circle
+                                                            cx="150"
+                                                            cy="150"
+                                                            r={segment.radius}
+                                                            stroke={segment.color}
+                                                            strokeWidth="14"
+                                                            strokeLinecap="round"
+                                                            fill="none"
+                                                            strokeDasharray={segment.circumference}
+                                                            strokeDashoffset={animatedDashOffset}
+                                                            transform={`rotate(${segment.rotation} 150 150)`}
+                                                            style={{
+                                                                transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                                opacity: 1
+                                                            }}
+                                                        />
+                                                    </g>
+                                                );
+                                            })}
+                                        </svg>
                                     </div>
 
                                     {/* Bottom Labels */}
-                                    <div className="w-full mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    <div className="w-full my-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         {[{
                                             key: 'pending',
                                             label: 'Pending Lecture',
@@ -310,7 +314,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                         }].map((chip) => (
                                             <div
                                                 key={chip.key}
-                                                className={`${legendCardClass} flex items-center w-fit justify-between gap-4 rounded-2xl px-4 py-3 transition-colors`}
+                                                className={`flex items-center justify-between rounded-2xl px-4 py-3 border border-transparent ${isDark ? "bg-zinc-800" : "bg-[#F5F5F9]"}`}
                                             >
                                                 <div className="flex items-center gap-2 text-sm font-medium">
                                                     <span className={`w-8 h-8 rounded-full grid place-items-center ${isDark ? 'bg-[#262732]' : 'bg-white'}`}>
