@@ -18,6 +18,8 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
 
     const [isMobile, setIsMobile] = useState(false);
     const [adminProfileImage, setAdminProfileImage] = useState(null);
+    const [studentName, setStudentName] = useState("");
+    const [studentImage, setStudentImage] = useState(null);
 
     useEffect(() => {
         const handleResize = () => {
@@ -45,6 +47,23 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
             fetchProfile();
         }
     }, [isAdminPath]);
+
+    useEffect(() => {
+        if (!isStudentPortalPath) return;
+        const storedEnrollment = localStorage.getItem('enrolment_number') || localStorage.getItem('enrollment_number');
+
+        if (!storedEnrollment) return;
+
+        const storedImg = localStorage.getItem('student_profile_image');
+        const storedName = localStorage.getItem('student_first_name');
+
+        if (storedImg) setStudentImage(storedImg);
+        if (storedName) setStudentName(storedName);
+
+        if (!storedImg || !storedName) {
+            fetchStudentProfile(storedEnrollment);
+        }
+    }, [isStudentPortalPath]);
 
     useEffect(() => {
         validation();
@@ -81,6 +100,31 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
         }
     }
 
+    const fetchStudentProfile = async (enrollment) => {
+        try {
+            const res = await axios.get(
+                `${BACKEND_API_URL}/school-portal/profile/${enrollment}`,
+                {
+                    headers: {
+                        accept: 'application/json',
+                    },
+                }
+            );
+            const data = res.data || {};
+            if (data.photo_path) {
+                const normalized = data.photo_path.replace(/\\/g, '/');
+                localStorage.setItem('student_profile_image', normalized);
+                setStudentImage(normalized);
+            }
+            if (data.first_name) {
+                localStorage.setItem('student_first_name', data.first_name);
+                setStudentName(data.first_name);
+            }
+        } catch (error) {
+            console.error("Failed to fetch student profile for header:", error);
+        }
+    };
+
     const validation = () => {
         // Admin area: only admins allowed
         if (isAdminPath) {
@@ -113,6 +157,8 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
             return "/Admin/Profile";
         } else if (isLecturePath) {
             return "/lecture/Profile";
+        } else if (isStudentPortalPath) {
+            return "/StudentPortel/profile";
         }
         return "/Admin/Profile";
     }
@@ -121,7 +167,7 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
         <header className={`${isDark ? 'bg-[#111111] border-zinc-800' : 'bg-white border-zinc-200'} flex items-center ${isMobile && !isSearchbar ? 'justify-end' : 'justify-between'} py-3 px-3 transition-colors duration-300`}>
             {/* Left: Title */}
             {!isMobile && (
-                <h1 className={`header-1 font-semibold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{title}</h1>
+                <h1 className={`header-1 font-semibold ${isDark ? 'text-white' : 'text-[#696CFF]'}`}>{`Welcome Back,${studentName}`}</h1>
             )}
 
             {/* Center: Search Bar */}
@@ -162,12 +208,12 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
                     onClick={() => navigate(handleProfilePath())}
                     className="relative cursor-pointer"
                 >
-                    {adminProfileImage
+                    {(isAdminPath ? adminProfileImage : studentImage)
                         ? <img
-                            src={adminProfileImage ? `${BACKEND_API_URL}/${adminProfileImage}` : "https://i.pravatar.cc/32"}
+                            src={`${BACKEND_API_URL}/${(isAdminPath ? adminProfileImage : studentImage)}`}
 
                             alt="User Avatar"
-                            className={`w-8 h-8 rounded-full border-2 ${isDark ? 'border-zinc-700' : 'border-zinc-300'} transition-colors duration-300`}
+                            className={`w-8 h-8 rounded-full border-2 ${isDark ? 'border-zinc-700' : 'border-zinc-300'} transition-colors duration-300 object-cover`}
                         />
                         : <User size={32} className="text-gray-300" />
                     }
