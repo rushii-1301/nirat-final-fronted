@@ -13,7 +13,7 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
     const isLecturePath = /^\/lecture\//i.test(pathname);
     const isStudentPath = /^\/student\//i.test(pathname);
     const isChapterPath = /^\/chapter\//i.test(pathname);
-    const isStudentPortalPath = /^\/StudentPortel\//i.test(pathname);
+    const isStudentPortalPath = /^\/StudentPortal\//i.test(pathname);
     const navigate = useNavigate();
 
     const [isMobile, setIsMobile] = useState(false);

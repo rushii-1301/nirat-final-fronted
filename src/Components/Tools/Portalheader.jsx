@@ -172,7 +172,7 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
 
             {/* Center: Search Bar */}
             {isSearchbar && (
-                <div className="relative flex items-center w-full max-w-md mx-4 ">
+                <div className={`relative flex items-center w-full max-w-md mx-4 ${isMobile ? "max-w-[300px] ml-[52px]" : ""}`}>
                     <Search className="absolute left-3 text-zinc-400" size={20} />
                     <input
                         type="text"
@@ -213,7 +213,7 @@ const Portalheader = ({ title, isDark, toggleTheme, searchValue, setSearchValue,
                             src={`${BACKEND_API_URL}/${(isAdminPath ? adminProfileImage : studentImage)}`}
 
                             alt="User Avatar"
-                            className={`w-8 h-8 rounded-full border-2 ${isDark ? 'border-zinc-700' : 'border-zinc-300'} transition-colors duration-300 object-cover`}
+                            className={`min-w-8 max-w-8 h-8 rounded-full border-2 ${isDark ? 'border-zinc-700' : 'border-zinc-300'} transition-colors duration-300 object-cover`}
                         />
                         : <User size={32} className="text-gray-300" />
                     }

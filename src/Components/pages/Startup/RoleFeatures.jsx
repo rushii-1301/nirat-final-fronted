@@ -47,8 +47,8 @@ function RoleFeatures({ theme, isDark, toggleTheme, sidebardata }) {
                             <div
                                 onClick={() => navigate('/login')}
                                 className={`group relative flex-1 rounded-[20px] md:rounded-[24px] lg:rounded-[28px] overflow-hidden transition-all duration-300 cursor-pointer ${isDark
-                                        ? 'bg-gray-900/40 border-[3px] border-yellow-500 hover:border-yellow-400 shadow-2xl hover:shadow-yellow-500/60'
-                                        : 'bg-white border-[3px] border-yellow-400 hover:border-yellow-500 shadow-xl hover:shadow-yellow-400/50'
+                                    ? 'bg-gray-900/40 border-[3px] border-yellow-500 hover:border-yellow-400 shadow-2xl hover:shadow-yellow-500/60'
+                                    : 'bg-white border-[3px] border-yellow-400 hover:border-yellow-500 shadow-xl hover:shadow-yellow-400/50'
                                     } hover:scale-[1.02] backdrop-blur-md`}
                             >
                                 <div className="relative p-[4vh] md:p-[3.5vh] lg:p-[4.5vh] flex flex-col items-center text-center h-full min-h-[280px] md:min-h-[32vh] lg:min-h-[36vh]">
@@ -78,10 +78,10 @@ function RoleFeatures({ theme, isDark, toggleTheme, sidebardata }) {
 
                             {/* Student Card */}
                             <div
-                                onClick={() => navigate('/StudentPortel/login')}
+                                onClick={() => navigate('/StudentPortal/login')}
                                 className={`group relative flex-1 rounded-[20px] md:rounded-[24px] lg:rounded-[28px] overflow-hidden transition-all duration-300 cursor-pointer ${isDark
-                                        ? 'bg-gray-900/40 border-[3px] border-blue-500 hover:border-blue-400 shadow-2xl hover:shadow-blue-500/60'
-                                        : 'bg-white border-[3px] border-blue-400 hover:border-blue-500 shadow-xl hover:shadow-blue-400/50'
+                                    ? 'bg-gray-900/40 border-[3px] border-blue-500 hover:border-blue-400 shadow-2xl hover:shadow-blue-500/60'
+                                    : 'bg-white border-[3px] border-blue-400 hover:border-blue-500 shadow-xl hover:shadow-blue-400/50'
                                     } hover:scale-[1.02] backdrop-blur-md`}
                             >
                                 <div className="relative p-[4vh] md:p-[3.5vh] lg:p-[4.5vh] flex flex-col items-center text-center h-full min-h-[280px] md:min-h-[32vh] lg:min-h-[36vh]">
