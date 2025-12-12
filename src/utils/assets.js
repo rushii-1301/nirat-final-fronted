@@ -20,14 +20,17 @@ const assetRegistry = {
   Eyes_light: '/Icons/Eyes-light.png',
   home_dark: '/Icons/home-dark.png',
   home_light: '/Icons/home-light.png',
+  current_home_light: '/Icons/cuurent-home-light.png',
   filter_dark: '/Icons/filter-dark.png',
   filter_light: '/Icons/filter-light.png',
+  current_filter_light: '/Icons/current-filter-light.png',
   edit_dark: '/Icons/edit-dark.png',
   edit_light: '/Icons/edit-light.png',
   delete_dark: '/Icons/delete-dark.png',
   delete_light: '/Icons/delete-light.png',
   add_student_dark: '/Icons/add_student-dark.png',
   add_student_light: '/Icons/add_student-light.png',
+  current_add_student_light: '/Icons/current-add_student-light.png',
   user_dark: '/Icons/user-dark.png',
   lock_dark: '/Icons/lock-dark.png',
   lectureicon_dark: '/Icons/lectureicon_dark.png',
@@ -37,11 +40,13 @@ const assetRegistry = {
   filtering_dark: '/Icons/filtering-dark.png',
   book_dark: '/Icons/book-dark.png',
   book_light: '/Icons/book-light.png',
+  current_book_light: '/Icons/current_book_light.png',
   addclass_dark: '/Icons/addclass-dark.png',
   share__dark: '/Icons/share-dark.png',
   delete_tranperant_dark: '/Icons/delete_tranperant-dark.png',
   video_dark: '/Icons/video-dark.png',
   video_light: '/Icons/video-light.png',
+  current_video_light: '/Icons/current_video_light.png',
   upload_dark: '/Icons/upload-dark.png',
   send_dark: '/Icons/send-dark.png',
   Ai_dark: '/Icons/Ai-dark.png',
@@ -49,19 +54,24 @@ const assetRegistry = {
   lecturefilter_light: '/Icons/lecturefilter-light.png',
   home_tranperent_dark: '/Icons/home-tranperent-dark.png',
   home_tranperent_light: '/Icons/home_tranperent_light.png',
-  playedleacher_light: '/Icons/playedleacher-light.png',
+  current_home_tranperent_light: '/Icons/current_home_tranperent_light.png',
   playedleacher_dark: '/Icons/playedleacher_dark.png',
+  playedleacher_light: '/Icons/playedleacher-light.png',
+  current_playedleacher_light: '/Icons/current-playedleacher-light.png',
   share_trap_dark: '/Icons/share-trap-dark.png',
   share_trap_light: '/Icons/share_trap_light.png',
+  current_share_trap_light: '/Icons/current_share_trap_light.png',
   addlecture_light: '/Icons/addlecture-light.png',
   addlecture_dark: '/Icons/addlecture_dark.png',
   q_dark: '/Icons/q&a-dark.png',
   q_light: '/Icons/q&a-light.png',
   chat_dark: '/Icons/chat-dark.png',
   chat_light: '/Icons/chat-light.png',
+  current_chat_light: '/Icons/current_chat_light.png',
   lectureicon_light: '/Icons/lectureicon_light.png',
   profile_dark: '/Icons/profile-dark.png',
   profile_light: '/Icons/profile-light.png',
+  current_profile_light: '/Icons/current_profile_light.png',
   books_dark: '/Icons/books-dark.png',
   subject_dark: '/Icons/subject-dark.png',
   book_name_dark: '/Icons/book_name-dark.png',
@@ -78,14 +88,19 @@ const assetRegistry = {
   clock_light: '/Icons/cloack-light.png',
   puchase_dark: '/Icons/puchase-dark.png',
   puchase_light: '/Icons/puchase_light.png',
+  current_puchase_light: '/Icons/current_puchase_light.png',
   settings_light: '/Icons/settings-light.png',
+  current_settings_light: '/Icons/current_settings_light.png',
   settings_dark: '/Icons/settings_dark.png',
   saved_dark: '/Icons/saved-dark.png',
   saved_light: '/Icons/saved_light.png',
+  current_saved_light: '/Icons/current_saved_light.png',
   Alllectures_dark: '/Icons/Alllectures-dark.png',
   Alllectures_light: '/Icons/Alllectures-light.png',
+  current_Alllectures_light: '/Icons/current-Alllectures-light.png',
   Generate_student_dark: '/Icons/generate-student-dark.png',
   Generate_student_light: '/Icons/generate-student-light.png',
+  current_Generate_student_light: '/Icons/current_Generate_student_light.png',
   pending_lecture_dark: '/Icons/pending-lecture-dark.png',
   pending_lecture_light: '/Icons/pending-lecture-light.png',
   all_lecture_dark: '/Icons/all-lecture-dark.png',
@@ -96,7 +111,15 @@ const assetRegistry = {
   student_progress_light: '/Icons/student-progress-light.png',
   chatsend_dark: '/Icons/chatsend-dark.png',
   chatsend_light: '/Icons/chatsend-light.png',
-
+  current_home_dark: '/Icons/current_home_dark.png',
+  current_book_dark: '/Icons/current_book_dark.png',
+  current_chat_dark: '/Icons/current_chat_dark.png',
+  current_video_dark: '/Icons/current_video_dark.png',
+  current_puchase_dark: '/Icons/current_puchase_dark.png',
+  current_saved_dark: '/Icons/current_saved_dark.png',
+  current_settings_dark: '/Icons/current_settings_dark.png',
+  current_profile_dark: '/Icons/current_profile_dark.png',
+  
 }
 
 export function registerAsset(key, path) {
@@ -227,4 +250,40 @@ export const studentPortalAuth = (type) => {
   }
 
   return true;
+}
+
+
+export const checkSuperadminAuth = () => {
+  const token = localStorage.getItem('superadmin_token') || '';
+  if (!token) return false;
+
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payloadJson = atob(base64);
+    const payload = JSON.parse(payloadJson || '{}');
+
+    // Check expiry: exp is in seconds since epoch
+    if (!payload || (payload.exp && payload.exp * 1000 < Date.now())) {
+      localStorage.removeItem('superadmin_token');
+      localStorage.removeItem('superadmin_user');
+      return false;
+    }
+
+    // Check if sub field equals 'superadmin'
+    if (payload.sub !== 'superadmin') {
+      localStorage.removeItem('superadmin_token');
+      localStorage.removeItem('superadmin_user');
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    console.error('Failed to decode superadmin JWT:', e);
+    localStorage.removeItem('superadmin_token');
+    localStorage.removeItem('superadmin_user');
+    return false;
+  }
 }

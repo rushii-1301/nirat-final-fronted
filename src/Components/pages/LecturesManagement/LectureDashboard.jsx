@@ -161,7 +161,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                     {/* ---- Stat Cards (Top Row) ---- */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-[minmax(90px,auto)]">
                         {isLoading
-                            ? Array.from({ length: 3 }).map((_, i) => (
+                            ? Array.from({ length: isAdminPath ? 4 : 3 }).map((_, i) => (
                                 <div
                                     key={i}
                                     className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] animate-pulse`}
@@ -175,47 +175,95 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                     <div className={`${isDark ? 'bg-zinc-800' : 'bg-zinc-200'} mt-4 h-6 w-16 rounded-full`} />
                                 </div>
                             ))
-                            : [
-                                {
-                                    name: "Played Lectures",
-                                    value: dashboardData.played_lectures,
-                                    to: "/lecture/Playedlecture"
-                                },
-                                {
-                                    name: "Shared Lectures",
-                                    value: dashboardData.shared_lectures,
-                                    to: "/lecture/Sharedlecture"
-                                },
-                                {
-                                    name: "Q & A Section",
-                                    value: dashboardData.qa_sessions,
-                                    to: "/lecture/QandA"
-                                }
-                            ].map((items, i) => (
-                                <div
-                                    key={i}
-                                    onClick={() => {
-                                        if (!isAdminPath) {
-                                            navigate(items.to);
-                                        }
-                                    }}
-                                    className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] ${isAdminPath ? 'cursor-default' : 'cursor-pointer'}`}>
-                                    <div
-                                        className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <img
-                                                src={isDark ? getAsset('Eyes_dark') : getAsset('Eyes_light')}
-                                                alt="Eyes"
-                                                className={"w-4 h-4"}
-                                            />
+                            : isAdminPath
+                                ? [
+                                    {
+                                        name: "Played Lectures",
+                                        value: dashboardData.played_lectures,
+                                        to: "/lecture/Playedlecture"
+                                    },
+                                    {
+                                        name: "Shared Lectures",
+                                        value: dashboardData.shared_lectures,
+                                        to: "/lecture/Sharedlecture"
+                                    },
+                                    {
+                                        name: "Q & A Section",
+                                        value: dashboardData.qa_sessions,
+                                        to: "/lecture/QandA"
+                                    },
+                                    {
+                                        name: "Watch Lecture",
+                                        value: dashboardData.total_lectures,
+                                        to: "/Admin/lecture/Allectures"
+                                    }
+                                ].map((items, i) => {
+                                    const isLastCard = i === 3;
+                                    return (
+                                        <div
+                                            key={i}
+                                            onClick={() => {
+                                                if (isLastCard && items.to) {
+                                                    navigate(items.to);
+                                                }
+                                            }}
+                                            className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] ${isLastCard ? 'cursor-pointer' : 'cursor-default'}`}>
                                             <div
-                                                className={`text-[12px] md:text-sm font-medium ${isDark ? 'text-white' : 'text-[#696CFF]'}`}
-                                            >{items.name}</div>
+                                                className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <img
+                                                        src={isDark ? getAsset('Eyes_dark') : getAsset('Eyes_light')}
+                                                        alt="Eyes"
+                                                        className={"w-4 h-4"}
+                                                    />
+                                                    <div
+                                                        className={`text-[12px] md:text-sm font-medium ${isDark ? 'text-white' : 'text-[#696CFF]'}`}
+                                                    >{items.name}</div>
+                                                </div>
+                                            </div>
+                                            <h2 className={`mt-3 text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{items.value}</h2>
                                         </div>
+                                    );
+                                })
+                                : [
+                                    {
+                                        name: "Played Lectures",
+                                        value: dashboardData.played_lectures,
+                                        to: "/lecture/Playedlecture"
+                                    },
+                                    {
+                                        name: "Shared Lectures",
+                                        value: dashboardData.shared_lectures,
+                                        to: "/lecture/Sharedlecture"
+                                    },
+                                    {
+                                        name: "Q & A Section",
+                                        value: dashboardData.qa_sessions,
+                                        to: "/lecture/QandA"
+                                    }
+                                ].map((items, i) => (
+                                    <div
+                                        key={i}
+                                        onClick={() => {
+                                            navigate(items.to);
+                                        }}
+                                        className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] cursor-pointer`}>
+                                        <div
+                                            className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <img
+                                                    src={isDark ? getAsset('Eyes_dark') : getAsset('Eyes_light')}
+                                                    alt="Eyes"
+                                                    className={"w-4 h-4"}
+                                                />
+                                                <div
+                                                    className={`text-[12px] md:text-sm font-medium ${isDark ? 'text-white' : 'text-[#696CFF]'}`}
+                                                >{items.name}</div>
+                                            </div>
+                                        </div>
+                                        <h2 className={`mt-3 text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{items.value}</h2>
                                     </div>
-                                    <h2 className={`mt-3 text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-zinc-900'}`}>{items.value}</h2>
-                                </div>
-                            ))}
+                                ))}
                     </div>
 
                     {/* ---- Total Lecture Chart (Second Row) ---- */}

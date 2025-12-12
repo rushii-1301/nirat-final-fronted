@@ -20,7 +20,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
         { name: "Total Credits", value: `0/0`, path: "" },
         { name: "Lectures After Limit", value: 0, path: "" },
         { name: "Active Subscription", value: 0, path: "" },
-        { name: "Watch Lecture", value: 0, path: "/Admin/WatchLecture" },
+        
     ]);
 
     const [chapterCount, setChapterCount] = useState(10);
@@ -57,13 +57,12 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 const totalCreditsDisplay = `${remainingCredits}/${totalCredits}`;
 
                 const activeSubsVal = payload.account_status?.days_until_expiry ?? 0;
-                const watchLectureVal = payload.watch_lecture ?? 0;
+                
                 setCards([
                     { name: "Management", value: `${Number(managementVal)}` },
                     { name: "Total Credits", value: totalCreditsDisplay },
                     { name: "Lectures After limit", value: `${Number(postLimitGenerated)}` },
                     { name: "Active Subscription", value: `${toSafeNumber(activeSubsVal)} Days` },
-                    { name: "Watch Lecture", value: `${Number(watchLectureVal)}` },
                 ]);
 
                 setChapterCount(chapterMembers);
@@ -162,9 +161,9 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* Main Section */}
                 <main className="mt-6 flex-1 overflow-y-auto no-scrollbar space-y-6">
                     {/* ---- Stat Cards ---- */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 auto-rows-[minmax(120px,auto)]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-6 auto-rows-[minmax(120px,auto)]">
                         {cardsLoading
-                            ? Array.from({ length: 5 }).map((_, i) => (
+                            ? Array.from({ length: 4 }).map((_, i) => (
                                 <div
                                     key={i}
                                     className={`${isDark ? "bg-zinc-900" : "bg-white"}

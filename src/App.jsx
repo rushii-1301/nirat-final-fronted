@@ -54,6 +54,8 @@ import UpdateStudentDetails from './Components/pages/StudentManagement/UpdateStu
 import ResetPassword from './Components/pages/Startup/ResetPassword'
 import RoleFeatures from './Components/pages/Startup/RoleFeatures'
 import PDFSlideViewer from './Components/pages/StudentPortal/pdfview'
+import SuperadministrationLogin from './Components/pages/SuperAdmin/SuperadministrationLogin'
+import SuperadministrationDashboard from './Components/pages/SuperAdmin/SuperadministrationDashboard'
 
 
 function App() {
@@ -69,7 +71,7 @@ function App() {
     {
       label: "Dashboard",
       to: "/lecture/Dashboard",
-      icon: ["home_tranperent_dark", "home_tranperent_light"]
+      icon: ["home_tranperent_dark", "home_tranperent_light", "current_home_tranperent_light"]
     },
     {
       label: "All Lectures",
@@ -80,17 +82,17 @@ function App() {
         "/lecture/newlecture",
         "/lecture/LectureVideo",
       ],
-      icon: ["Alllectures_dark", "Alllectures_light"]
+      icon: ["Alllectures_dark", "Alllectures_light", "current_Alllectures_light"]
     },
     {
       label: "Played Lecture",
       to: "/lecture/Playedlecture",
-      icon: ["playedleacher_dark", "playedleacher_light"]
+      icon: ["playedleacher_dark", "playedleacher_light", "current_playedleacher_light"]
     },
     {
       label: "Shared Lecture",
       to: "/lecture/Sharedlecture",
-      icon: ["share_trap_dark", "share_trap_light"]
+      icon: ["share_trap_dark", "share_trap_light","current_share_trap_light"]
     },
     // {
     //   label: "Start New Lecture",
@@ -108,7 +110,7 @@ function App() {
     {
       label: "Dashboard",
       to: "/Admin/Dashboard",
-      icon: ["home_dark", "home_light"]
+      icon: ["home_dark", "home_light", "current_home_light"]
     },
     {
       label: "All Members",
@@ -125,7 +127,7 @@ function App() {
         "/Admin/lecture/Dashboard",
 
       ],
-      icon: ["filter_dark", "filter_light"]
+      icon: ["filter_dark", "filter_light", "current_filter_light"]
     }
   ]
 
@@ -133,12 +135,12 @@ function App() {
     {
       label: "Dashboard",
       to: "/Student/Dashboard",
-      icon: ["home_dark", "home_light"]
+      icon: ["home_dark", "home_light","current_home_light"]
     },
     {
       label: "Generate Student List",
       to: "/Student/Generatestudent",
-      icon: ["Generate_student_dark", "Generate_student_light"]
+      icon: ["Generate_student_dark", "Generate_student_light","current_Generate_student_light"]
     }
   ]
 
@@ -146,7 +148,7 @@ function App() {
     {
       label: "Home",
       to: "/chapter/Home",
-      icon: ["home_dark", "home_light"]
+      icon: ["home_dark", "home_light", "current_home_light"]
     },
     {
       label: "Add",
@@ -162,49 +164,49 @@ function App() {
         "/chapter/Narration",
         "/chapter/CoverPage",
       ],
-      icon: ["add_student_dark", "add_student_light"]
+      icon: ["add_student_dark", "add_student_light", "current_add_student_light"]
     }
   ]
   const StudentpoartalSidebar = [
     {
       label: "Home",
       to: "/StudentPortal/home",
-      icon: ["home_tranperent_dark", "home_tranperent_light"]
+      icon: ["home_tranperent_dark", "home_tranperent_light","current_home_light","current_home_dark"]
     },
     {
       label: "Book",
       to: "/StudentPortal/chapter",
-      icon: ["book_dark", "book_light"]
+      icon: ["book_dark", "book_light","current_book_light","current_book_dark"]
     },
     {
       label: "Chat",
       to: "/StudentPortal/OpenChart",
-      icon: ["chat_dark", "chat_light"]
+      icon: ["chat_dark", "chat_light","current_chat_light","current_chat_dark"]
     },
     {
       label: "Watched Lecture",
       to: "/StudentPortal/WatchedLeachers",
-      icon: ["video_dark", "video_light"]
+      icon: ["video_dark", "video_light","current_video_light","current_video_dark"]
     },
     {
       label: "Purchase History",
       to: "/StudentPortal/PuchaseHistory",
-      icon: ["puchase_dark", "puchase_light"]
+      icon: ["puchase_dark", "puchase_light","current_puchase_light","current_puchase_dark"]
     },
     {
       label: "Saved Videos",
       to: "/StudentPortal/SavedVideos",
-      icon: ["saved_dark", "saved_light"]
+      icon: ["saved_dark", "saved_light","current_saved_light","current_saved_dark"]
     },
     {
       label: "Setting",
       to: "/StudentPortal/Settings",
-      icon: ["settings_dark", "settings_light"]
+      icon: ["settings_dark", "settings_light","current_settings_light","current_settings_dark"]
     },
     {
       label: "Profile",
       to: "/StudentPortal/profile",
-      icon: ["profile_dark", "profile_light"]
+      icon: ["profile_dark", "profile_light","current_profile_light","current_profile_dark"]
     },
 
   ]
@@ -223,6 +225,8 @@ function App() {
         <Route path="/login" element={<Login theme={theme} isDark={isDark} toggleTheme={toggleTheme} />} />
         <Route path="/change-password" element={<ChangePassword theme={theme} isDark={isDark} />} />
         <Route path="/signup" element={<SignUp theme={theme} isDark={isDark} />} />
+        <Route path="/superadministration/login" element={<SuperadministrationLogin theme={theme} isDark={isDark} />} />
+        <Route path="/superadministration/dashboard" element={<SuperadministrationDashboard theme={theme} isDark={isDark} />} />
 
         {/* Landing */}
         <Route path="/" element={<Navigate to="/Intro" />} />
@@ -241,7 +245,7 @@ function App() {
         <Route path="/Admin/chapter/Dashboard" element={<ChapterManagement theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} addchapter="/Admin/chapter/AddChapter" />} />
         <Route path="/Admin/student/Dashboard" element={<StudentDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
         <Route path="/Admin/lecture/Dashboard" element={<LectureDashboard theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
-        <Route path="/Admin/lecture/Alllectures" element={<LectureHome theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
+        <Route path="/Admin/lecture/Allectures" element={<LectureHome theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
         <Route path="/Admin/reset-password" element={<ResetPassword theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={adminSidebar} />} />
 
         {/* chapter Management */}

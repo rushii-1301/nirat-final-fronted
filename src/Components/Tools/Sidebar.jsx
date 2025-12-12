@@ -247,8 +247,16 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
                       : ''}`}
                 >
                   <img
-                    src={isDark ? getAsset(bar?.icon[0]) : getAsset(bar?.icon[1])}
-                    alt="home_dark"
+                    src={
+                      isDark
+                        ? isStudentPortalPath && isActiveCombined && bar?.icon[3]
+                          ? getAsset(bar?.icon[3])
+                          : getAsset(bar?.icon[0])
+                        : isActiveCombined && bar?.icon[2]
+                          ? getAsset(bar?.icon[2])
+                          : getAsset(bar?.icon[1])
+                    }
+                    alt="sidebar-icon"
                     className={`object-contain transition-all duration-300 w-5`}
                   />
 
