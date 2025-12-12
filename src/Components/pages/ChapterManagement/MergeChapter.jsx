@@ -5,6 +5,7 @@ import { Plus, Trash2, Lock, Check, ArrowLeft } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets";
+import MathText from "../../Tools/MathText";
 
 function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardata, backto }) {
   const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
@@ -369,7 +370,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
 
                                 {/* Chapter text */}
                                 <div
-                                  className={`flex-1 text-sm ${isChecked
+                                  className={`flex-1 text-sm whitespace-pre-wrap ${isChecked
                                     ? isDark
                                       ? "font-semibold text-white"
                                       : "font-semibold text-[#1f1f3d]"
@@ -378,7 +379,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                                       : "text-[#4a4c78]"
                                     }`}
                                 >
-                                  {chapter.title}
+                                  <MathText>{chapter.title}</MathText>
                                 </div>
                               </div>
                             );
@@ -460,7 +461,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
 
                             <div className="flex-1 flex flex-col gap-2">
                               {/* Chapter title */}
-                              <span className={`text-[20px] font-semibold ${isDark ? "text-white" : "text-[#696CFF]"}`}>{item.title}</span>
+                              <span className={`text-[20px] font-semibold whitespace-pre-wrap ${isDark ? "text-white" : "text-[#696CFF]"}`}><MathText>{item.title}</MathText></span>
 
                               {/* Optional short context (book title or first subtopic title) */}
                               {/* <span className={`text-[11px] ${isDark ? "text-gray-400" : "text-[#7b7dab]"}`}>
@@ -474,12 +475,12 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                                 <div className="mt-1 space-y-4">
                                   {item.subtopics.map((sub, idx) => (
                                     <div key={idx} className="text-[11px] leading-snug space-y-1">
-                                      <div className={`text-[15px] 2xl:text-[17px] ${isDark ? "text-gray-200 font-semibold" : "text-[#3f4170] font-bold"}`}>
-                                        {idx + 1}. {sub.title}
+                                      <div className={`text-[15px] 2xl:text-[17px] whitespace-pre-wrap ${isDark ? "text-gray-200 font-semibold" : "text-[#3f4170] font-bold"}`}>
+                                        {idx + 1}. <MathText>{sub.title}</MathText>
                                       </div>
                                       {sub.narration && (
-                                        <div className={`text-[13px] 2xl:text-[15px] ${isDark ? "text-gray-400" : "text-[#5a5c8c]"}`}>
-                                          {sub.narration}
+                                        <div className={`text-[13px] 2xl:text-[15px] whitespace-pre-wrap ${isDark ? "text-gray-400" : "text-[#5a5c8c]"}`}>
+                                          <MathText>{sub.narration}</MathText>
                                         </div>
                                       )}
                                     </div>

@@ -119,7 +119,7 @@ const assetRegistry = {
   current_saved_dark: '/Icons/current_saved_dark.png',
   current_settings_dark: '/Icons/current_settings_dark.png',
   current_profile_dark: '/Icons/current_profile_dark.png',
-  
+
 }
 
 export function registerAsset(key, path) {

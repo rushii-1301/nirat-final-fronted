@@ -1,15 +1,20 @@
 import React, { useState } from "react";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CloudUpload, ArrowLeft } from "lucide-react";
+import axios from "axios";
+import { BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets.js";
 
 function CoverPage({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter/AllChapters" }) {
     const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
 
     const [videoUrl, setVideoUrl] = useState(null);
     const [coverPreview, setCoverPreview] = useState(null);
+    const [coverFile, setCoverFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Default thumbnail removed to match "empty box" look from design, 
     // or can be used if video is actually uploaded. 
@@ -29,14 +34,57 @@ function CoverPage({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
     const handleCoverFile = (file) => {
         if (!file) return;
         if (!(file.type === "image/png" || file.type === "image/jpeg")) {
-            // alert("Only PNG or JPG images are allowed!");
+            handleerror("Only PNG or JPG images are allowed!");
             return;
         }
+        setCoverFile(file);
         const reader = new FileReader();
         reader.onloadend = () => {
             setCoverPreview(reader.result);
         };
         reader.readAsDataURL(file);
+    };
+
+    const handleGenerate = async () => {
+        if (!coverFile) {
+            handleerror("Please upload a cover photo first!");
+            return;
+        }
+
+        // Get lecture_id from localStorage (assuming it's stored there)
+        const lectureId = location.state?.lectureId;
+        if (!lectureId) {
+            handleerror("Lecture ID not found. Please try again.");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const formData = new FormData();
+            formData.append('cover_photo', coverFile);
+
+            const response = await axios.post(
+                `${BACKEND_API_URL}/chapter-materials/lectures/${lectureId}/cover-photo`,
+                formData,
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                }
+            );
+
+            if (response.data) {
+                handlesuccess("Cover photo uploaded successfully!");
+                navigate('/chapter/Home');
+            }
+        } catch (error) {
+            console.error("Error uploading cover photo:", error);
+            handleerror(error.response?.data?.detail || "Failed to upload cover photo. Please try again.");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     // Card style - white on light mode, dashed borders inside
@@ -168,13 +216,14 @@ function CoverPage({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                                 <div className="pt-4 flex justify-center">
                                     <button
                                         type="button"
-                                        onClick={() => navigate('/chapter/Home')}
+                                        onClick={handleGenerate}
+                                        disabled={isUploading}
                                         className={`min-w-[140px] px-6 py-2.5 rounded-md text-sm font-medium cursor-pointer transition-all ${isDark
                                             ? "bg-[#696CFF] text-white hover:bg-[#5f62e0]"
                                             : "bg-[#696CFF] text-white hover:bg-[#5f62e0]"
-                                            }`}
+                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
-                                        Generate
+                                        {isUploading ? 'Uploading...' : 'Generate'}
                                     </button>
                                 </div>
                             </div>

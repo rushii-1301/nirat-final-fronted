@@ -92,7 +92,7 @@ function App() {
     {
       label: "Shared Lecture",
       to: "/lecture/Sharedlecture",
-      icon: ["share_trap_dark", "share_trap_light","current_share_trap_light"]
+      icon: ["share_trap_dark", "share_trap_light", "current_share_trap_light"]
     },
     // {
     //   label: "Start New Lecture",
@@ -135,12 +135,12 @@ function App() {
     {
       label: "Dashboard",
       to: "/Student/Dashboard",
-      icon: ["home_dark", "home_light","current_home_light"]
+      icon: ["home_dark", "home_light", "current_home_light"]
     },
     {
       label: "Generate Student List",
       to: "/Student/Generatestudent",
-      icon: ["Generate_student_dark", "Generate_student_light","current_Generate_student_light"]
+      icon: ["Generate_student_dark", "Generate_student_light", "current_Generate_student_light"]
     }
   ]
 
@@ -171,42 +171,42 @@ function App() {
     {
       label: "Home",
       to: "/StudentPortal/home",
-      icon: ["home_tranperent_dark", "home_tranperent_light","current_home_light","current_home_dark"]
+      icon: ["home_tranperent_dark", "home_tranperent_light", "current_home_light", "current_home_dark"]
     },
     {
       label: "Book",
       to: "/StudentPortal/chapter",
-      icon: ["book_dark", "book_light","current_book_light","current_book_dark"]
+      icon: ["book_dark", "book_light", "current_book_light", "current_book_dark"]
     },
     {
       label: "Chat",
       to: "/StudentPortal/OpenChart",
-      icon: ["chat_dark", "chat_light","current_chat_light","current_chat_dark"]
+      icon: ["chat_dark", "chat_light", "current_chat_light", "current_chat_dark"]
     },
     {
       label: "Watched Lecture",
       to: "/StudentPortal/WatchedLeachers",
-      icon: ["video_dark", "video_light","current_video_light","current_video_dark"]
+      icon: ["video_dark", "video_light", "current_video_light", "current_video_dark"]
     },
     {
       label: "Purchase History",
       to: "/StudentPortal/PuchaseHistory",
-      icon: ["puchase_dark", "puchase_light","current_puchase_light","current_puchase_dark"]
+      icon: ["puchase_dark", "puchase_light", "current_puchase_light", "current_puchase_dark"]
     },
     {
       label: "Saved Videos",
       to: "/StudentPortal/SavedVideos",
-      icon: ["saved_dark", "saved_light","current_saved_light","current_saved_dark"]
+      icon: ["saved_dark", "saved_light", "current_saved_light", "current_saved_dark"]
     },
     {
       label: "Setting",
       to: "/StudentPortal/Settings",
-      icon: ["settings_dark", "settings_light","current_settings_light","current_settings_dark"]
+      icon: ["settings_dark", "settings_light", "current_settings_light", "current_settings_dark"]
     },
     {
       label: "Profile",
       to: "/StudentPortal/profile",
-      icon: ["profile_dark", "profile_light","current_profile_light","current_profile_dark"]
+      icon: ["profile_dark", "profile_light", "current_profile_light", "current_profile_dark"]
     },
 
   ]

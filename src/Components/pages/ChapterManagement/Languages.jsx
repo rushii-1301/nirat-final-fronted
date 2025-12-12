@@ -53,17 +53,26 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
         }
       );
 
+      // Only navigate if the API call was successful
       if (response?.data?.status) {
         handlesuccess(response?.data?.message || "Lecture configuration saved");
+        navigate("/chapter/Narration", {
+          state: {
+            lectureId,
+          },
+        });
+      } else {
+        // Handle unsuccessful response
+        handleerror(response?.data?.detail || response?.data?.message || "Failed to save configuration");
       }
-
-      navigate("/chapter/Narration", {
-        state: {
-          lectureId,
-        },
-      });
     } catch (error) {
       console.error("Error saving lecture configuration:", error);
+      // Display error message from API response
+      const errorMessage = error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to save lecture configuration";
+      handleerror(errorMessage);
     }
   };
 

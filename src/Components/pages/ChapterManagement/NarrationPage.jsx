@@ -17,6 +17,8 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
     const [slides, setSlides] = useState([]);
     const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
     const [isLoadingSlides, setIsLoadingSlides] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+    const [generatedLectureId, setGeneratedLectureId] = useState(null);
     const [narration, setNarration] = useState("");
     const [originalNarration, setOriginalNarration] = useState("");
     const [isManualEdit, setIsManualEdit] = useState(false);
@@ -100,6 +102,21 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
             if (lastFetchedLectureId.current === lectureId) return;
             lastFetchedLectureId.current = lectureId;
             setIsLoadingSlides(true);
+            setLoadingProgress(0);
+
+            // Simulate progress while waiting for API
+            const progressInterval = setInterval(() => {
+                setLoadingProgress((prev) => {
+                    // Progress slows down as it approaches 90%
+                    if (prev < 30) return prev + 3;
+                    if (prev < 60) return prev + 2;
+                    if (prev < 85) return prev + 1;
+                    if (prev < 90) return prev + 0.5;
+                    if (prev < 92) return prev + 0.5;
+                    return prev; // Stop at 90% until API responds
+                });
+            }, 400);
+
             try {
                 const token = localStorage.getItem('access_token');
                 const response = await axios.post(
@@ -116,6 +133,10 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
 
                 const lecture = response?.data?.data?.lecture;
                 if (lecture && Array.isArray(lecture.slides)) {
+                    // API responded successfully - complete the progress bar
+                    setLoadingProgress(100);
+                    // Store the generated lecture_id from API response
+                    setGeneratedLectureId(lecture.lecture_id);
                     setSlides(lecture.slides);
                     setCurrentSlideIndex(0);
                     const firstNarration = lecture.slides[0]?.narration || "";
@@ -124,13 +145,76 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                 }
             } catch (error) {
                 console.error('Error generating lecture slides:', error);
+                setLoadingProgress(100); // Complete progress even on error
             } finally {
-                setIsLoadingSlides(false);
+                clearInterval(progressInterval);
+                // Small delay before hiding loader to show 100% completion
+                setTimeout(() => {
+                    setIsLoadingSlides(false);
+                    setLoadingProgress(0);
+                }, 500);
             }
         };
 
         fetchSlides();
     }, [lectureId]);
+
+    // Function to regenerate slides
+    const handleRegenerate = async () => {
+        if (!lectureId) return;
+
+        setIsLoadingSlides(true);
+        setLoadingProgress(0);
+        setIsManualEdit(false);
+
+        // Simulate progress while waiting for API
+        const progressInterval = setInterval(() => {
+            setLoadingProgress((prev) => {
+                if (prev < 30) return prev + 3;
+                if (prev < 60) return prev + 2;
+                if (prev < 85) return prev + 1;
+                if (prev < 90) return prev + 0.5;
+                return prev;
+            });
+        }, 400);
+
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await axios.post(
+                `${BACKEND_API_URL}/chapter-materials/chapter_lecture/generate/${lectureId}`,
+                {},
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                }
+            );
+
+            const lecture = response?.data?.data?.lecture;
+            if (lecture && Array.isArray(lecture.slides)) {
+                setLoadingProgress(100);
+                setGeneratedLectureId(lecture.lecture_id);
+                setSlides(lecture.slides);
+                setCurrentSlideIndex(0);
+                const firstNarration = lecture.slides[0]?.narration || "";
+                setNarration(firstNarration);
+                setOriginalNarration(firstNarration);
+                handlesuccess("Lecture regenerated successfully");
+            }
+        } catch (error) {
+            console.error('Error regenerating lecture slides:', error);
+            handleerror("Failed to regenerate lecture");
+            setLoadingProgress(100);
+        } finally {
+            clearInterval(progressInterval);
+            setTimeout(() => {
+                setIsLoadingSlides(false);
+                setLoadingProgress(0);
+            }, 500);
+        }
+    };
 
     const currentSlide = slides.length > 0 ? slides[currentSlideIndex] : null;
 
@@ -156,12 +240,54 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
 
     return (
         <div className={`relative flex ${isDark ? 'bg-zinc-950 text-gray-100' : 'bg-[#F5F5F9] text-zinc-900'} min-h-screen overflow-y-hidden transition-colors duration-300`}>
-            {/* Full-page loading overlay while slides are generating */}
+            {/* Full-page loading overlay with circular progress */}
             {isLoadingSlides && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="h-8 w-8 border border-transparent rounded-full animate-spin" />
-                        <p className="text-xs text-gray-200 tracking-wide uppercase">Generating lecture narration...</p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="flex flex-col items-center space-y-6">
+                        {/* Circular Progress */}
+                        <div className="relative w-40 h-40">
+                            {/* Background Circle */}
+                            <svg className="w-full h-full transform -rotate-90">
+                                <circle
+                                    cx="80"
+                                    cy="80"
+                                    r="70"
+                                    stroke="#d4d4d8"
+                                    strokeWidth="10"
+                                    fill="none"
+                                    opacity="0.3"
+                                />
+                                {/* Progress Circle */}
+                                <circle
+                                    cx="80"
+                                    cy="80"
+                                    r="70"
+                                    stroke="#696CFF"
+                                    strokeWidth="10"
+                                    fill="none"
+                                    strokeDasharray={`${2 * Math.PI * 70}`}
+                                    strokeDashoffset={`${2 * Math.PI * 70 * (1 - loadingProgress / 100)}`}
+                                    strokeLinecap="round"
+                                    className="transition-all duration-300 ease-out"
+                                />
+                            </svg>
+                            {/* Percentage Text */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-4xl font-bold text-white">
+                                    {Math.round(loadingProgress)}%
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Loading Text */}
+                        <div className="text-center space-y-2">
+                            <h3 className="text-lg font-semibold text-white">
+                                Generating Lecture
+                            </h3>
+                            <p className="text-sm text-gray-300">
+                                Please wait while we generate your content...
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}
@@ -204,7 +330,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                 >
                                     Cancel
                                 </button> */}
-                                <button
+                                {/* <button
                                     onClick={() => {
                                         setNarration(originalNarration);
                                         setIsManualEdit(false);
@@ -212,6 +338,13 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                     className={`${isDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'} max-w-fit flex justify-center items-center cursor-pointer px-4 py-1.5 rounded-md text-sm hover:shadow transition-all duration-200`}
                                 >
                                     ReGenerate
+                                </button> */}
+                                <button
+                                    onClick={handleRegenerate}
+                                    disabled={isLoadingSlides}
+                                    className={`${isDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'} max-w-fit flex justify-center items-center cursor-pointer px-4 py-1.5 rounded-md text-sm hover:shadow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    {isLoadingSlides ? 'Regenerating...' : 'ReGenerate'}
                                 </button>
                             </div>
                         </div>
@@ -390,7 +523,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                         {!showPromptBar && (
                             <div className="mt-4 pt-2 flex flex-row gap-4 sm:gap-4">
                                 <button
-                                    onClick={() => navigate("/chapter/CoverPage")}
+                                    onClick={() => navigate("/chapter/CoverPage", { state: { lectureId: generatedLectureId } })}
                                     className={`${isDark
                                         ? 'bg-white text-zinc-800 hover:bg-[#f2f3ff] border border-zinc-700'
                                         : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'

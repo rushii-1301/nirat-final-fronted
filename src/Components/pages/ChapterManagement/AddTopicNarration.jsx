@@ -5,7 +5,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Send, RotateCcw, Sparkles, ArrowLeft } from "lucide-react";
 
 import axios from "axios";
-import { BACKEND_API_URL, handlesuccess } from "../../../utils/assets";
+import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets";
+import MathText from "../../Tools/MathText";
 
 export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter/UploadBook" }) {
   const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
@@ -17,6 +18,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
   const [chapterTitle, setChapterTitle] = useState("");
   const [topics, setTopics] = useState([]); // Array of { title, summary, subtopics: [{title, narration}] }
   const [isLoadingTopics, setIsLoadingTopics] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [expandedTopicIndex, setExpandedTopicIndex] = useState(null); // Index of currently expanded topic
   const [materialsTopics, setMaterialsTopics] = useState([]); // All materials returned by extract-topics
   const [currentMaterialIndex, setCurrentMaterialIndex] = useState(0); // Which material's topics are being viewed
@@ -72,6 +74,19 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
 
   const fetchExtractedTopics = async (materialIds) => {
     setIsLoadingTopics(true);
+    setLoadingProgress(0);
+
+    // Simulate progress while waiting for API
+    const progressInterval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev < 30) return prev + 3;
+        if (prev < 60) return prev + 2;
+        if (prev < 85) return prev + 1;
+        if (prev < 90) return prev + 0.5;
+        return prev; // Stop at 90% until API responds
+      });
+    }, 400);
+
     try {
       const token = localStorage.getItem('access_token');
       console.log('Fetching extracted topics for material IDs:', materialIds);
@@ -91,6 +106,9 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
         const topicsList = response.data.data.topics;
 
         if (Array.isArray(topicsList) && topicsList.length > 0) {
+          // API responded successfully - complete the progress bar
+          setLoadingProgress(100);
+
           // Normalize all materials from API
           const normalizedMaterials = topicsList.map((material) => {
             const topicsArray = material.topics || [];
@@ -146,8 +164,14 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
     } catch (error) {
       console.error('Error fetching extracted topics:', error);
       setTopics([{ title: "Error loading topics", summary: "", subtopics: [] }]);
+      setLoadingProgress(100); // Complete progress even on error
     } finally {
-      setIsLoadingTopics(false);
+      clearInterval(progressInterval);
+      // Small delay before hiding loader to show 100% completion
+      setTimeout(() => {
+        setIsLoadingTopics(false);
+        setLoadingProgress(0);
+      }, 500);
     }
   };
 
@@ -309,7 +333,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
       if (entries.length > 0) {
         const token = localStorage.getItem("access_token");
 
-        const response = await Promise.allSettled(
+        const results = await Promise.allSettled(
           entries.map(([materialId, ids]) =>
             axios.post(
               `${BACKEND_API_URL}/chapter-materials/${materialId}/assistant-add-topics`,
@@ -324,22 +348,48 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
             )
           )
         );
-        setTimeout(() => {
-          if (response.status === 200) {
-            handlesuccess(response?.data?.message || "Topics added successfully")
-          }
-        }, 2000);
+
+        // Check if all requests succeeded
+        const allSucceeded = results.every(result => result.status === 'fulfilled' && result.value?.status === 200);
+
+        if (allSucceeded) {
+          handlesuccess("Topics added successfully");
+
+          setTimeout(() => {
+            const materialIds = navState.materialIds || navState.selectedIds || [];
+            navigate("/chapter/MergeChapter", {
+              state: {
+                materialIds,
+              },
+            });
+          }, 1500);
+        } else {
+          // Find first error
+          const failedResult = results.find(result =>
+            result.status === 'rejected' || result.value?.status !== 200
+          );
+
+          const errorMsg = failedResult?.status === 'rejected'
+            ? failedResult.reason?.response?.data?.detail || failedResult.reason?.message
+            : failedResult?.value?.data?.detail || failedResult?.value?.data?.message;
+
+          handleerror(errorMsg || "Failed to add some topics");
+        }
+      } else {
+        // No suggestions selected, navigate directly
+        const materialIds = navState.materialIds || navState.selectedIds || [];
+        navigate("/chapter/MergeChapter", {
+          state: {
+            materialIds,
+          },
+        });
       }
     } catch (error) {
-      console.error("Error calling assistant-add-topics API:", error);
-    } finally {
-      // Continue navigation regardless of API result so user flow is not blocked
-      const materialIds = navState.materialIds || navState.selectedIds || [];
-      navigate("/chapter/MergeChapter", {
-        state: {
-          materialIds,
-        },
-      });
+      const errorMessage = error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to save lecture configuration";
+      handleerror(errorMessage);
     }
   };
 
@@ -400,6 +450,58 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
         >
           <Header title="Add Chapter Management" isDark={isDark} toggleTheme={toggleTheme} />
         </div>
+
+        {/* Loading Overlay with Circular Progress */}
+        {isLoadingTopics && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center space-y-6">
+              {/* Circular Progress */}
+              <div className="relative w-32 h-32">
+                {/* Background Circle */}
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke="#d4d4d8"
+                    strokeWidth="8"
+                    fill="none"
+                    opacity="0.3"
+                  />
+                  {/* Progress Circle */}
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke="#696CFF"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 56}`}
+                    strokeDashoffset={`${2 * Math.PI * 56 * (1 - loadingProgress / 100)}`}
+                    strokeLinecap="round"
+                    className="transition-all duration-300 ease-out"
+                  />
+                </svg>
+                {/* Percentage Text */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">
+                    {Math.round(loadingProgress)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Loading Text */}
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-semibold text-white">
+                  Extracting Topics
+                </h3>
+                <p className="text-sm text-gray-300">
+                  Please wait while we analyze your content...
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto no-scrollbar pb-20 pt-6">
@@ -550,7 +652,7 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                         >
                           <div className="flex-1 pr-6">
                             <h3
-                              className={`text-[16px] 2xl:text-[20px] text-base font-bold mb-1.5 transition-colors ${expandedTopicIndex === index
+                              className={`text-[16px] 2xl:text-[20px] text-base font-bold mb-1.5 transition-colors whitespace-pre-wrap ${expandedTopicIndex === index
                                 ? isDark
                                   ? 'text-white'
                                   : 'text-[#696CFF]'
@@ -559,11 +661,11 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                                   : 'text-zinc-900 group-hover:text-zinc-900'
                                 }`}
                             >
-                              {topic.title || `Topic ${index + 1}`}
+                              <MathText>{topic.title || `Topic ${index + 1}`}</MathText>
                             </h3>
 
-                            <p className="text-xs text-gray-500 line-clamp-2 font-light leading-relaxed">
-                              {topic.summary || ""}
+                            <p className="text-xs text-gray-500 line-clamp-2 font-light leading-relaxed whitespace-pre-wrap">
+                              <MathText>{topic.summary || ""}</MathText>
                             </p>
                           </div>
                           <div
@@ -590,9 +692,12 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
 
                             {/* Full Summary */}
                             {topic.summary && (
-                              <div className="bg-zinc-950/30 rounded-lg p-3 border border-zinc-800/50">
-                                <p className="text-xs text-gray-400 leading-relaxed">
-                                  {topic.summary}
+                              <div className={`w-full text-[10px] 2xl:text-[14px] rounded-lg px-3 py-2 text-xs transition-all whitespace-pre-wrap ${isDark
+                                ? "bg-zinc-950/50 text-gray-400 border border-zinc-800/50"
+                                : "bg-zinc-100 text-zinc-800 border border-zinc-200"
+                                }`}>
+                                <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap">
+                                  <MathText>{topic.summary}</MathText>
                                 </p>
                               </div>
                             )}
@@ -618,22 +723,21 @@ export default function AddTopicNarration({ theme = "dark", isDark: isDarkProp, 
                                     >
                                       <div className="mb-1.5">
                                         <h4
-                                          className={`text-xs text-[12px] 2xl:text-[15px] font-medium transition-colors ${isDark
+                                          className={`text-xs text-[12px] 2xl:text-[15px] font-medium transition-colors whitespace-pre-wrap ${isDark
                                             ? "text-gray-300 group-hover:text-white"
                                             : "text-zinc-800 group-hover:text-[#696CFF]"
                                             }`}
                                         >
-                                          {sub.title}
-                                        </h4>
+                                          <MathText>{sub.title}</MathText>             </h4>
                                       </div>
                                       {sub.narration && (
                                         <div
-                                          className={`w-full text-[10px] 2xl:text-[14px] rounded-lg px-3 py-2 text-xs transition-all ${isDark
+                                          className={`w-full text-[10px] 2xl:text-[14px] rounded-lg px-3 py-2 text-xs transition-all whitespace-pre-wrap ${isDark
                                             ? "bg-zinc-950/50 text-gray-400 border border-zinc-800/50"
                                             : "bg-zinc-100 text-zinc-800 border border-zinc-200"
                                             }`}
                                         >
-                                          {sub.narration || "No narration available for this subtopic."}
+                                          <MathText>{sub.narration || "No narration available for this subtopic."}</MathText>
                                         </div>
                                       )}
                                     </div>

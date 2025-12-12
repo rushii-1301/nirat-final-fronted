@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronUp, Book, Layers, Sparkles, ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL } from "../../../utils/assets";
+import MathText from "../../Tools/MathText";
 
 function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebardata, backto = "/chapter" }) {
   const isDark = typeof isDarkProp === "boolean" ? isDarkProp : theme === "dark";
@@ -248,8 +249,8 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <h3 className={`text-sm sm:text-base font-semibold truncate ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
-                                  {chapter.title}
+                                <h3 className={`text-sm sm:text-base font-semibold truncate whitespace-pre-wrap ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
+                                  <MathText>{chapter.title}</MathText>
                                 </h3>
                                 <p className={`text-xs mt-0.5 ${themeClasses.subText}`}>
                                   {hasSubtopics ? `${chapter.subtopics.length} Subtopics` : 'No subtopics'}
@@ -285,14 +286,14 @@ function AllChapters({ theme = "light", isDark: isDarkProp, toggleTheme, sidebar
                                           <span className={`text-xs font-medium ${themeClasses.accentText}`}>
                                             {sub.index.toString().padStart(2, '0')}
                                           </span>
-                                          <h4 className={`text-sm font-medium ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                                            {sub.title}
+                                          <h4 className={`text-sm font-medium whitespace-pre-wrap ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                                            <MathText>{sub.title}</MathText>
                                           </h4>
                                         </div>
 
                                         {sub.narration ? (
-                                          <p className={`text-xs leading-relaxed ${themeClasses.subText} line-clamp-2 hover:line-clamp-none transition-all`}>
-                                            {sub.narration}
+                                          <p className={`text-xs leading-relaxed whitespace-pre-wrap ${themeClasses.subText} line-clamp-2 hover:line-clamp-none transition-all`}>
+                                            <MathText>{sub.narration}</MathText>
                                           </p>
                                         ) : (
                                           <p className={`text-[10px] italic opacity-50 ${themeClasses.subText}`}>
