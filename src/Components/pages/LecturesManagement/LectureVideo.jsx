@@ -156,6 +156,29 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isRecording, mediaRecorder]);
 
+    // Hide cursor when recording
+    useEffect(() => {
+        let styleElement = null;
+
+        if (isRecording) {
+            // Create a style element to force cursor hidden on EVERYTHING
+            styleElement = document.createElement('style');
+            styleElement.textContent = `
+                *, *::before, *::after {
+                    cursor: none !important;
+                }
+            `;
+            document.head.appendChild(styleElement);
+        }
+
+        // Cleanup function to remove style when recording stops
+        return () => {
+            if (styleElement) {
+                document.head.removeChild(styleElement);
+            }
+        };
+    }, [isRecording]);
+
 
 
     // Start recording - captures current tab/window
@@ -172,8 +195,18 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 preferCurrentTab: true
             });
 
+            // Priority order for mimeTypes
+            const mimeTypes = [
+                "video/mp4",
+                "video/webm;codecs=vp9",
+                "video/webm"
+            ];
+
+            const mimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || "video/webm";
+
             const recorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm;codecs=vp9'
+                mimeType,
+                videoBitsPerSecond: 5000000 // 5 Mbps for high quality (perfect quality)
             });
 
             const chunks = [];
@@ -185,7 +218,9 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             };
 
             recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
+                // Strip codecs from mimeType to ensure backend compatibility (e.g. "video/webm;codecs=vp9" -> "video/webm")
+                const cleanMimeType = recorder.mimeType.split(';')[0];
+                const blob = new Blob(chunks, { type: cleanMimeType });
                 setRecordedBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
                 setIsRecording(false);
@@ -293,7 +328,10 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         try {
             const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const formData = new FormData();
-            formData.append('file', blob, `lecture-${lectureId}-${Date.now()}.webm`);
+
+            // Determine extension based on blob type
+            const extension = blob.type.split(';')[0].split('/')[1] || 'mp4';
+            formData.append('file', blob, `lecture-${lectureId}-${Date.now()}.${extension}`);
 
             handlesuccess("Uploading recording...");
 
