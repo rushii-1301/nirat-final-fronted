@@ -163,7 +163,7 @@ function PortalSignUp({ isDark, toggleTheme }) {
                             <label
                                 className={`block ${isDark ? 'text-white' : 'text-black'} text-[14px] font-medium leading-none tracking-normal capitalize font-inter mb-2`}
                             >
-                                Username/ Phone number/ Enrolment Number
+                                Enrolment Number
                             </label>
 
                             <div className="relative">
@@ -174,7 +174,7 @@ function PortalSignUp({ isDark, toggleTheme }) {
                                     onChange={handleChange}
                                     onKeyDown={handleKeyDown}
                                     className={`w-full ${isDark ? 'bg-[#2a2a2a] text-white border-gray-600 focus:border-blue-500' : 'bg-zinc-200 text-black border-gray-300 focus:border-blue-500'} rounded-lg px-4 py-3 text-sm focus:outline-none transition-colors`}
-                                    placeholder="Enter Username , Phone number or Enrolment Number "
+                                    placeholder="Enrolment Number"
                                 />
                             </div>
                         </div>

@@ -51,6 +51,63 @@ input::-webkit-contacts-auto-fill-button {
   margin: 0;
 }
 
+/* Video progress bar styles */
+.video-progress {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.video-progress::-webkit-slider-track {
+  background: #525252;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.video-progress::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: white;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  border: 2px solid #1f2430;
+  cursor: pointer;
+  margin-top: -4px;
+  transition: transform 0.15s ease;
+}
+
+.video-progress::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.video-progress::-moz-range-track {
+  background: #525252;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.video-progress::-moz-range-thumb {
+  background: white;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  border: 2px solid #1f2430;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.video-progress::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Smooth progress bar fill */
+.progress-fill {
+  transition: width 0.1s linear;
+  will-change: width;
+}
+
 /* Transparent autofill for inputs - works with both dark and light themes */
 input:-webkit-autofill,
 textarea:-webkit-autofill,
@@ -128,7 +185,7 @@ select:-webkit-autofill:focus {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: white;
+  background: black;
   cursor: pointer;
   transition: transform 0.15s ease;
 }

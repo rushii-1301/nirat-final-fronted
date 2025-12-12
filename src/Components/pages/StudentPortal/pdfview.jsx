@@ -45,7 +45,12 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
   useEffect(() => {
     const fetchBookById = async () => {
       if (!bookId) {
-        // If no bookId, show empty state
+        // If no bookId, use fallback PDF
+        setBookData({
+          pdfUrl: "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf",
+          title: "PDF Viewer",
+          totalPages: 150
+        });
         setLoading(false);
         return;
       }
@@ -53,6 +58,11 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
       const token = localStorage.getItem('token');
       if (!token) {
         console.warn("Student token not found in localStorage");
+        setBookData({
+          pdfUrl: "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf",
+          title: "PDF Viewer",
+          totalPages: 150
+        });
         setLoading(false);
         return;
       }
@@ -85,17 +95,30 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
         if (specificBook) {
           console.log('Found book:', specificBook);
           setBookData({
-            pdfUrl: `${BACKEND_API_URL}${specificBook.file_url}`,
+            pdfUrl: specificBook.file_url?.startsWith('/https://') 
+              ? specificBook.file_url.replace(/^\//, '') // Remove leading slash for URLs like /https://...
+              : specificBook.file_url?.startsWith('http') 
+                ? specificBook.file_url 
+                : `${BACKEND_API_URL}${specificBook.file_url}`,
             title: specificBook.title,
             totalPages: 150
           });
         } else {
-          console.log('Book not found');
-          // Don't set fallback PDF, let it show empty state
+          console.log('Book not found, using fallback PDF');
+          setBookData({
+            pdfUrl: "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf",
+            title: "PDF Viewer",
+            totalPages: 150
+          });
         }
       } catch (error) {
         console.error('Failed to fetch book data:', error);
-        // Don't set fallback PDF on error
+        // Set fallback PDF on error
+        setBookData({
+          pdfUrl: "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf",
+          title: "PDF Viewer",
+          totalPages: 150
+        });
       } finally {
         setLoading(false);
       }
@@ -111,9 +134,9 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
   // If no PDF URL, don't set fallback
   let finalPdfUrl = bookData?.pdfUrl;
   if (finalPdfUrl && finalPdfUrl.includes('192.168.1.53')) {
-    // Backend not accessible, don't use fallback
-    finalPdfUrl = null;
-    console.log('Backend not accessible, no PDF available');
+    // Backend not accessible, use fallback PDF
+    finalPdfUrl = "/PDF/GSEB-Board-Class-8-Social-Science-Textbook-Gujarati-Medium-Semester-2.pdf";
+    console.log('Backend not accessible, using fallback PDF');
   }
 
   // Debug: Log the final PDF URL being used
@@ -184,13 +207,11 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
   };
 
   const zoomIn = () => {
-    setZoom((z) => Math.min(2, z + 0.2));
-    setIframeKey((prev) => prev + 1); // Force iframe reload
+    setZoom((z) => Math.min(3, z + 0.2));
   };
 
   const zoomOut = () => {
-    setZoom((z) => Math.max(0.6, z - 0.2));
-    setIframeKey((prev) => prev + 1); // Force iframe reload
+    setZoom((z) => Math.max(1, z - 0.2));
   };
 
   const toggleViewMode = () => {
@@ -355,18 +376,20 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
           <Portalheader title={bookData?.title || "PDF Viewer"} isDark={isDark} toggleTheme={toggleTheme} />
         </div>
 
-        <main className={`${isFullscreen ? '' : 'mt-6'} flex-1 flex flex-col min-h-0 px-4 md:px-8`}>
+        <main className="flex-1 flex flex-col min-h-0 px-0">
           {/* PDF Viewer - Full Container */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden flex items-center justify-center">
             <iframe
               key={iframeKey}
-              src={`${pdfFile}#toolbar=0&navpanes=0&scrollbar=${viewMode === 'continuous' ? '1' : '0'}&page=${currentPage}&zoom=${Math.round(zoom * 100)}&view=${viewMode === 'continuous' ? 'FitH' : 'SinglePage'}`}
-              className="w-full h-full"
+              src={`${pdfFile}#toolbar=1&navpanes=1&scrollbar=1&page=${currentPage}&view=FitV`}
+              className={`${isDark ? 'bg-black' : 'bg-zinc-100'} no-scrollbar`}
               style={{ 
                 width: '100%', 
                 height: '100%',
                 border: 'none',
-                display: 'block'
+                display: 'block',
+                transform: `scale(${zoom})`,
+                transformOrigin: 'center center'
               }}
               title="PDF Viewer"
             />
@@ -374,7 +397,7 @@ export default function PDFSlideViewer({ theme, isDark, toggleTheme, sidebardata
 
           {/* Floating Control Bar */}
           <div className="absolute bottom-4 left-4 right-4 z-30">
-            <div className={`${isDark ? 'bg-zinc-900/90' : 'bg-white/90'} backdrop-blur border ${isDark ? 'border-zinc-700' : 'border-gray-300'} rounded-lg px-4 py-3 max-w-md mx-auto`}>
+            <div className="backdrop-blur border rounded-lg px-4 py-3 max-w-md mx-auto">
               <div className="flex items-center justify-between gap-3">
                 {/* Navigation */}
                 <div className="flex items-center gap-2">

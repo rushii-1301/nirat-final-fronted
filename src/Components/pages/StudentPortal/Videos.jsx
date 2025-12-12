@@ -33,6 +33,9 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [videoInitialized, setVideoInitialized] = useState(false);
+    const [isVideoLoading, setIsVideoLoading] = useState(true);
+    const [canPlayVideo, setCanPlayVideo] = useState(false);
     const videoRef = useRef(null);
 
     // Format duration from seconds to MM:SS
@@ -171,6 +174,12 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
             };
         }
 
+        // Handle both full URLs and relative paths
+        let videoUrl = videoData.video_url || defaultVideoUrl;
+        if (videoUrl && !videoUrl.startsWith('http') && !videoUrl.startsWith('/')) {
+            videoUrl = `/${videoUrl}`;
+        }
+
         return {
             subjectLabel: videoData.subject || "Unknown Subject",
             title: videoData.title || "Unknown Title",
@@ -179,7 +188,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
             duration: formatDuration(videoData.duration_seconds) || "0:00",
             description: videoData.description || "No description available",
             highlights: videoData.topics || [],
-            videoUrl: videoData.video_url || defaultVideoUrl,
+            videoUrl: videoUrl,
             thumb: videoData.thumbnail_url || null,
             relatedVideos:
                 videoData.related_videos?.map((rv) => ({
@@ -230,7 +239,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
     const toggleFullscreen = () => {
         if (videoRef.current) {
             const video = videoRef.current;
-            
+
             if (!isFullscreen) {
                 // YouTube-style mobile fullscreen
                 if (video.webkitEnterFullscreen) {
@@ -241,7 +250,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                     video.requestFullscreen().then(() => {
                         // Try to lock orientation to landscape on mobile
                         if (screen.orientation && screen.orientation.lock) {
-                            screen.orientation.lock('landscape').catch(() => {});
+                            screen.orientation.lock('landscape').catch(() => { });
                         }
                     }).catch(() => {
                         // Fallback for mobile
@@ -271,18 +280,53 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                 } else if (document.msExitFullscreen) {
                     document.msExitFullscreen();
                 }
-                
+
                 // Unlock orientation when exiting fullscreen
                 if (screen.orientation && screen.orientation.unlock) {
-                    screen.orientation.unlock().catch(() => {});
+                    screen.orientation.unlock().catch(() => { });
                 }
             }
         }
     };
 
     const handleVideoKeyPress = (e) => {
-        if (e.key === 'f' || e.key === 'F') {
-            toggleFullscreen();
+        const video = videoRef.current;
+        if (!video) return;
+        
+        switch(e.key.toLowerCase()) {
+            case ' ':
+            case 'k':
+                e.preventDefault();
+                handleVideoClick();
+                break;
+            case 'arrowleft':
+                e.preventDefault();
+                skipBackward();
+                break;
+            case 'arrowright':
+                e.preventDefault();
+                skipForward();
+                break;
+            case 'j':
+                e.preventDefault();
+                video.currentTime = Math.max(video.currentTime - 10, 0);
+                break;
+            case 'l':
+                e.preventDefault();
+                video.currentTime = Math.min(video.currentTime + 10, duration);
+                break;
+            case 'm':
+                e.preventDefault();
+                toggleMute();
+                break;
+            case 'f':
+                e.preventDefault();
+                toggleFullscreen();
+                break;
+            case 'c':
+                e.preventDefault();
+                toggleCaptions();
+                break;
         }
     };
 
@@ -298,15 +342,27 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
         }
     };
 
-    const togglePlayPause = () => {
+    // YouTube-style video controls
+    const handleVideoClick = () => {
         if (videoRef.current) {
             if (isPlaying) {
                 videoRef.current.pause();
             } else {
+                // Ensure no other videos are playing
+                const allVideos = document.querySelectorAll('video');
+                allVideos.forEach(v => {
+                    if (v !== videoRef.current) {
+                        v.pause();
+                    }
+                });
                 videoRef.current.play();
             }
             setIsPlaying(!isPlaying);
         }
+    };
+
+    const togglePlayPause = () => {
+        handleVideoClick();
     };
 
     const handleSeek = (e) => {
@@ -317,6 +373,12 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
         }
     };
 
+    // YouTube-style captions toggle
+    const toggleCaptions = () => {
+        // Placeholder for captions functionality
+        console.log('Captions toggle - not implemented yet');
+    };
+
     const formatTime = (seconds) => {
         if (isNaN(seconds)) return '0:00';
         const minutes = Math.floor(seconds / 60);
@@ -324,27 +386,115 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // Smooth progress update with debounce for visual updates
+    const progressUpdateRef = useRef(null);
+    const updateProgressSmoothly = (time) => {
+        if (progressUpdateRef.current) {
+            cancelAnimationFrame(progressUpdateRef.current);
+        }
+        progressUpdateRef.current = requestAnimationFrame(() => {
+            setCurrentTime(time);
+        });
+    };
+
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
-        const updateTime = () => setCurrentTime(video.currentTime);
-        const updateDuration = () => setDuration(video.duration);
+        const updateTime = () => {
+            if (video && !isNaN(video.currentTime)) {
+                updateProgressSmoothly(video.currentTime);
+            }
+        };
+        
+        const updateDuration = () => {
+            if (video && !isNaN(video.duration) && video.duration > 0) {
+                setDuration(video.duration);
+            }
+        };
+        
         const handlePlay = () => setIsPlaying(true);
         const handlePause = () => setIsPlaying(false);
+        const handleEnded = () => {
+            setIsPlaying(false);
+            // Only restart if video was actually playing (not on first load)
+            if (video && videoInitialized) {
+                video.currentTime = 0;
+                setCurrentTime(0);
+            }
+        };
+        const handleLoadedData = () => {
+            if (video && !isNaN(video.duration) && video.duration > 0) {
+                setDuration(video.duration);
+                // Mark video as initialized only on first load
+                if (!videoInitialized) {
+                    setVideoInitialized(true);
+                    setCurrentTime(0);
+                }
+            }
+        };
+        const handleCanPlay = () => {
+            setIsVideoLoading(false);
+            setCanPlayVideo(true);
+        };
+        const handleLoadStart = () => {
+            setIsVideoLoading(true);
+            setCanPlayVideo(false);
+        };
+        const handleError = (e) => {
+            console.error('Video error:', e);
+            setIsVideoLoading(false);
+            setCanPlayVideo(false);
+            // Try to reload video on error
+            if (video.src) {
+                video.load();
+            }
+        };
+
+        // Use requestAnimationFrame for smoother updates
+        let animationId;
+        const smoothUpdate = () => {
+            if (video && !video.paused && !video.ended) {
+                updateTime();
+                animationId = requestAnimationFrame(smoothUpdate);
+            }
+        };
 
         video.addEventListener('timeupdate', updateTime);
         video.addEventListener('loadedmetadata', updateDuration);
+        video.addEventListener('loadeddata', handleLoadedData);
         video.addEventListener('play', handlePlay);
         video.addEventListener('pause', handlePause);
+        video.addEventListener('ended', handleEnded);
+        video.addEventListener('canplay', handleCanPlay);
+        video.addEventListener('loadstart', handleLoadStart);
+        video.addEventListener('canplay', updateDuration);
+        video.addEventListener('error', handleError);
+        video.addEventListener('play', () => {
+            animationId = requestAnimationFrame(smoothUpdate);
+        });
+        video.addEventListener('pause', () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
 
         return () => {
             video.removeEventListener('timeupdate', updateTime);
             video.removeEventListener('loadedmetadata', updateDuration);
+            video.removeEventListener('loadeddata', handleLoadedData);
             video.removeEventListener('play', handlePlay);
             video.removeEventListener('pause', handlePause);
+            video.removeEventListener('ended', handleEnded);
+            video.removeEventListener('canplay', handleCanPlay);
+            video.removeEventListener('loadstart', handleLoadStart);
+            video.removeEventListener('canplay', updateDuration);
+            video.removeEventListener('error', handleError);
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
         };
-    }, []);
+    }, [pageData.videoUrl]);
 
     // Fullscreen event listeners for YouTube-style behavior
     useEffect(() => {
@@ -387,12 +537,57 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
             document.removeEventListener('webkitfullscreenchange', handleWebkitFullscreenChange);
             document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
             document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-            
+
             if (videoRef.current) {
                 const video = videoRef.current;
                 video.removeEventListener('webkitbeginfullscreen', handleVideoFullscreen);
                 video.removeEventListener('webkitendfullscreen', handleVideoExitFullscreen);
             }
+        };
+    }, []);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (video && pageData.videoUrl) {
+            // Stop any currently playing video
+            video.pause();
+            video.currentTime = 0;
+            
+            // Reset video states when URL changes
+            setCurrentTime(0);
+            setDuration(0);
+            setIsPlaying(false);
+            setVideoInitialized(false);
+            
+            // Load new video
+            video.load();
+        }
+    }, [pageData.videoUrl]);
+
+    // Global video management - ensure only one video plays at a time
+    useEffect(() => {
+        // Pause all videos when component unmounts or when navigating away
+        return () => {
+            const video = videoRef.current;
+            if (video) {
+                video.pause();
+                video.currentTime = 0;
+            }
+        };
+    }, []);
+
+    // Stop video when leaving the page
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const video = videoRef.current;
+            if (video) {
+                video.pause();
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
         };
     }, []);
 
@@ -407,6 +602,11 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
         };
     }, [isFullscreen]);
 
+    const closeSettings = () => {
+        setShowSettings(false);
+        setCurrentSettingsView('main');
+    };
+
     const toggleFullscreenAndCloseSettings = () => {
         const wasSettingsOpen = showSettings;
         if (wasSettingsOpen) {
@@ -414,11 +614,6 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
             setCurrentSettingsView('main');
         }
         toggleFullscreen();
-    };
-
-    const closeSettings = () => {
-        setShowSettings(false);
-        setCurrentSettingsView('main');
     };
     const [showComments, setShowComments] = useState(false);
     const [showDescription, setShowDescription] = useState(false);
@@ -645,7 +840,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                         <div className="relative aspect-video lg:aspect-2/1 group">
                                             <video
                                                 ref={videoRef}
-                                                className="absolute inset-0 w-full h-full"
+                                                className="absolute inset-0 w-full h-full cursor-pointer"
                                                 autoPlay
                                                 controls={false}
                                                 controlsList="nodownload noplaybackrate noremoteplayback"
@@ -653,15 +848,28 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                 playsInline
                                                 webkit-playsinline="true"
                                                 x-webkit-airplay="allow"
+                                                preload="metadata"
+                                                onClick={handleVideoClick}
                                             >
+                                                <source src={pageData.videoUrl} type="video/webm" />
                                                 <source src={pageData.videoUrl} type="video/mp4" />
                                                 Your browser does not support the video tag.
                                             </video>
 
+                                            {/* Loading Spinner */}
+                                            {isVideoLoading && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
+                                                    <div className="flex flex-col items-center gap-3">
+                                                        <div className="w-12 h-12 border-3 border-zinc-300 border-t-white rounded-full animate-spin"></div>
+                                                        <div className="text-sm text-white opacity-80">Loading video...</div>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* Center Controls - YouTube Style: Skip Back, Play/Pause, Skip Forward */}
-                                            <div className={`absolute inset-0 flex items-center justify-center z-10 pointer-events-none transition-opacity duration-200 ${
-                                                isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
-                                            }`}>
+                                            {canPlayVideo && (
+                                                <div className={`absolute inset-0 flex items-center justify-center z-10 pointer-events-none transition-opacity duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                                                    }`}>
                                                 <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-12 max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] w-full px-4">
                                                     {/* Skip Backward Button */}
                                                     <div
@@ -681,7 +889,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                         onClick={() => { togglePlayPause(); closeSettings(); }}
                                                     >
                                                         {isPlaying ? (
-                                                            <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                            <svg className=" w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
                                                                 <rect x="6" y="4" width="3" height="12" />
                                                                 <rect x="11" y="4" width="3" height="12" />
                                                             </svg>
@@ -704,25 +912,29 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                                </div>
+                                            )}
 
                                             {/* Custom Controls Overlay */}
-                                            <div className={`absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/90 to-transparent px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 transition-opacity duration-200 ${
-                                                isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
-                                            }`}>
+                                            {canPlayVideo && (
+                                                <div className={`absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/90 to-transparent px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 transition-opacity duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                                                    }`}>
                                                 {/* Progress Bar */}
                                                 <div className="mb-2 sm:mb-3">
-                                                    <input
-                                                        type="range"
-                                                        min="0"
-                                                        max={duration || 100}
-                                                        value={currentTime}
-                                                        onChange={(e) => { handleSeek(e); closeSettings(); }}
-                                                        className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer slider"
-                                                        style={{
-                                                            background: `linear-gradient(to right, white ${(currentTime / (duration || 1)) * 100}%, #525252 ${(currentTime / (duration || 1)) * 100}%)`
-                                                        }}
-                                                    />
+                                                    <div className="relative w-full h-2 bg-zinc-600 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="absolute left-0 top-0 h-full bg-white rounded-full progress-fill transition-all duration-75 ease-linear"
+                                                            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                                                        />
+                                                        <input
+                                                            type="range"
+                                                            min="0"
+                                                            max={duration || 100}
+                                                            value={currentTime}
+                                                            onChange={(e) => { handleSeek(e); closeSettings(); }}
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        />
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex items-center justify-between gap-1 sm:gap-2">
@@ -730,14 +942,14 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                     <div className="flex items-center gap-1 sm:gap-2 md:gap-3 min-w-0">
                                                         <button
                                                             onClick={() => { toggleMute(); closeSettings(); }}
-                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition shrink-0"
+                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition shrink-0 cursor-pointer"
                                                             title={isMuted ? 'Unmute' : 'Mute'}
                                                         >
                                                             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                                                         </button>
                                                         <button
                                                             onClick={() => { togglePlayPause(); closeSettings(); }}
-                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition relative z-30 shrink-0"
+                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition relative z-30 shrink-0 cursor-pointer"
                                                         >
                                                             {isPlaying ? (
                                                                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -758,7 +970,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                         <div className="relative">
                                                             <button
                                                                 onClick={() => setShowSettings(!showSettings)}
-                                                                className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition"
+                                                                className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition cursor-pointer"
                                                                 title="Settings"
                                                             >
                                                                 <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -855,7 +1067,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                                                             setShowSettings(false);
                                                                                             setCurrentSettingsView('main');
                                                                                         }}
-                                                                                        className={`w-full text-left px-3 py-2 rounded text-sm ${playbackSpeed === speed ? 'bg-zinc-600 text-white' : 'text-zinc-300 hover:bg-zinc-600'}`}
+                                                                                        className={`w-full text-left px-3 py-2 rounded text-sm cursor-pointer ${playbackSpeed === speed ? 'bg-zinc-600 text-white' : 'text-zinc-300 hover:bg-zinc-600'}`}
                                                                                     >
                                                                                         {speed}x
                                                                                     </button>
@@ -884,7 +1096,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                                                             setShowSettings(false);
                                                                                             setCurrentSettingsView('main');
                                                                                         }}
-                                                                                        className={`w-full text-left px-3 py-2 rounded text-sm capitalize ${quality === q ? 'bg-zinc-600 text-white' : 'text-zinc-300 hover:bg-zinc-600'}`}
+                                                                                        className={`w-full text-left px-3 py-2 rounded text-sm capitalize cursor-pointer ${quality === q ? 'bg-zinc-600 text-white' : 'text-zinc-300 hover:bg-zinc-600'}`}
                                                                                     >
                                                                                         {q}
                                                                                     </button>
@@ -897,14 +1109,15 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                         </div>
                                                         <button
                                                             onClick={toggleFullscreenAndCloseSettings}
-                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition"
+                                                            className="p-1 sm:p-1.5 md:p-2 rounded hover:bg-white/20 text-white transition cursor-pointer"
                                                             title="Fullscreen"
                                                         >
                                                             <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -931,7 +1144,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                     fill={liked ? 'currentColor' : 'none'}
                                                 />
                                                 <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${isDark ? 'text-white' : 'text-black'}`}>
-                                                    Like 
+                                                    Like
                                                     {/* {totalLikes > 0 && `(${formatCount(totalLikes)})`} */}
                                                 </span>
                                             </button>
@@ -985,9 +1198,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                         }`}
                                                     fill={bookmarked ? 'currentColor' : 'none'}
                                                 />
-                                                <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${isDark ? 'text-white' : 'text-black'}`}>
-                                                    {bookmarked ? 'Bookmarked' : 'Bookmark'}
-                                                </span>
+                                                
                                             </button>
                                         </div>
 
@@ -1001,22 +1212,21 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                     {showComments ? (
                                         <>
                                             {/* Overlay */}
-                                            <div 
+                                            <div
                                                 className={`fixed inset-0 z-40 ${isDark ? 'bg-black/50' : 'bg-black/30'}`}
                                                 onClick={() => setShowComments(false)}
                                             />
-                                            
+
                                             {/* Sidebar */}
-                                            <div className={`fixed top-0 right-0 h-full w-96 ${isDark ? 'bg-zinc-900' : 'bg-white'} shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-                                                showComments ? 'translate-x-0' : 'translate-x-full'
-                                            }`}>
+                                            <div className={`fixed top-0 right-0 h-full w-96 ${isDark ? 'bg-zinc-900' : 'bg-white'} shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${showComments ? 'translate-x-0' : 'translate-x-full'
+                                                }`}>
                                                 {/* Header */}
                                                 <div className={`p-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
                                                     <div className="flex items-center justify-between">
                                                         <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Comments</h3>
-                                                        <button 
-                                                            onClick={() => setShowComments(false)} 
-                                                            className={`h-8 w-8 inline-flex items-center justify-center rounded-md cursor-pointer transition ${isDark ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-600'}`} 
+                                                        <button
+                                                            onClick={() => setShowComments(false)}
+                                                            className={`h-8 w-8 inline-flex items-center justify-center rounded-md cursor-pointer transition ${isDark ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-600'}`}
                                                             aria-label="Close comments"
                                                         >
                                                             <X className="w-4 h-4" />
@@ -1028,7 +1238,6 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                 <div className={`p-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
                                                     <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'} mb-3`}>Join The Discussion About This Video</div>
                                                     <div className="flex items-start gap-3">
-                                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs font-semibold`}>U</div>
                                                         <div className="flex-1">
                                                             <textarea
                                                                 value={commentInput}
@@ -1036,14 +1245,16 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                                 onKeyDown={handleKeyPress}
                                                                 placeholder="Add a comment...."
                                                                 rows={3}
-                                                                className={`w-full resize-none rounded-md border px-3 py-2 outline-none ${isDark ? 'bg-zinc-900 border-zinc-800 placeholder-zinc-500 focus:ring-2 focus:ring-[#2563EB] focus:border-transparent' : 'bg-white border-zinc-300 placeholder-zinc-400 focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent'}`}
+                                                                className={`w-full resize-none rounded-md border px-3 py-2 outline-none ${isDark ? 'bg-zinc-800 border-zinc-800 placeholder-zinc-500 focus:ring-2 focus:ring-[#2563EB] focus:border-transparent' : 'bg-white border-zinc-300 placeholder-zinc-400 focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent'}`}
                                                             />
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-end mt-3">
                                                         <button onClick={postComment} className={`h-9 px-3 inline-flex items-center gap-2 rounded-md transition ${isDark ? 'bg-white text-zinc-900 border-2 border-zinc-800 hover:bg-zinc-900 hover:text-white' : 'bg-[#2563EB] text-white hover:bg-[#1D4ED8]'}`}>
-                                                            <Send className={`w-4 h-4`} />
-                                                            <span className="text-sm">Post Comment</span>
+                                                            <span className="text-sm font-semibold font-inter text-[14px] leading-none tracking-normal capitalize">
+                                                                Post Comment
+                                                            </span>
+
                                                         </button>
                                                     </div>
                                                 </div>
