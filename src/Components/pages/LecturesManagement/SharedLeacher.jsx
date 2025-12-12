@@ -15,6 +15,15 @@ const LectureListItem = ({ lecture, isDark, onDelete }) => {
         <div className={`flex items-start justify-between gap-4 p-4 ${isDark ? 'border-zinc-800' : 'border-zinc-200'} border-b last:border-b-0`}>
             {/* Thumbnail + duration badge */}
             <div className={placeholderStyle}>
+                {lecture.lecture_url ? (
+                    <video
+                        src={lecture.lecture_url}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                    />
+                ) : (
+                    <div className={`w-full h-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-300'}`} />
+                )}
                 <div className={`absolute bottom-1 right-1 px-2 py-0.5 rounded-md text-[10px] md:text-xs font-medium ${isDark ? 'bg-black/70 text-gray-100' : 'bg-black/70 text-white'}`}>
                     {duration}
                 </div>
