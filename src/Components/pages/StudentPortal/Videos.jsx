@@ -80,6 +80,10 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                         setTotalLikes(apiVideo.total_likes);
                     }
 
+                    if (apiVideo.user_subscribed !== undefined) {
+                        setBookmarked(apiVideo.user_subscribed);
+                    }
+
                     if (response.data.data.comments) {
                         const formattedComments = response.data.data.comments.map((comment) => ({
                             id: comment.id,
@@ -557,6 +561,47 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
         }
     };
 
+    const handleBookmarkToggle = async () => {
+        const newBookmarkedState = !bookmarked;
+        setBookmarked(newBookmarkedState);
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.error("No authentication token found");
+                setBookmarked(!newBookmarkedState);
+                return;
+            }
+
+            const videoId = params.id || passedVideo?.id || "2";
+
+            const response = await axios.post(
+                `${BACKEND_API_URL}/school-portal/videos/${videoId}/subscribe`,
+                {
+                    subscribed: newBookmarkedState,
+                },
+                {
+                    headers: {
+                        accept: "application/json",
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.data?.status) {
+                // Bookmark successfully updated
+                console.log("Video subscription status updated:", response.data.message);
+            } else {
+                setBookmarked(!newBookmarkedState);
+                console.error("Failed to update bookmark status");
+            }
+        } catch (err) {
+            console.error("Failed to update bookmark:", err);
+            setBookmarked(!newBookmarkedState);
+        }
+    };
+
     const toggleReplyLike = (id) => {
         setLikedReplies((prev) => ({
             ...prev,
@@ -632,7 +677,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
 
                                                     {/* Play/Pause Button */}
                                                     <div
-                                                        className="bg-zinc-800/70 rounded-full p-2 sm:p-3 md:p-4 cursor-pointer pointer-events-auto hover:bg-zinc-700/80 transition-colors shrink-0"
+                                                        className="bg-zinc-800/70 rounded-full p-2 sm:p-3 md:p-4 cursor-pointer pointer-events-auto hover:bg-zinc-900/80 transition-colors shrink-0"
                                                         onClick={() => { togglePlayPause(); closeSettings(); }}
                                                     >
                                                         {isPlaying ? (
@@ -765,7 +810,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                                             {/* Playback Speed Option */}
                                                                             <button
                                                                                 onClick={() => setCurrentSettingsView('speed')}
-                                                                                className="flex items-center justify-between w-full p-3 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
+                                                                                className="flex items-center justify-between w-full p-3 text-sm font-medium text-zinc-200 hover:bg-zinc-900"
                                                                             >
                                                                                 <div className="flex items-center gap-2">
                                                                                     <img src={getAsset('video_dark')} alt="Playback Speed" className="w-4 h-4" />
@@ -779,7 +824,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                                                             {/* Quality Option */}
                                                                             <button
                                                                                 onClick={() => setCurrentSettingsView('quality')}
-                                                                                className="flex items-center justify-between w-full p-3 text-sm font-medium text-zinc-200 hover:bg-zinc-700"
+                                                                                className="flex items-center justify-between w-full p-3 text-sm font-medium text-zinc-200 hover:bg-zinc-900"
                                                                             >
                                                                                 <div className="flex items-center gap-2">
                                                                                     <img src={getAsset('video_dark')} alt="Quality" className="w-4 h-4" />
@@ -865,7 +910,7 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
 
                                     {/* Meta Card */}
                                     <div className={`border ${panelBg} rounded-xl px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-2`}>
-                                        <span className={`inline-block text-xs px-2 py-1 rounded ${isDark ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-200 text-zinc-700'} mb-2`}>{pageData.subjectLabel}</span>
+                                        <span className={`inline-block text-xs px-2 py-1 rounded ${isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-200 text-zinc-700'} mb-2`}>{pageData.subjectLabel}</span>
                                         <h2 className="text-2xl font-bold">{pageData.title}</h2>
                                         <p className={`text-base ${subText} mb-4`}>{pageData.description}</p>
 
@@ -873,75 +918,75 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                         <div className="flex flex-wrap gap-2 mb-4">
                                             <button
                                                 onClick={handleVideoLike}
-                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer transition ${isDark
-                                                    ? 'border-zinc-700 hover:bg-zinc-800'
-                                                    : 'border-zinc-300 hover:bg-zinc-100'
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md cursor-pointer transition ${isDark
+                                                    ? 'bg-zinc-800 hover:bg-zinc-700'
+                                                    : 'bg-zinc-100 hover:bg-zinc-200'
                                                     }`}
                                             >
                                                 <ThumbsUp
                                                     className={`w-4 h-4 transition-transform duration-150 group-active:scale-90 ${liked
                                                         ? (isDark ? 'text-white scale-110' : 'text-blue-600 scale-110')
-                                                        : (isDark ? subText : 'text-zinc-900')
+                                                        : (isDark ? 'text-white' : 'text-black')
                                                         }`}
                                                     fill={liked ? 'currentColor' : 'none'}
                                                 />
-                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>
+                                                <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${isDark ? 'text-white' : 'text-black'}`}>
                                                     Like 
                                                     {/* {totalLikes > 0 && `(${formatCount(totalLikes)})`} */}
                                                 </span>
                                             </button>
-                                            <button className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition`}>
-                                                <Share2 className={`w-4 h-4 ${isDark ? subText : 'text-zinc-900'}`} />
-                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>Share</span>
+                                            <button className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md cursor-pointer transition ${isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-zinc-100 hover:bg-zinc-200'}`}>
+                                                <Share2 className={`w-4 h-4 ${isDark ? 'text-white' : 'text-black'}`} />
+                                                <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${isDark ? 'text-white' : 'text-black'}`}>Share</span>
                                             </button>
                                             <button
                                                 onClick={() => { setShowComments(!showComments); if (!showComments) setShowDescription(false); }}
-                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer transition ${showComments
-                                                    ? (isDark ? 'bg-zinc-200 text-zinc-900 border-transparent' : 'bg-zinc-900 text-white border-transparent')
-                                                    : (isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100')
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md cursor-pointer transition ${showComments
+                                                    ? (isDark ? 'bg-zinc-200 text-zinc-900' : 'bg-zinc-900 text-white')
+                                                    : (isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-zinc-100 hover:bg-zinc-200')
                                                     }`}
                                             >
-                                                <MessageSquare className={`w-4 h-4 ${showComments ? '' : (isDark ? subText : 'text-zinc-900')}`} />
-                                                <span className={`hidden sm:inline text-sm ${showComments ? '' : (isDark ? '' : 'text-zinc-900')}`}>Comments</span>
+                                                <MessageSquare className={`w-4 h-4 ${showComments ? '' : (isDark ? 'text-white' : 'text-black')}`} />
+                                                <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${showComments ? '' : (isDark ? 'text-white' : 'text-black')}`}>Comments</span>
                                             </button>
                                             <button
                                                 onClick={() => { setShowDescription(true); setShowComments(false); }}
-                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer transition ${showDescription
-                                                    ? (isDark ? 'bg-zinc-200 text-zinc-900 border-transparent' : 'bg-zinc-900 text-white border-transparent')
-                                                    : (isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100')
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md cursor-pointer transition ${showDescription
+                                                    ? (isDark ? 'bg-zinc-200 text-zinc-900' : 'bg-zinc-900 text-white')
+                                                    : (isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-zinc-100 hover:bg-zinc-200')
                                                     }`}
                                             >
-                                                <Info className={`w-4 h-4 ${showDescription ? '' : (isDark ? subText : 'text-zinc-900')}`} />
-                                                <span className={`hidden sm:inline text-sm ${showDescription ? '' : (isDark ? '' : 'text-zinc-900')}`}>Description</span>
+                                                <Info className={`w-4 h-4 ${showDescription ? '' : (isDark ? 'text-white' : 'text-black')}`} />
+                                                <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${showDescription ? '' : (isDark ? 'text-white' : 'text-black')}`}>Description</span>
                                             </button>
                                             <button
                                                 onClick={() => setNotInterested((prev) => !prev)}
-                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition ml-auto`}
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md cursor-pointer transition ${isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-zinc-100 hover:bg-zinc-200'}`}
                                             >
                                                 <Flag
                                                     className={`w-4 h-4 transition-transform duration-150 group-active:scale-90 ${notInterested
                                                         ? (isDark ? 'text-red-500 scale-110' : 'text-red-600 scale-110')
-                                                        : (isDark ? subText : 'text-zinc-900')
+                                                        : (isDark ? 'text-white' : 'text-black')
                                                         }`}
                                                     fill={notInterested ? 'currentColor' : 'none'}
                                                 />
-                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>
+                                                <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${isDark ? 'text-white' : 'text-black'}`}>
                                                     Not Interested
                                                 </span>
                                             </button>
                                             <button
-                                                onClick={() => setBookmarked((prev) => !prev)}
-                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition`}
+                                                onClick={handleBookmarkToggle}
+                                                className={`group flex items-center gap-0 sm:gap-2 h-9 px-2 sm:px-3 rounded-md cursor-pointer transition ${isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-zinc-100 hover:bg-zinc-200'}`}
                                             >
                                                 <Bookmark
                                                     className={`w-4 h-4 transition-transform duration-150 group-active:scale-90 ${bookmarked
-                                                        ? (isDark ? 'text-white scale-110' : 'text-blue-600 scale-110')
-                                                        : (isDark ? subText : 'text-zinc-900')
+                                                        ? (isDark ? 'text-white scale-110' : 'text-blue-500 scale-110')
+                                                        : (isDark ? 'text-white' : 'text-black')
                                                         }`}
                                                     fill={bookmarked ? 'currentColor' : 'none'}
                                                 />
-                                                <span className={`hidden sm:inline text-sm ${isDark ? '' : 'text-zinc-900'}`}>
-                                                    Bookmark
+                                                <span className={`hidden sm:inline font-inter font-semibold text-base leading-none tracking-normal capitalize ${isDark ? 'text-white' : 'text-black'}`}>
+                                                    {bookmarked ? 'Bookmarked' : 'Bookmark'}
                                                 </span>
                                             </button>
                                         </div>
@@ -954,137 +999,150 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                 {/* Right: Related / Comments */}
                                 <aside className="lg:col-span-1 mb-3 md:mb-4 lg:mb-0">
                                     {showComments ? (
-                                        <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5 flex flex-col min-h-0 max-h-[85vh] md:max-h-[88vh] lg:max-h-[83vh]`}>
-                                            <div className="flex items-center justify-between mb-3">
-                                                <h3 className="text-sm font-semibold">Comment</h3>
-                                                <button onClick={() => setShowComments(false)} className={`h-8 w-8 inline-flex items-center justify-center rounded-md border cursor-pointer ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-zinc-300 hover:bg-zinc-100'} transition`} aria-label="Close comments">
-                                                    <X className={`w-4 h-4 ${subText}`} />
-                                                </button>
-                                            </div>
-                                            <div className={`text-xs ${subText} mb-2`}>Join The Discussion About This Video</div>
-                                            <div className="flex items-start gap-2 mb-2">
-                                                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs font-semibold`}>U</div>
-                                                <div className="flex-1">
-                                                    <textarea
-                                                        value={commentInput}
-                                                        onChange={(e) => setCommentInput(e.target.value)}
-                                                        onKeyDown={handleKeyPress}
-                                                        placeholder="Add a comment...."
-                                                        rows={3}
-                                                        className={`w-full resize-none rounded-md border px-3 py-2 outline-none ${isDark ? 'bg-zinc-900 border-zinc-800 placeholder-zinc-500 focus:ring-2 focus:ring-[#2563EB] focus:border-transparent' : 'bg-white border-zinc-300 placeholder-zinc-400 focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent'}`}
-                                                    />
+                                        <>
+                                            {/* Overlay */}
+                                            <div 
+                                                className={`fixed inset-0 z-40 ${isDark ? 'bg-black/50' : 'bg-black/30'}`}
+                                                onClick={() => setShowComments(false)}
+                                            />
+                                            
+                                            {/* Sidebar */}
+                                            <div className={`fixed top-0 right-0 h-full w-96 ${isDark ? 'bg-zinc-900' : 'bg-white'} shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+                                                showComments ? 'translate-x-0' : 'translate-x-full'
+                                            }`}>
+                                                {/* Header */}
+                                                <div className={`p-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>Comments</h3>
+                                                        <button 
+                                                            onClick={() => setShowComments(false)} 
+                                                            className={`h-8 w-8 inline-flex items-center justify-center rounded-md cursor-pointer transition ${isDark ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-600'}`} 
+                                                            aria-label="Close comments"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Comment Input */}
+                                                <div className={`p-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                                                    <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'} mb-3`}>Join The Discussion About This Video</div>
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs font-semibold`}>U</div>
+                                                        <div className="flex-1">
+                                                            <textarea
+                                                                value={commentInput}
+                                                                onChange={(e) => setCommentInput(e.target.value)}
+                                                                onKeyDown={handleKeyPress}
+                                                                placeholder="Add a comment...."
+                                                                rows={3}
+                                                                className={`w-full resize-none rounded-md border px-3 py-2 outline-none ${isDark ? 'bg-zinc-900 border-zinc-800 placeholder-zinc-500 focus:ring-2 focus:ring-[#2563EB] focus:border-transparent' : 'bg-white border-zinc-300 placeholder-zinc-400 focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent'}`}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-end mt-3">
+                                                        <button onClick={postComment} className={`h-9 px-3 inline-flex items-center gap-2 rounded-md transition ${isDark ? 'bg-white text-zinc-900 border-2 border-zinc-800 hover:bg-zinc-900 hover:text-white' : 'bg-[#2563EB] text-white hover:bg-[#1D4ED8]'}`}>
+                                                            <Send className={`w-4 h-4`} />
+                                                            <span className="text-sm">Post Comment</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Comments List */}
+                                                <div className="flex-1 overflow-y-auto no-scrollbar p-4" style={{ height: 'calc(100vh - 280px)' }}>
+
+                                                    <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'} mb-3`}>{comments.length} Comments</div>
+                                                    {comments.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            {comments.map((c, idx) => (
+                                                                <div key={c.id} className={idx < comments.length - 1 ? `pb-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}` : ''}>
+                                                                    <div className="flex items-start gap-3">
+                                                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs font-semibold flex-shrink-0`}>
+                                                                            {c.name.split(' ').map(p => p[0]).slice(0, 2).join('')}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-zinc-900'} truncate`}>{c.name}</span>
+                                                                                <span className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{c.time}</span>
+                                                                            </div>
+                                                                            <div className={`text-sm ${isDark ? 'text-zinc-200' : 'text-zinc-800'} mb-2 break-words`}>{c.text}</div>
+                                                                            <div className="flex items-center gap-4 text-xs">
+                                                                                <button
+                                                                                    onClick={() => toggleCommentLike(c.id)}
+                                                                                    className={`group inline-flex items-center gap-1 transition cursor-pointer`}
+                                                                                >
+                                                                                    <ThumbsUp
+                                                                                        className={`w-3.5 h-3.5 transition-transform duration-150 group-active:scale-90 ${likedComments[c.id]
+                                                                                            ? 'text-blue-600 scale-110'
+                                                                                            : (isDark ? 'text-zinc-400' : 'text-zinc-600')
+                                                                                            }`}
+                                                                                        fill={likedComments[c.id] ? 'currentColor' : 'none'}
+                                                                                    />
+                                                                                    <span className={`${likedComments[c.id] ? 'text-blue-600' : (isDark ? 'text-zinc-400' : 'text-zinc-600')}`}>
+                                                                                        {formatCount(c.likes)}
+                                                                                    </span>
+                                                                                </button>
+                                                                                <button className={`group inline-flex items-center gap-1 cursor-pointer`}>
+                                                                                    <Reply className={`w-3.5 h-3.5 ${isDark ? 'text-zinc-400' : 'text-zinc-600'} group-hover:text-blue-600`} />
+                                                                                    <span className={`${isDark ? 'text-zinc-400' : 'text-zinc-600'} group-hover:text-blue-600`}>Reply</span>
+                                                                                </button>
+                                                                            </div>
+                                                                            {c.replies && c.replies.length > 0 && (
+                                                                                <div className="mt-3 space-y-3">
+                                                                                    {c.replies.map((r) => (
+                                                                                        <div key={r.id} className="flex items-start gap-2">
+                                                                                            <div className={`h-6 w-6 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs flex-shrink-0`}>
+                                                                                                {r.name.split(' ').map(p => p[0]).slice(0, 2).join('')}
+                                                                                            </div>
+                                                                                            <div className="flex-1 min-w-0">
+                                                                                                <div className="flex items-center gap-2 mb-1">
+                                                                                                    <span className={`text-xs font-medium ${isDark ? 'text-zinc-200' : 'text-zinc-700'} truncate`}>{r.name}</span>
+                                                                                                    <span className={`text-xs ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>{r.time}</span>
+                                                                                                </div>
+                                                                                                <div className={`text-xs ${isDark ? 'text-zinc-300' : 'text-zinc-600'} break-words`}>{r.text}</div>
+                                                                                                <div className="flex items-center gap-3 mt-1 text-xs">
+                                                                                                    <button
+                                                                                                        onClick={() => toggleReplyLike(r.id)}
+                                                                                                        className={`group inline-flex items-center gap-1 cursor-pointer`}
+                                                                                                    >
+                                                                                                        <ThumbsUp
+                                                                                                            className={`w-3 h-3 transition-transform duration-150 group-active:scale-90 ${likedReplies[r.id]
+                                                                                                                ? 'text-blue-600 scale-110'
+                                                                                                                : (isDark ? 'text-zinc-500' : 'text-zinc-500')
+                                                                                                                }`}
+                                                                                                            fill={likedReplies[r.id] ? 'currentColor' : 'none'}
+                                                                                                        />
+                                                                                                        <span className={`${likedReplies[r.id] ? 'text-blue-600' : (isDark ? 'text-zinc-500' : 'text-zinc-500')}`}>
+                                                                                                            {formatCount(r.likes)}
+                                                                                                        </span>
+                                                                                                    </button>
+                                                                                                    <button className={`group inline-flex items-center gap-1 cursor-pointer`}>
+                                                                                                        <Reply className={`w-3 h-3 ${isDark ? 'text-zinc-500' : 'text-zinc-500'} group-hover:text-blue-600`} />
+                                                                                                        <span className={`${isDark ? 'text-zinc-500' : 'text-zinc-500'} group-hover:text-blue-600`}>Reply</span>
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-8">
+                                                            <div className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>No comments yet. Be the first to comment!</div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <div className="flex justify-end mb-3">
-                                                <button onClick={postComment} className={`h-9 px-3 inline-flex items-center gap-2 rounded-md transition ${isDark ? 'bg-white text-zinc-900 border-2 border-zinc-800 hover:bg-zinc-900 hover:text-white' : 'bg-[#2563EB] text-white hover:bg-[#1D4ED8]'}`}>
-                                                    <Send className={`w-4 h-4`} />
-                                                    <span className="text-sm">Post Comment</span>
-                                                </button>
-                                            </div>
-                                            <div className={`text-xs ${subText} mb-2`}>{comments.length} Comment</div>
-                                            <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pr-1 no-scrollbar">
-                                                {comments.map((c, idx) => (
-                                                    <div key={c.id}>
-                                                        <div className="flex items-start gap-3">
-                                                            <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-xs font-semibold`}>
-                                                                {c.name.split(' ').map(p => p[0]).slice(0, 2).join('')}
-                                                            </div>
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="flex items-center">
-                                                                    <div className="text-sm font-medium truncate">{c.name}</div>
-                                                                    <span className={`px-2 ${subText}`}>•</span>
-                                                                    <div className={`text-xs ${subText}`}>{c.time}</div>
-                                                                </div>
-                                                                <div className={`text-sm mt-1`}>{c.text}</div>
-                                                                <div className="flex items-center mt-2 text-xs">
-                                                                    <button
-                                                                        onClick={() => toggleCommentLike(c.id)}
-                                                                        className={`group text-xs inline-flex items-center gap-1 transition cursor-pointer`}
-                                                                    >
-                                                                        <ThumbsUp
-                                                                            className={`w-3.5 h-3.5 transition-transform duration-150 group-active:scale-90 ${likedComments[c.id]
-                                                                                ? 'text-[#2563EB] scale-110'
-                                                                                : subText
-                                                                                }`}
-                                                                            fill={likedComments[c.id] ? 'currentColor' : 'none'}
-                                                                        />
-                                                                        <span className={`${likedComments[c.id] ? 'text-[#2563EB]' : subText}`}>
-                                                                            {formatCount(c.likes)}
-                                                                        </span>
-                                                                    </button>
-                                                                    <span className={`px-3 ${subText}`}>•</span>
-                                                                    <button className={`group text-xs inline-flex items-center gap-1`}>
-                                                                        <Reply className={`w-3.5 h-3.5 ${subText} group-hover:text-[#2563EB]`} />
-                                                                        <span className={`${subText} group-hover:text-[#2563EB]`}>Reply</span>
-                                                                    </button>
-                                                                </div>
-                                                                {c.replies && c.replies.length > 0 && (
-                                                                    <div className="mt-4 pl-10 space-y-4">
-                                                                        {c.replies.map((r) => (
-                                                                            <div key={r.id} className="flex items-start gap-3">
-                                                                                <div className={`h-7 w-7 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-800'} text-[10px] font-semibold`}>
-                                                                                    {r.name.split(' ').map(p => p[0]).slice(0, 2).join('')}
-                                                                                </div>
-                                                                                <div className="min-w-0 flex-1">
-                                                                                    <div className="flex items-center">
-                                                                                        <div className="text-sm font-medium truncate">{r.name}</div>
-                                                                                        <span className={`px-2 ${subText}`}>•</span>
-                                                                                        <div className={`text-xs ${subText}`}>{r.time}</div>
-                                                                                    </div>
-                                                                                    <div className={`text-sm mt-1`}>{r.text}</div>
-                                                                                    <div className="flex items-center mt-2 text-xs">
-                                                                                        <button
-                                                                                            onClick={() => toggleReplyLike(r.id)}
-                                                                                            className={`group text-xs inline-flex items-center gap-1 transition cursor-pointer`}
-                                                                                        >
-                                                                                            <ThumbsUp
-                                                                                                className={`w-3.5 h-3.5 transition-transform duration-150 group-active:scale-90 ${likedReplies[r.id]
-                                                                                                    ? 'text-[#2563EB] scale-110'
-                                                                                                    : subText
-                                                                                                    }`}
-                                                                                                fill={likedReplies[r.id] ? 'currentColor' : 'none'}
-                                                                                            />
-                                                                                            <span className={`${likedReplies[r.id] ? 'text-[#2563EB]' : subText}`}>
-                                                                                                {formatCount(r.likes)}
-                                                                                            </span>
-                                                                                        </button>
-                                                                                        <span className={`px-3 ${subText}`}>•</span>
-                                                                                        <button className={`group text-xs inline-flex items-center gap-1`}>
-                                                                                            <Reply className={`w-3.5 h-3.5 ${subText} group-hover:text-[#2563EB]`} />
-                                                                                            <span className={`${subText} group-hover:text-[#2563EB]`}>Reply</span>
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        {idx < comments.length - 1 && <div className={`mt-6 border-t ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}></div>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                                        </>
                                     ) : (
-                                        <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5`}>
-                                            <h3 className="text-sm font-semibold mb-3">Related Video</h3>
-                                            <div className="space-y-2 md:space-y-3">
-                                                {pageData.relatedVideos.map((rv) => (
-                                                    <div
-                                                        key={rv.id}
-                                                        onClick={() => navigate(`/StudentPortal/Videos/${rv.id}`, { state: { video: rv }, replace: true })}
-                                                        className={`flex gap-2 md:gap-3 items-center rounded-lg border ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'} p-2 cursor-pointer hover:opacity-80 transition-opacity`}
-                                                    >
-                                                        <div className="w-24 h-16 rounded-md overflow-hidden bg-zinc-800/60">
-                                                            <div className={`w-full h-full bg-cover bg-center`} style={{ backgroundImage: `url('${rv.thumb}')` }} />
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <div className="text-sm font-medium truncate">{rv.title}</div>
-                                                            <div className={`text-xs ${subText}`}>{rv.duration}</div>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                        <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5 text-center`}>
+                                            <div className={`text-sm ${subText}`}>
+                                                No related videos available
                                             </div>
                                         </div>
                                     )}

@@ -139,7 +139,7 @@ function PortalSignUp({ isDark, toggleTheme }) {
                         {/* Sign In Your Account Header */}
                         <div className="flex items-center gap-4">
                             <button
-                                onClick={() => navigate(-1)}
+                                onClick={() => navigate('/Intro')}
                                 className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark 
                                     ? 'text-white hover:bg-gray-800' 
                                     : 'text-black hover:bg-gray-200'
