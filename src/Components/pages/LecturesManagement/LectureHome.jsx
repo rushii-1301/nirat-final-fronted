@@ -31,21 +31,21 @@ const ChapterCard = ({ data, isDark, onDelete, onShare }) => {
                     {/* Play Button */}
                     <button
                         onClick={() => navigate("/lecture/LectureVideo", { state: { lectureId: data.lecture_id } })}
-                        className={`cursor-pointer w-[30%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-semibold transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}>
+                        className={`cursor-pointer w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-semibold transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}>
                         <span>Play</span>
                         <Play fill="currentColor" className="w-4 h-4" />
                     </button>
                     {/* Share Button */}
-                    <button
+                    {/* <button
                         onClick={() => onShare && onShare(data)}
                         className={`cursor-pointer w-[35%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}>
                         <span>Share</span>
                         <Share2 fill="currentColor" className="w-4 h-4" />
-                    </button>
+                    </button> */}
                     {/* Remove Button */}
                     <button
                         onClick={() => onDelete(data)}
-                        className={`cursor-pointer w-[45%] lg:w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}
+                        className={`cursor-pointer w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}
                     >
                         <span>Remove</span>
                         <Trash2 className="w-4 h-4" />
@@ -189,8 +189,10 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                 },
             });
 
-            // Handle the response - it's a direct array of lecture objects
-            if (response.data && Array.isArray(response.data)) {
+            // Handle the response
+            if (response.data?.data?.lectures && Array.isArray(response.data.data.lectures)) {
+                setLectureData(response.data.data.lectures);
+            } else if (response.data && Array.isArray(response.data)) {
                 setLectureData(response.data);
             } else {
                 console.warn('Unexpected response format:', response.data);
@@ -224,7 +226,9 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                 },
             });
 
-            if (response.data && Array.isArray(response.data)) {
+            if (response.data?.data?.lectures && Array.isArray(response.data.data.lectures)) {
+                setLectureData(response.data.data.lectures);
+            } else if (response.data && Array.isArray(response.data)) {
                 setLectureData(response.data);
             }
         } catch (error) {
@@ -259,8 +263,8 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 params: {
-                    std: encodeURIComponent(lectureToDelete.std),
-                    subject: encodeURIComponent(lectureToDelete.subject),
+                    std: lectureToDelete.std,
+                    subject: lectureToDelete.subject,
                     lecture_id: lectureToDelete.lecture_id,
                 },
             });

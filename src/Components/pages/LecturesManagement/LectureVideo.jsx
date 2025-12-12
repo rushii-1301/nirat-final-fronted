@@ -13,6 +13,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     const [isRecording, setIsRecording] = useState(false);
     const [recordedBlob, setRecordedBlob] = useState(null);
     const [mediaRecorder, setMediaRecorder] = useState(null);
+    const autoUploadRef = useRef(false); // To track if upload should happen automatically
     const [viewportDimensions, setViewportDimensions] = useState({
         width: window.innerWidth,
         height: window.innerHeight,
@@ -88,6 +89,24 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         };
     }, []);
 
+    // Listen for messages from iframe (e.g. Lecture Ended)
+    useEffect(() => {
+        const handleMessage = (event) => {
+            // Adjust condition based on actual message sent by iframe
+            // Assuming "LectureCompleted" or similar
+            if (event.data === "LectureCompleted" || event.data?.type === "LectureCompleted") {
+                console.log("Lecture completed received");
+                if (isRecording) {
+                    autoUploadRef.current = true;
+                    stopRecording();
+                }
+            }
+        };
+
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, [isRecording]);
+
     // Auto-hide controls after 3 seconds of inactivity
     useEffect(() => {
         // If recording, force hide controls and don't add listeners
@@ -95,6 +114,9 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             setShowControls(false);
             return;
         }
+
+        // Listen for messages from iframe (e.g. Lecture Ended)
+
 
         let timeout;
 
@@ -169,6 +191,12 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 setIsRecording(false);
                 setIsPlaying(false); // Stop lecture playback when recording stops
                 setShowControls(true); // Show controls when recording stops
+
+                // Auto upload if triggered
+                if (autoUploadRef.current) {
+                    handleUpload(blob);
+                    autoUploadRef.current = false;
+                }
             };
 
             // Handle system "Stop sharing" button
@@ -178,7 +206,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
 
             setShowControls(false); // Hide controls immediately before start
             setTimeout(() => {
-                recorder.start();
+                if (recorder.state === "inactive") recorder.start();
             }, 1500);
             setMediaRecorder(recorder);
             setIsRecording(true);
@@ -245,22 +273,68 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         }
     };
 
-    // Download recorded video
-    const handleDownload = () => {
-        if (recordedBlob) {
-            const url = URL.createObjectURL(recordedBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `lecture-${Date.now()}.mp4`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+    // Upload recorded video
+    const handleUpload = async (blobToUpload) => {
+        const blob = blobToUpload || recordedBlob;
+        if (!blob) return;
+
+        // Get Lecture ID
+        let lectureId = location.state?.lectureId;
+        if (!lectureId && lecturejson) {
+            const match = lecturejson.match(/(\d+)\.json$/);
+            if (match) lectureId = match[1];
+        }
+
+        if (!lectureId) {
+            handleerror("Lecture ID not found");
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+            const formData = new FormData();
+            formData.append('file', blob, `lecture-${lectureId}-${Date.now()}.webm`);
+
+            handlesuccess("Uploading recording...");
+
+            const response = await axios.post(
+                `${BACKEND_API_URL}/lectures/${lectureId}/share-recording`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    }
+                }
+            );
+
+            if (response.data) {
+                handlesuccess("Recording uploaded successfully!");
+                // Clear blob after success
+                setRecordedBlob(null);
+            }
+        } catch (error) {
+            console.error("Error uploading recording:", error);
+            handleerror("Failed to upload recording.");
         }
     };
 
-    // Check if download should be enabled
-    const isDownloadEnabled = recordedBlob !== null;
+    // Download recorded video (Commented out as per request)
+    // const handleDownload = () => {
+    //     if (recordedBlob) {
+    //         const url = URL.createObjectURL(recordedBlob);
+    //         const link = document.createElement('a');
+    //         link.href = url;
+    //         link.download = `lecture-${Date.now()}.mp4`;
+    //         document.body.appendChild(link);
+    //         link.click();
+    //         document.body.removeChild(link);
+    //         URL.revokeObjectURL(url);
+    //     }
+    // };
+
+    // Check if upload should be enabled
+    const isUploadEnabled = recordedBlob !== null;
 
     const handleShare = async () => {
         if (!shareClass.trim()) {
@@ -346,28 +420,29 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                         {/* Right: Download and Share buttons */}
                         <div className="shrink-0 flex items-center gap-2">
                             {/* Download Button - Only enabled after recording */}
+                            {/* Upload Button - Replacing Download */}
                             <button
-                                onClick={handleDownload}
-                                disabled={!isDownloadEnabled}
-                                className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full backdrop-blur-sm transition-all duration-200 text-xs sm:text-sm font-medium ${isDownloadEnabled
+                                onClick={() => handleUpload()}
+                                disabled={!isUploadEnabled}
+                                className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full backdrop-blur-sm transition-all duration-200 text-xs sm:text-sm font-medium ${isUploadEnabled
                                     ? 'bg-white/10 hover:bg-white/20 text-white cursor-pointer'
                                     : 'bg-white/5 text-white/30 cursor-not-allowed'
                                     }`}
-                                aria-label="Download lecture"
-                                title={!isDownloadEnabled ? "Start recording first to enable download" : "Download recorded lecture"}
+                                aria-label="Upload recording"
+                                title={!isUploadEnabled ? "Start recording first to enable upload" : "Upload recorded lecture"}
                             >
-                                <Download size={16} />
-                                <span className="hidden sm:inline">Download</span>
+                                <Share2 size={16} /> {/* Using Share icon for upload/share */}
+                                <span className="hidden sm:inline">Upload</span>
                             </button>
 
                             {/* Share Button */}
-                            <button
+                            {/* <button
                                 onClick={() => setIsShareOpen(true)}
                                 className="inline-flex cursor-pointer items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all duration-200 text-white text-xs sm:text-sm font-medium"
                             >
                                 <Share2 size={16} />
                                 <span className="hidden sm:inline">Share</span>
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>
