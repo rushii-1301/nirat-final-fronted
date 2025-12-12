@@ -159,7 +159,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* ===== Main Section (scrollable) ===== */}
                 <main className="mt-6 flex-1 overflow-y-auto no-scrollbar space-y-6">
                     {/* ---- Stat Cards (Top Row) ---- */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-[minmax(90px,auto)]">
+                    <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-${isAdminPath ? 4 : 3} gap-6 auto-rows-[minmax(90px,auto)]`}>
                         {isLoading
                             ? Array.from({ length: isAdminPath ? 4 : 3 }).map((_, i) => (
                                 <div
