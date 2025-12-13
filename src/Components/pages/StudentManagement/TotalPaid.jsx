@@ -1,10 +1,12 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
 import { ChevronDown, ArrowLeft, ArrowRight } from "lucide-react";
 
 function TotalPaid({ isDark, toggleTheme, sidebardata }) {
+  const navigate = useNavigate();
   const [lectureData] = useState([
     {
       studentName: "John Carter",

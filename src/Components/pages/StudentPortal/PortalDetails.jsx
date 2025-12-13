@@ -102,17 +102,28 @@ function PortalDetails() {
   }, []);
 
   const handleChange = (e) => {
+    let value = e.target.value;
+    
+    // Convert email to lowercase
+    if (e.target.name === 'emailAddress') {
+      value = value.toLowerCase();
+    }
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
   };
 
   const onPickPhoto = (file) => {
     if (!file) return;
     const allowedTypes = ['image/jpeg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      handleerror('Only JPG and PNG images are allowed');
+    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+    
+    if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(fileExtension)) {
+      handleerror('Only PNG and JPG images are allowed');
       return;
     }
     setPhoto(file);
@@ -151,7 +162,7 @@ function PortalDetails() {
     // Regex rules
     const nameRegex = /^[A-Za-z\s]+$/;
     const phoneRegex = /^\d{10,11}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@gmail\.com$/;
 
     // Required + format for each field with clear messages
     if (!firstName?.trim()) {
@@ -223,7 +234,7 @@ function PortalDetails() {
       return;
     }
     if (!emailRegex.test(emailAddress)) {
-      handleerror('Please enter a valid Email Address');
+      handleerror('Email must be a valid Gmail address (@gmail.com)');
       return;
     }
 
@@ -367,7 +378,7 @@ function PortalDetails() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Facutity</label>
+                <label className={labelCls}>Faculty</label>
                 <input
                   type="text"
                   name="classHead"
@@ -449,7 +460,7 @@ function PortalDetails() {
                     <div className="text-gray-500 text-xs">
                       <span className="text-[#4A4AFF] font-medium">Click to browse</span> or drag and drop
                     </div>
-                    <div className="text-gray-600 text-xs">PNG</div>
+                    <div className="text-gray-600 text-xs">PNG, JPG or JPEG</div>
                   </div>
                 )}
               </label>
