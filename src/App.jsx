@@ -135,6 +135,15 @@ function App() {
     {
       label: "Dashboard",
       to: "/Student/Dashboard",
+      activePaths: [
+        "/student/Dashboard",
+        "/student/lectures",
+        "/student/paid",
+        "/student/list",
+        "/Student/getdetails",
+        "/student/Add",
+        "/student/Generatestudent",
+      ],
       icon: ["home_dark", "home_light", "current_home_light"]
     },
     {

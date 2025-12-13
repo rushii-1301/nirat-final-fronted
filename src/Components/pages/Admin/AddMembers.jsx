@@ -101,6 +101,12 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
       setForm((prev) => ({ ...prev, phone_number: numeric }));
       return;
     }
+    if (name === 'email') {
+      // Force lowercase and remove invalid characters
+      const formatted = value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+      setForm((prev) => ({ ...prev, email: formatted }));
+      return;
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -174,6 +180,10 @@ function AddMembers({ theme, isDark, toggleTheme, sidebardata }) {
     }
     if (!form.email) {
       handleerror('Please enter Email.');
+      return;
+    }
+    if (!form.email.endsWith('@gmail.com')) {
+      handleerror('Please enter a valid Gmail address (example: username@gmail.com).');
       return;
     }
     if (!isEdit && !form.password) {

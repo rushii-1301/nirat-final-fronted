@@ -18,9 +18,19 @@ function Login({ theme, isDark, toggleTheme }) {
   const [isForgotLoading, setIsForgotLoading] = useState(false);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'email') {
+      // Force lowercase and remove invalid characters
+      const formatted = value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+
+      setFormData({ ...formData, [name]: formatted });
+      return;
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -28,6 +38,10 @@ function Login({ theme, isDark, toggleTheme }) {
     e.preventDefault();
     if (!forgotEmail) {
       handleerror("Please enter your email");
+      return;
+    }
+    if (!forgotEmail.endsWith('@gmail.com')) {
+      handleerror("Email must be a valid @gmail.com address");
       return;
     }
 
@@ -64,6 +78,10 @@ function Login({ theme, isDark, toggleTheme }) {
     e.preventDefault();
     if (!formData.email || !formData.password) {
       handleerror("Please fill in both email and password");
+      return;
+    }
+    if (!formData.email.endsWith('@gmail.com')) {
+      handleerror("Email must be a valid @gmail.com address");
       return;
     }
 
@@ -305,7 +323,14 @@ function Login({ theme, isDark, toggleTheme }) {
                         type="email"
                         name="forgotEmail"
                         value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const formatted = value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+                          const parts = formatted.split('@');
+                          if (parts.length > 2) return;
+                          if (parts.length === 2 && !"gmail.com".startsWith(parts[1])) return;
+                          setForgotEmail(formatted);
+                        }}
                         placeholder="you@example.com"
                         className={`w-full pl-12 pr-4 py-3.5 text-sm sm:text-base rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 ${isDark
                           ? "bg-zinc-800/60 text-white border-2 border-zinc-700/50 placeholder-gray-500 focus:border-white/20 focus:ring-white/10 hover:border-zinc-600"

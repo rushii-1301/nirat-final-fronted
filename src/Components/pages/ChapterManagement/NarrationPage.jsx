@@ -115,7 +115,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                     if (prev < 92) return prev + 0.5;
                     return prev; // Stop at 90% until API responds
                 });
-            }, 400);
+            }, 1200);
 
             try {
                 const token = localStorage.getItem('access_token');

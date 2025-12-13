@@ -260,6 +260,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
         setSelectedClass("");
         setSelectedSubject("");
         setSelectedChapter("");
+        fetchFilterOptions(); // Reset filter options to default
         // Fetch all data again immediately
         setLoadingLectures(true);
         try {
@@ -426,7 +427,13 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                                         setOpenFilter(null);
                                         // Fetch filter options when opening filter panel
                                         if (newShowFilter) {
-                                            fetchFilterOptions();
+                                            if (selectedClass && selectedSubject) {
+                                                fetchFilterOptions(selectedClass, selectedSubject);
+                                            } else if (selectedClass) {
+                                                fetchFilterOptions(selectedClass);
+                                            } else {
+                                                fetchFilterOptions();
+                                            }
                                         }
                                     }}
                                     className={`${isDark
