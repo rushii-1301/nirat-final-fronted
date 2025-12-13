@@ -170,7 +170,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
         setIsLoading(true);
         try {
             const token = localStorage.getItem("access_token");
-            let url = `${BACKEND_API_URL}/lectures/`;
+            let url = `${BACKEND_API_URL}/lectures`;
 
             // Build query params based on filters
             const params = new URLSearchParams();
