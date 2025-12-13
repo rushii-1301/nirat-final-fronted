@@ -152,9 +152,8 @@ function TotalPaid({ isDark, toggleTheme, sidebardata }) {
 
   return (
     <div
-      className={`flex h-screen overflow-y-auto overflow-x-hidden transition-colors duration-300 ${
-        isDark ? "bg-black text-white" : "bg-zinc-50 text-zinc-900"
-      }`}
+      className={`flex h-screen overflow-y-auto overflow-x-hidden transition-colors duration-300 ${isDark ? "bg-black text-white" : "bg-zinc-50 text-zinc-900"
+        }`}
     >
       {/* Sidebar */}
       <Sidebar isDark={isDark} sidebardata={sidebardata} />
@@ -168,35 +167,40 @@ function TotalPaid({ isDark, toggleTheme, sidebardata }) {
 
         {/* Main Content */}
         <main
-          className={`mt-6 flex-1 min-w-0 overflow-y-auto transition-colors duration-300 ${
-            isDark ? "bg-black" : "bg-zinc-50"
-          }`}
+          className={`mt-6 flex-1 min-w-0 overflow-y-auto transition-colors duration-300 ${isDark ? "bg-black" : "bg-zinc-50"
+            }`}
         >
           <div
-            className={`flex flex-col h-full ${
-              isDark ? "bg-black text-gray-200" : "bg-white text-zinc-800"
-            }`}
+            className={`flex flex-col h-full ${isDark ? "bg-black text-gray-200" : "bg-white text-zinc-800"
+              }`}
           >
             {/* Table container matching Purchase List design */}
             <div
-              className={`w-full max-w-none min-h-0 rounded overflow-hidden transition-colors duration-300 ${
-                isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
-              } border`}
+              className={`w-full max-w-none min-h-0 rounded overflow-hidden transition-colors duration-300 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
+                } border`}
             >
-              {/* Table Header */}
-              <h2 className={`text-base font-medium leading-none capitalize pl-6 pt-6 mb-2 ${
-                isDark ? 'text-white' : 'text-zinc-700'
-              }`}>
-                Purchase List
-              </h2>
+              <div className="flex items-center gap-2 p-4">
+                <button
+                  onClick={() => navigate('/Student/Dashboard')}
+                  className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-zinc-800 text-gray-300' : 'hover:bg-zinc-100 text-zinc-700'}`}
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+                <h2
+                  className={`text-[22px] font-medium leading-none tracking-normal capitalize ${isDark ? 'text-gray-100' : 'text-black'
+                    }`}
+                >
+                  Purchase List
+                </h2>
+              </div>
+
 
               {/* Table Scroll Area - match TotalLecture style */}
-              <div className="p-6 pt-0 mt-3 max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-auto no-scrollbar">
+              <div className="p-6 pt-0 max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-auto no-scrollbar">
                 <table className="min-w-full table-fixed">
                   <thead
-                    className={`${
-                      isDark ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700'
-                    } text-left text-xs md:text-sm font-semibold sticky top-0 z-10`}
+                    className={`${isDark ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700'
+                      } text-left text-xs md:text-sm font-semibold sticky top-0 z-10`}
                   >
                     <tr className="align-middle">
                       <th className="px-7 py-2 whitespace-nowrap align-middle">Student Name</th>
@@ -210,9 +214,8 @@ function TotalPaid({ isDark, toggleTheme, sidebardata }) {
                   </thead>
 
                   <tbody
-                    className={`divide-y ${
-                      isDark ? 'divide-zinc-800 text-gray-300' : 'divide-zinc-200 text-zinc-700'
-                    } text-xs md:text-sm font-normal`}
+                    className={`divide-y ${isDark ? 'divide-zinc-800 text-gray-300' : 'divide-zinc-200 text-zinc-700'
+                      } text-xs md:text-sm font-normal`}
                   >
                     {paginatedData.map((row, index) => (
                       <tr
@@ -251,11 +254,10 @@ function TotalPaid({ isDark, toggleTheme, sidebardata }) {
                   <span>Rows per page:</span>
                   <div className="relative inline-block">
                     <select
-                      className={`cursor-pointer appearance-none border rounded-md pl-3 pr-8 py-1 focus:outline-none focus:ring-1 ${
-                        isDark
+                      className={`cursor-pointer appearance-none border rounded-md pl-3 pr-8 py-1 focus:outline-none focus:ring-1 ${isDark
                           ? "bg-black border-zinc-700 text-white focus:ring-blue-500"
                           : "bg-white border-zinc-300 text-zinc-900 focus:ring-blue-500"
-                      }`}
+                        }`}
                       value={rowsPerPage}
                       onChange={(e) => {
                         const next = parseInt(e.target.value, 10) || 10;

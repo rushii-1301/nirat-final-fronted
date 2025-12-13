@@ -166,15 +166,15 @@ function TotalLecture({ isDark, toggleTheme, sidebardata, addchapter }) {
                                     onClick={() => navigate('/Student/Dashboard')}
                                     className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-zinc-800 text-gray-300' : 'hover:bg-zinc-100 text-zinc-700'}`}
                                 >
-                                    <ArrowLeft className="w-5 h-5" />
+                                    <ArrowLeft className="w-6 h-6" />
                                 </button>
-                                <h2
-  className={`text-[16px] font-medium leading-none tracking-normal capitalize ${
-    isDark ? 'text-white' : 'text-zinc-700'
-  }`}
->
-  Watched Lecture List
-</h2>
+                                
+<h2
+                                    className={`text-[22px] font-medium leading-none tracking-normal capitalize ${isDark ? 'text-gray-100' : 'text-black'
+                                        }`}
+                                >
+                                      Watched Lecture List
+                                </h2>
                             </div>
 
                             {/* Table itself */}

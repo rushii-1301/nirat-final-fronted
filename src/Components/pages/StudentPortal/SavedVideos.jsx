@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { Play, Trash2, Calendar, Clock } from "lucide-react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Portalheader from "../../Tools/Portalheader.jsx";
 
 function SavedVideos({ isDark, toggleTheme, sidebardata }) {
+    const navigate = useNavigate();
     const shellBg = isDark ? "bg-black text-[#E5E7EB]" : "bg-[#F5F7FB] text-[#0F172A]";
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -52,10 +54,43 @@ function SavedVideos({ isDark, toggleTheme, sidebardata }) {
         video.chapter_name.toLowerCase().includes(searchValue.toLowerCase())
     );
 
-    const handleConfirmDelete = () => {
+    const handlePlayVideo = (video) => {
+        navigate(`/StudentPortal/Videos/${video.id}`, { state: { video } });
+    };
+
+    const handleConfirmDelete = async () => {
         if (!videoToDelete) return;
-        setVideos((prev) => prev.filter((v) => v.id !== videoToDelete.id));
-        setVideoToDelete(null);
+        
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setError('No authentication token found');
+                return;
+            }
+
+            const response = await axios.post(
+                `https://api.edinai.inaiverse.com/school-portal/videos/${videoToDelete.id}/subscribe`,
+                {
+                    subscribed: false,
+                },
+                {
+                    headers: {
+                        accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.data?.status) {
+                setVideos((prev) => prev.filter((v) => v.id !== videoToDelete.id));
+                setVideoToDelete(null);
+            } else {
+                setError('Failed to unbookmark video');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to unbookmark video');
+        }
     };
 
     return (
@@ -120,6 +155,7 @@ function SavedVideos({ isDark, toggleTheme, sidebardata }) {
                                             <div className="flex items-center gap-3 sm:gap-4 md:gap-5 flex-1 min-w-0">
                                                 <button
                                                     type="button"
+                                                    onClick={() => handlePlayVideo(video)}
                                                     className={`${isDark
                                                         ? "bg-white text-black"
                                                         : "bg-[#3333331A] text-black"

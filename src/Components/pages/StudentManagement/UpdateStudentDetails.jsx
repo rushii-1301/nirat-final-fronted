@@ -171,11 +171,66 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
     fetchSelectedStudent();
   }, [stateEnrollmentNumber]);
 
+  // 🟦 Validation Functions
+  const validateAllFields = () => {
+    const { firstName, fatherName, classStream, mobileNumber, parentsNumber } = formData;
+
+    if (firstName && !/^[a-zA-Z\s]*$/.test(firstName)) {
+      handleerror("First Name can only contain letters and spaces");
+      return false;
+    }
+
+    if (fatherName && !/^[a-zA-Z\s]*$/.test(fatherName)) {
+      handleerror("Father Name can only contain letters and spaces");
+      return false;
+    }
+
+    if (classStream && !/^[a-zA-Z0-9\s]*$/.test(classStream)) {
+      handleerror("Class/Stream cannot contain special symbols");
+      return false;
+    }
+
+    if (formData.division && !/^[a-zA-Z0-9\s]*$/.test(formData.division)) {
+      handleerror("Division cannot contain special symbols");
+      return false;
+    }
+
+    if (formData.classHead && !/^[a-zA-Z0-9\s]*$/.test(formData.classHead)) {
+      handleerror("Class Head cannot contain special symbols");
+      return false;
+    }
+
+    if (mobileNumber) {
+      if (!/^\d*$/.test(mobileNumber)) {
+        handleerror("Mobile Number can only contain numbers");
+        return false;
+      }
+      if (mobileNumber.length < 10 || mobileNumber.length > 11) {
+        handleerror("Mobile Number must be between 10 and 11 digits");
+        return false;
+      }
+    }
+
+    if (parentsNumber) {
+      if (!/^\d*$/.test(parentsNumber)) {
+        handleerror("Parents Number can only contain numbers");
+        return false;
+      }
+      if (parentsNumber.length < 10 || parentsNumber.length > 11) {
+        handleerror("Parents Number must be between 10 and 11 digits");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   // 🟦 Input Change Handler
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -183,6 +238,11 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
   const handleSave = async () => {
     if (!formData.enrollmentNumber) {
       handleerror("Please enter enrollment number");
+      return;
+    }
+
+    // Validate all fields before saving
+    if (!validateAllFields()) {
       return;
     }
 
@@ -382,11 +442,7 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                   onChange={handleChange}
                   placeholder="Enter Class | Stream"
                   className={inputCls}
-                  disabled
-                  readOnly
-                  style={{ pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                  tabIndex="-1"
-                  autoComplete="off"
+                  style={{ cursor: 'text' }}
                 />
               </div>
 
@@ -405,11 +461,7 @@ function UpdateStudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                   onChange={handleChange}
                   placeholder="Enter Division"
                   className={inputCls}
-                  disabled
-                  readOnly
-                  style={{ pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                  tabIndex="-1"
-                  autoComplete="off"
+                  style={{ cursor: 'text' }}
                 />
               </div>
             </div>
