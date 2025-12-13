@@ -30,8 +30,12 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
     const messagesStartRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const mainScrollRef = useRef(null); // main scrollable area
+    const narrationContentRef = useRef(null);
+    const bulletsContentRef = useRef(null);
+    const questionContentRef = useRef(null);
     const [isAtTop, setIsAtTop] = useState(true);
     const [isAtBottom, setIsAtBottom] = useState(true);
+    const [isMathJaxReady, setIsMathJaxReady] = useState(false);
 
     const handlePromptSubmit = (e) => {
         e.preventDefault();
@@ -94,6 +98,23 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
     const cardCls = `${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-4 sm:p-5 transition-colors duration-200`;
 
     const lastFetchedLectureId = useRef(null);
+
+    useEffect(() => {
+        let attempt = 0;
+        const timer = setInterval(() => {
+            attempt += 1;
+            if (window.MathJax?.typesetPromise) {
+                setIsMathJaxReady(true);
+                clearInterval(timer);
+            }
+            if (attempt > 20) {
+                clearInterval(timer);
+            }
+        }, 250);
+        return () => clearInterval(timer);
+    }, []);
+
+
 
     useEffect(() => {
         const fetchSlides = async () => {
@@ -217,6 +238,28 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
     };
 
     const currentSlide = slides.length > 0 ? slides[currentSlideIndex] : null;
+
+    const mathSignature = [
+        narration,
+        (currentSlide?.bullets || []).join('||'),
+        currentSlide?.question || '',
+        currentSlideIndex
+    ].join('__');
+
+    useEffect(() => {
+        if (!isMathJaxReady) return;
+        const containers = [narrationContentRef.current, bulletsContentRef.current, questionContentRef.current].filter(Boolean);
+        if (!containers.length) return;
+        const typeset = async () => {
+            try {
+                window.MathJax?.typesetClear?.(containers);
+                await window.MathJax?.typesetPromise?.(containers);
+            } catch (error) {
+                // minor error suppress
+            }
+        };
+        typeset();
+    }, [isMathJaxReady, mathSignature]);
 
     const handlePrevSlide = () => {
         if (currentSlideIndex > 0) {
@@ -415,7 +458,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                         <div className="flex-1 space-y-3">
                                             {/* Bullets Section */}
                                             {currentSlide?.bullets && currentSlide.bullets.length > 0 && (
-                                                <div className={`rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950/40' : 'border-zinc-200 bg-white'} px-4 sm:px-5 py-3 sm:py-4`}>
+                                                <div ref={bulletsContentRef} className={`rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950/40' : 'border-zinc-200 bg-white'} px-4 sm:px-5 py-3 sm:py-4`}>
                                                     <div className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
                                                         Key Points
                                                     </div>
@@ -453,7 +496,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                                             placeholder="Edit narration manually here"
                                                         />
                                                     ) : (
-                                                        <div className="text-sm leading-relaxed text-justify max-h-[27vh] md:max-h-[30vh] lg:max-h-[30vh] xl:max-h-[30vh] overflow-y-auto pr-1 no-scrollbar">
+                                                        <div ref={narrationContentRef} className="text-sm leading-relaxed text-justify max-h-[27vh] md:max-h-[30vh] lg:max-h-[30vh] xl:max-h-[30vh] overflow-y-auto pr-1 no-scrollbar">
                                                             <p className="leading-relaxed">{narration}</p>
                                                         </div>
                                                     )}
@@ -466,7 +509,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                                     <div className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
                                                         Questions
                                                     </div>
-                                                    <div className={`${isDark ? 'bg-zinc-900/50 border-zinc-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-3`}>
+                                                    <div ref={questionContentRef} className={`${isDark ? 'bg-zinc-900/50 border-zinc-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-3`}>
                                                         <p className="text-sm leading-relaxed whitespace-pre-line">{currentSlide.question}</p>
                                                     </div>
                                                 </div>
