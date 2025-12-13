@@ -515,13 +515,13 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                     </button>
                 )}
 
-                <button
+                {/* <button
                     onClick={handleReset}
                     className="p-4 cursor-pointer rounded-full border-2 border-cyan-500 bg-cyan-500/10 text-cyan-400 hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-300"
                     title="Reset"
                 >
                     <RotateCcw className="w-6 h-6" />
-                </button>
+                </button> */}
             </div>
 
             {/* Bottom Gradient Overlay */}
