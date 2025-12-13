@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import { getAuthRedirectPath } from './utils/assets'
 import AddMembers from './Components/pages/Admin/AddMembers'
 import AllMembers from './Components/pages/Admin/AllMembers'
 import ChapterManagement from './Components/pages/ChapterManagement/ChapterManagement'
@@ -66,6 +67,57 @@ function App() {
     return 'dark'
   })
   const isDark = useMemo(() => theme === 'dark', [theme])
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    // Check for token and redirect if on public pages
+    const token = localStorage.getItem('access_token')
+    const redirectPath = getAuthRedirectPath(token)
+
+    // List of public paths to redirect FROM if already logged in
+    const publicPaths = ['/', '/Intro', '/login', '/signup', '/superadministration/login']
+
+    // Also support redirection from root if it's exact match or if user visits login pages
+    // Note: We use startsWith for Intro/login/signup to catch sub-routes if any, though exact match is safer for now
+    const currentPath = location.pathname.toLowerCase()
+
+    const isPublic = publicPaths.some(p => currentPath === p.toLowerCase() || (p !== '/' && currentPath.startsWith(p.toLowerCase())))
+
+    if (redirectPath && isPublic) {
+      navigate(redirectPath, { replace: true })
+    }
+  }, [navigate, location])
+
+  // Disable Developer Tools and Right Click
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+
+    const handleKeyDown = (e) => {
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault();
+      }
+      // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+      if (e.ctrlKey && e.shiftKey && (['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key))) {
+        e.preventDefault();
+      }
+      // Ctrl+U (View Source)
+      if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const lectureSidebar = [
     {

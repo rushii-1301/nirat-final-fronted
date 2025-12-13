@@ -287,3 +287,36 @@ export const checkSuperadminAuth = () => {
     return false;
   }
 }
+
+export const getAuthRedirectPath = (token) => {
+  if (!token) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payloadJson = atob(base64);
+    const payload = JSON.parse(payloadJson || '{}');
+
+    // Check expiry
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return null;
+    }
+
+    const { user_type, work_type, role } = payload;
+
+    // Admin
+    if (user_type === 'admin' || role === 'admin') return '/Admin';
+
+    // Member Roles
+    if (user_type === 'member') {
+      if (work_type === 'chapter') return '/chapter';
+      if (work_type === 'student') return '/Student';
+      if (work_type === 'lecture') return '/lecture';
+    }
+
+    return null;
+  } catch (e) {
+    return null;
+  }
+};

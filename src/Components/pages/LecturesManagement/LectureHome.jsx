@@ -192,8 +192,8 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
             // Handle the response
             if (response.data?.data?.lectures && Array.isArray(response.data.data.lectures)) {
                 setLectureData(response.data.data.lectures);
-            } else if (response.data && Array.isArray(response.data)) {
-                setLectureData(response.data);
+            } else if (response.data?.data && Array.isArray(response.data.data)) {
+                setLectureData(response.data?.data);
             } else {
                 console.warn('Unexpected response format:', response.data);
                 setLectureData([]);

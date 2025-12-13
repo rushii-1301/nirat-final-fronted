@@ -166,14 +166,14 @@ const Header = ({ title, isDark, toggleTheme, searchValue, setSearchValue, isSea
                 </button>
 
                 {/* Notifications - only navigates on lecture routes */}
-                <button
+                {/* <button
                     type="button"
                     onClick={() => navigate(handleNotificationPath())}
                     className={`relative cursor-pointer p-2 rounded-lg transition ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-100'}`}
                 >
                     <Bell size={18} className={`${isDark ? 'text-gray-300' : 'text-zinc-700'} transition-colors duration-300`} />
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
+                </button> */}
 
                 {/* Profile Avatar */}
                 {isAdminPath && (
