@@ -259,7 +259,26 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
             }
         };
         typeset();
-    }, [isMathJaxReady, mathSignature]);
+    }, [isMathJaxReady, mathSignature, isDark, theme]);
+
+    // Add global style for MathJax overflow handling
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            mjx-container {
+                overflow: visible !important;
+                white-space: normal !important;
+                max-width: 100%;
+            }
+            .mjx-chtml {
+                outline: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
 
     const handlePrevSlide = () => {
         if (currentSlideIndex > 0) {
@@ -496,8 +515,24 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                                             placeholder="Edit narration manually here"
                                                         />
                                                     ) : (
-                                                        <div ref={narrationContentRef} className="text-sm leading-relaxed text-justify max-h-[27vh] md:max-h-[30vh] lg:max-h-[30vh] xl:max-h-[30vh] overflow-y-auto pr-1 no-scrollbar">
-                                                            <p className="leading-relaxed">{narration}</p>
+                                                        <div ref={narrationContentRef} className="text-sm leading-relaxed text-left max-h-[27vh] md:max-h-[30vh] lg:max-h-[30vh] xl:max-h-[30vh] overflow-y-auto pr-1 no-scrollbar space-y-3">
+                                                            {narration.split(/\\n|\n/).map((line, i) => {
+                                                                if (!line.trim()) return <br key={i} />;
+
+                                                                // Parse bold markdown (**text**)
+                                                                const parts = line.split(/(\*\*.*?\*\*)/g);
+                                                                // Simple equation block handling if needed, though MathJax handles $...$
+                                                                return (
+                                                                    <p key={i} className="leading-relaxed">
+                                                                        {parts.map((part, index) => {
+                                                                            if (part.startsWith('**') && part.endsWith('**')) {
+                                                                                return <strong key={index} className="font-bold text-gray-900 dark:text-gray-100">{part.slice(2, -2)}</strong>;
+                                                                            }
+                                                                            return <span key={index}>{part}</span>;
+                                                                        })}
+                                                                    </p>
+                                                                );
+                                                            })}
                                                         </div>
                                                     )}
                                                 </div>
@@ -685,8 +720,8 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                         )}
                     </div>
                 </main>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 

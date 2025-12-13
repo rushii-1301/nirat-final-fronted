@@ -4,7 +4,7 @@ import Header from "../../Tools/Header";
 import { RotateCcw, X, ChevronDown, ChevronUp, CloudUpload, ArrowLeft, FileText, Trash2, Check } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BACKEND_API_URL, handlesuccess } from "../../../utils/assets";
+import { BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets";
 
 function formatBytes(bytes, decimals = 2) {
   if (!+bytes) return '0 Bytes';
@@ -265,6 +265,14 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
   const handleFileChange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
+
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      handleerror("File size exceeds 50MB limit.");
+      e.target.value = "";
+      return;
+    }
 
     // Future me yahi par API call karke chapter title/topics generate kar sakte ho
     setUploadedFile(file);
