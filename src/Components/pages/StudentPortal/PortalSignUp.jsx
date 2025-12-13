@@ -104,7 +104,7 @@ function PortalSignUp({ isDark, toggleTheme }) {
     };
 
     return (
-        <div className={`min-h-screen ${isDark ? 'bg-black' : 'bg-white'} flex items-center justify-center p-4 transition-colors duration-300`}>
+        <div className={`min-h-screen ${isDark ? 'bg-black' : 'bg-zinc-100'} flex items-center justify-center p-4 transition-colors duration-300`}>
             <div className="w-full max-w-xl md:max-w-2xl lg:max-w-3xl px-2 sm:px-0">
                 {/* Logo */}
                 <div className="text-center mb-8">
@@ -133,20 +133,20 @@ function PortalSignUp({ isDark, toggleTheme }) {
                 </div>
 
                 {/* Form */}
-                <div className={`${isDark ? 'bg-[#1a1a1a] border-black' : 'bg-white border-gray-300'} rounded-2xl p-6 sm:p-8 shadow-2xl border`}>
+                <div className={`${isDark ? 'bg-[#1a1a1a] border-black' : 'bg-white border-gray-300'} rounded-2xl p-6 sm:p-8`}>
                     <div className="space-y-6 w-full">
 
                         {/* Sign In Your Account Header */}
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => navigate('/Intro')}
-                                className={`p-2 rounded-lg transition-colors cursor-pointer ${isDark 
-                                    ? 'text-white hover:bg-gray-800' 
+                                className={`p-2 rounded-full hover:rounded-full transition-colors cursor-pointer ${isDark 
+                                    ? 'text-white hover:bg-zinc-800' 
                                     : 'text-black hover:bg-gray-200'
                                 }`}
                                 title="Go Back"
                             >
-                                <ArrowLeft className="w-5 h-5" />
+                                <ArrowLeft className="w-6 h-6" />
                             </button>
                             <div>
                                 <h3 className={`${isDark ? 'text-white' : 'text-black'} text-[25px] font-medium mb-1 -mt-2.5`}>
@@ -173,7 +173,7 @@ function PortalSignUp({ isDark, toggleTheme }) {
                                     value={formData.enrolment_number}
                                     onChange={handleChange}
                                     onKeyDown={handleKeyDown}
-                                    className={`w-full ${isDark ? 'bg-[#2a2a2a] text-white border-gray-600 focus:border-blue-500' : 'bg-zinc-200 text-black border-gray-300 focus:border-blue-500'} rounded-lg px-4 py-3 text-sm focus:outline-none transition-colors`}
+                                    className={`w-full ${isDark ? 'bg-[#2a2a2a] text-white border-gray-600 focus:border-blue-500' : 'bg-zinc-100 text-black border-gray-300 focus:border-blue-500'} rounded-lg px-4 py-3 text-sm focus:outline-none transition-colors`}
                                     placeholder="Enrolment Number"
                                 />
                             </div>
@@ -192,7 +192,7 @@ function PortalSignUp({ isDark, toggleTheme }) {
                                     value={formData.password}
                                     onChange={handleChange}
                                     onKeyDown={handleKeyDown}
-                                    className={`w-full ${isDark ? 'bg-[#2a2a2a] text-white border-gray-600 focus:border-blue-500' : 'bg-zinc-200 text-gray-900 border-gray-300 focus:border-blue-500'} rounded-lg px-4 py-3 pr-12 text-sm focus:outline-none transition-colors`}
+                                    className={`w-full ${isDark ? 'bg-[#2a2a2a] text-white border-gray-600 focus:border-blue-500' : 'bg-zinc-100 text-gray-900 border-gray-300 focus:border-blue-500'} rounded-lg px-4 py-3 pr-12 text-sm focus:outline-none transition-colors`}
                                     placeholder="Enter Password"
                                 />
                                 <button

@@ -3,7 +3,7 @@ import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
 import { BACKEND_API_URL, getAsset, handleerror, handlesuccess } from "../../../utils/assets.js";
 import axios from "axios";
-import { Inbox, Loader2, ArrowLeft, MoveLeft } from 'lucide-react';
+import { Inbox, Loader2, ArrowLeft, MoveLeft, ChevronDown } from 'lucide-react';
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 
 function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
@@ -318,7 +318,7 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                     {/* Filters Section */}
                     <div className="w-full mx-auto">
                         {/* Toggle Button - only visible on mobile/tablet */}
-                        <div className="fixed top-20 left-0 right-0 md:hidden flex justify-end p-3 z-40" style={{ backgroundColor: isDark ? '#09090b' : '#fafafa' }}>
+                        <div className={`fixed top-20 left-0 right-0 md:hidden flex justify-end p-3 z-2 ${isDark ? 'bg-black' : 'bg-zinc-50'}`}>
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
                                 className="bg-white text-black hover:bg-white cursor-pointer px-4 py-2 rounded-md text-sm shadow transition"
@@ -328,7 +328,7 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                         </div>
 
                         {/* Desktop Filter Panel (always visible) */}
-                        <div className={`hidden md:block w-full p-3 md:p-4 rounded-xl shadow-lg border ${isDark ? 'bg-zinc-900 text-gray-100 border-zinc-800' : 'bg-white text-zinc-800 border-zinc-200'}`}>
+                        <div className={`hidden md:block w-full p-3 md:p-4 rounded-xl ${isDark ? 'bg-zinc-900 text-gray-100' : 'bg-white text-zinc-800'}`}>
                             <div className="flex items-center gap-2 mb-2">
                                 <button
                                     onClick={() => navigate(-1)}
@@ -343,41 +343,133 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                     Students List
                                 </h2></div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8" style={{maxWidth: '600px'}}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8" style={{ maxWidth: '600px' }}>
                                 {/* Class/Stream */}
                                 <div className="flex flex-col space-y-1">
                                     <label className={`text-sm ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Class/Stream</label>
-                                    <select
+                                    <div>
+                                        <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const classDropdown = document.getElementById('class-dropdown');
+                                                const divisionDropdown = document.getElementById('division-dropdown');
+                                                
+                                                // Close division dropdown if open
+                                                if (!divisionDropdown.classList.contains('hidden')) {
+                                                    divisionDropdown.classList.add('hidden');
+                                                }
+                                                
+                                                // Toggle class dropdown
+                                                classDropdown.classList.toggle('hidden');
+                                            }}
+                                            className={`${isDark
+                                                ? "w-full rounded-md border border-zinc-900 bg-zinc-800 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-[#696CFF] text-left cursor-pointer"
+                                                : "w-full rounded-md border-0 bg-zinc-100 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-[#696CFF] text-left cursor-pointer"
+                                                }`}
+                                        >
+                                            {selectedClass}
+                                            <ChevronDown className={`float-right ${isDark ? 'text-white' : 'text-zinc-900'}`} size={20} />
+                                        </button>
+                                        <div id="class-dropdown" className={`hidden absolute w-full z-50 mt-1 rounded-md border ${isDark ? 'border-zinc-800 bg-zinc-800' : 'border-zinc-200 bg-white'} shadow-lg max-h-60 overflow-y-auto`}>
+                                            <div
+                                                onClick={() => {
+                                                    handleClassChange('All Classes');
+                                                    document.getElementById('class-dropdown').classList.add('hidden');
+                                                }}
+                                                className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedClass === 'All Classes' ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                            >
+                                                All Classes
+                                            </div>
+                                            {uniqueClasses.map((clsname, index) => (
+                                                <div
+                                                    key={index}
+                                                    onClick={() => {
+                                                        handleClassChange(clsname);
+                                                        document.getElementById('class-dropdown').classList.add('hidden');
+                                                    }}
+                                                    className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedClass === clsname ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                                >
+                                                    {clsname}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    </div>
+                                    {/* <select
                                         value={selectedClass}
                                         onChange={(e) => handleClassChange(e.target.value)}
-                                        className={`${isDark ? 'bg-zinc-800 text-gray-300' : 'bg-zinc-100 text-black'} p-2 rounded-md w-full focus:outline-none border cursor-pointer ${isDark ? 'border-zinc-700' : 'border-zinc-200'}`}
+                                    // className={`${isDark ? 'bg-zinc-800 text-gray-300' : 'bg-zinc-100 text-black'} p-2 rounded-md w-full focus:outline-none border cursor-pointer ${isDark ? 'border-zinc-700' : 'border-zinc-200'}`}
                                     >
                                         <option
                                             value="All Classes"
-                                            className="text-[14px] font-normal leading-none tracking-normal capitalize"
+                                            className={`${isDark
+                                                ? "w-full rounded-md border border-zinc-800 bg-[#696CFF] px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
+                                                : "w-full rounded-md border border-zinc-300 bg-[#696CFF] px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-[#696CFF]"
+                                                }`}
                                         >
                                             All Classes
                                         </option>
 
-                                        {uniqueClasses.map((className, index) => (
-                                            <option key={index} value={className}>{className}</option>
+                                        {uniqueClasses.map((clsname, index) => (
+                                            <option
+                                                key={index}
+                                                value={clsname}
+                                            >{clsname}</option>
                                         ))}
-                                    </select>
+                                    </select> */}
                                 </div>
 
                                 {/* Division */}
                                 <div className="flex flex-col space-y-1">
                                     <label className={`text-sm ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Division</label>
-                                    <select
-                                        value={selectedDivision}
-                                        onChange={(e) => setSelectedDivision(e.target.value)}
-                                        className={`${isDark ? 'bg-zinc-800 text-gray-300' : 'bg-zinc-100 text-black'} p-2 rounded-md w-full focus:outline-none border cursor-pointer ${isDark ? 'border-zinc-700' : 'border-zinc-200'}`}
-                                    >
-                                        <option value="All Division" className="text-[14px] font-normal leading-none tracking-normal capitalize">All Division</option>
-                                        {uniqueDivisions.map((division, index) => (
-                                            <option key={index} value={division}>{division}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const divisionDropdown = document.getElementById('division-dropdown');
+                                                const classDropdown = document.getElementById('class-dropdown');
+                                                
+                                                // Close class dropdown if open
+                                                if (!classDropdown.classList.contains('hidden')) {
+                                                    classDropdown.classList.add('hidden');
+                                                }
+                                                
+                                                // Toggle division dropdown
+                                                divisionDropdown.classList.toggle('hidden');
+                                            }}
+                                            className={`${isDark
+                                                ? "w-full rounded-md border border-zinc-800 bg-zinc-800 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-[#696CFF] text-left cursor-pointer"
+                                                : "w-full rounded-md border-0 bg-zinc-100 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-[#696CFF] text-left cursor-pointer"
+                                                }`}
+                                        >
+                                            {selectedDivision}
+                                            <ChevronDown className={`float-right ${isDark ? 'text-white' : 'text-zinc-900'}`} size={20} />
+                                        </button>
+                                        <div id="division-dropdown" className={`hidden absolute w-full z-50 mt-1 rounded-md border ${isDark ? 'border-zinc-800 bg-zinc-800' : 'border-zinc-200 bg-white'} shadow-lg`}>
+                                            <div
+                                                onClick={() => {
+                                                    setSelectedDivision('All Division');
+                                                    document.getElementById('division-dropdown').classList.add('hidden');
+                                                }}
+                                                className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedDivision === 'All Division' ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                            >
+                                                All Division
+                                            </div>
+                                            {uniqueDivisions.map((division, index) => (
+                                                <div
+                                                    key={index}
+                                                    onClick={() => {
+                                                        setSelectedDivision(division);
+                                                        document.getElementById('division-dropdown').classList.add('hidden');
+                                                    }}
+                                                    className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedDivision === division ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                                >
+                                                    {division}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -392,31 +484,105 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                         {/* Class/Stream */}
                                         <div className="flex flex-col space-y-1 cursor-pointer">
                                             <label className={`text-sm ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Class/Stream</label>
-                                            <select
-                                                value={selectedClass}
-                                                onChange={(e) => handleClassChange(e.target.value)}
-                                                className={`${isDark ? 'bg-zinc-800 text-gray-300 border-zinc-700' : 'bg-zinc-100 text-zinc-800 border-zinc-200'} p-2 rounded-md w-full focus:outline-none border cursor-pointer`}
-                                            >
-                                                <option value="All Classes ">All Classes</option>
-                                                {uniqueClasses.map((className, index) => (
-                                                    <option key={index} value={className}>{className}</option>
-                                                ))}
-                                            </select>
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const mobileClassDropdown = document.getElementById('mobile-class-dropdown');
+                                                        const mobileDivisionDropdown = document.getElementById('mobile-division-dropdown');
+                                                        
+                                                        // Close division dropdown if open
+                                                        if (!mobileDivisionDropdown.classList.contains('hidden')) {
+                                                            mobileDivisionDropdown.classList.add('hidden');
+                                                        }
+                                                        
+                                                        // Toggle class dropdown
+                                                        mobileClassDropdown.classList.toggle('hidden');
+                                                    }}
+                                                    className={`${isDark
+                                                        ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-[#696CFF] text-left"
+                                                        : "w-full rounded-md border-0 bg-zinc-100 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-[#696CFF] text-left"
+                                                        }`}
+                                                >
+                                                    {selectedClass}
+                                                    <ChevronDown className={`float-right ${isDark ? 'text-white' : 'text-zinc-900'}`} size={20} />
+                                                </button>
+                                                <div id="mobile-class-dropdown" className={`hidden absolute w-full z-50 mt-1 rounded-md border ${isDark ? 'border-zinc-800 bg-zinc-800' : 'border-zinc-200 bg-white'} shadow-lg`}>
+                                                    <div
+                                                        onClick={() => {
+                                                            handleClassChange('All Classes');
+                                                            document.getElementById('mobile-class-dropdown').classList.add('hidden');
+                                                        }}
+                                                        className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedClass === 'All Classes' ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                                    >
+                                                        All Classes
+                                                    </div>
+                                                    {uniqueClasses.map((className, index) => (
+                                                        <div
+                                                            key={index}
+                                                            onClick={() => {
+                                                                handleClassChange(className);
+                                                                document.getElementById('mobile-class-dropdown').classList.add('hidden');
+                                                            }}
+                                                            className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedClass === className ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                                        >
+                                                            {className}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Division */}
                                         <div className="flex flex-col space-y-1">
                                             <label className={`text-sm ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Division</label>
-                                            <select
-                                                value={selectedDivision}
-                                                onChange={(e) => setSelectedDivision(e.target.value)}
-                                                className={`${isDark ? 'bg-zinc-800 text-gray-300 border-zinc-700 ' : 'bg-zinc-100 text-zinc-800 border-zinc-200'} p-2 rounded-md w-full focus:outline-none border cursor-pointer`}
-                                            >
-                                                <option value="All Division">All Division</option>
-                                                {uniqueDivisions.map((division, index) => (
-                                                    <option key={index} value={division}>{division}</option>
-                                                ))}
-                                            </select>
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const mobileDivisionDropdown = document.getElementById('mobile-division-dropdown');
+                                                        const mobileClassDropdown = document.getElementById('mobile-class-dropdown');
+                                                        
+                                                        // Close class dropdown if open
+                                                        if (!mobileClassDropdown.classList.contains('hidden')) {
+                                                            mobileClassDropdown.classList.add('hidden');
+                                                        }
+                                                        
+                                                        // Toggle division dropdown
+                                                        mobileDivisionDropdown.classList.toggle('hidden');
+                                                    }}
+                                                    className={`${isDark
+                                                        ? "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-[#696CFF] text-left"
+                                                        : "w-full rounded-md border-0 bg-zinc-100 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-[#696CFF] text-left"
+                                                        }`}
+                                                >
+                                                    {selectedDivision}
+                                                    <ChevronDown className={`float-right ${isDark ? 'text-white' : 'text-zinc-900'}`} size={20} />
+                                                </button>
+                                                <div id="mobile-division-dropdown" className={`hidden absolute w-full z-50 mt-1 rounded-md border ${isDark ? 'border-zinc-800 bg-zinc-800' : 'border-zinc-200 bg-white'} shadow-lg`}>
+                                                    <div
+                                                        onClick={() => {
+                                                            setSelectedDivision('All Division');
+                                                            document.getElementById('mobile-division-dropdown').classList.add('hidden');
+                                                        }}
+                                                        className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedDivision === 'All Division' ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                                    >
+                                                        All Division
+                                                    </div>
+                                                    {uniqueDivisions.map((division, index) => (
+                                                        <div
+                                                            key={index}
+                                                            onClick={() => {
+                                                                setSelectedDivision(division);
+                                                                document.getElementById('mobile-division-dropdown').classList.add('hidden');
+                                                            }}
+                                                            className={`px-3 py-2 text-sm cursor-pointer ${isDark ? 'text-gray-100' : 'text-zinc-900'} ${selectedDivision === division ? (isDark ? 'bg-[#696CFF]' : 'bg-[#696CFF] text-white') : (isDark ? '' : 'bg-zinc-100')}`}
+                                                        >
+                                                            {division}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -468,7 +634,7 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                             filteredStudents.map((s, i) => (
                                 <div
                                     key={`${s.enrollment_number}-${i}`}
-                                    className={`p-4 rounded-lg border transition-colors ${highlightedRows.includes(s.enrollment_number)
+                                    className={`p-4 mt-10 rounded-lg border transition-colors ${highlightedRows.includes(s.enrollment_number)
                                         ? isDark
                                             ? 'bg-blue-900/50 border-blue-500'
                                             : 'bg-blue-50 border-blue-500'
@@ -477,7 +643,7 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                             : 'bg-white border-zinc-200 hover:bg-zinc-50'
                                         }`}
                                 >
-                                    <div className="space-y-3">
+                                    <div className="space-y-5">
                                         <div>
                                             <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Name</p>
                                             <NavLink
@@ -499,27 +665,28 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
 
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Enrollment</p>
-                                                <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.enrollment_number}</p>
-                                            </div>
+                                            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Father Name</p>
+                                            <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.father_name}</p>
+                                        </div>
                                             <div>
                                                 <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Class</p>
                                                 <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.class_name}</p>
+                                            </div>
+                                            <div>
+                                                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Mobile</p>
+                                                <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.mobile_number}</p>
                                             </div>
                                             <div>
                                                 <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Division</p>
                                                 <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.division}</p>
                                             </div>
                                             <div>
-                                                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Mobile</p>
-                                                <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.mobile_number}</p>
+                                                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Enrollment</p>
+                                                <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.enrollment_number}</p>
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Father Name</p>
-                                            <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-zinc-800'}`}>{s.father_name}</p>
-                                        </div>
+                                        
 
                                         <div className="flex justify-end gap-3 pt-2 border-t" style={{ borderColor: isDark ? '#27272a' : '#e4e4e7' }}>
                                             <button
@@ -565,12 +732,12 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                     </div>
 
                     {/* Desktop Table View */}
-                    <div className={`hidden md:block w-full mx-auto ${filteredStudents.length === 0 ? 'mt-8 mb-8 h-auto border-0 bg-transparent shadow-none' : 'h-[89%] md:h-[68%] mt-4 md:mt-5 mb-6 rounded-xl overflow-hidden border '} ${filteredStudents.length === 0 ? '' : (isDark ? 'border-zinc-800 bg-zinc-950 shadow-sm' : 'border-zinc-200 bg-white shadow-sm')}`}>
+                    <div className={`hidden md:block w-full mx-auto ${filteredStudents.length === 0 ? 'mt-8 mb-8 h-auto border border-transparent bg-transparent shadow-none' : 'h-[89%] md:h-[68%] mt-4 md:mt-5 mb-6 overflow-hidden border-0 '} ${filteredStudents.length === 0 ? '' : (isDark ? 'bg-zinc-950 shadow-none' : 'bg-transparent shadow-none')}`}>
                         <div className={`overflow-x-auto no-scrollbar ${filteredStudents.length === 0 ? '' : 'h-full'}`}>
                             <div className={`${filteredStudents.length === 0 && "h-full w-full justify-center items-center"}`} style={{ scrollbarWidth: 'none' }}>
                                 <table className="w-full pr-10 md:pr-5 lg:pr-7 table-fixed text-[13px] md:text-sm h-full">
                                     {filteredStudents.length > 0 && (
-                                        <thead className={`${isDark ? 'bg-zinc-900 text-gray-200 border-b border-zinc-800' : 'bg-zinc-100 text-zinc-800 border-b  border-zinc-200'}  sticky top-0 z-10`}>
+                                        <thead className={`${isDark ? 'bg-zinc-900 text-gray-200' : 'bg-white text-[#696CFF]'}  sticky top-0 z-10`}>
                                             <tr>
                                                 <th className="px-4 py-3 text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">Name</th>
                                                 <th className="px-4 py-3 text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">Enrollment Number</th>
@@ -608,18 +775,14 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                             filteredStudents.map((s, i) => (
                                                 <tr
                                                     key={`${s.enrollment_number}-${i}`}
-                                                    className={`
-                                                        ${isDark ? 'hover:bg-zinc-900' : 'hover:bg-zinc-50'} 
-                                                        transition-colors
-                                                        ${highlightedRows.includes(s.enrollment_number)
-                                                            ? isDark
-                                                                ? 'bg-blue-900/50 border-l-4 border-l-blue-500'
-                                                                : 'bg-blue-50 border-l-4 border-l-blue-500'
-                                                            : ''
-                                                        }
-                                                    `}
+                                                    className={`transition-colors ${isDark ? 'border-b border-zinc-800' : 'border-b border-zinc-200'} ${highlightedRows.includes(s.enrollment_number)
+                                                        ? isDark
+                                                            ? 'bg-blue-900/50 border-l-4 border-l-blue-500'
+                                                            : 'bg-blue-50 border-l-4 border-l-blue-500'
+                                                        : ''
+                                                    }`}
                                                 >
-                                                    <td className={`px-4 py-3 h-12 align-middle cursor-pointer hover:underline whitespace-nowrap overflow-hidden text-ellipsis ${isDark ? 'text-blue-400' : 'text-[#696CFF]'}`}>
+                                                    <td className={`px-4 py-3 h-12 align-middle cursor-pointer hover:underline whitespace-nowrap overflow-hidden text-ellipsis ${isDark ? 'text-blue-400' : 'text-[#0098FF]'}`}>
                                                         <NavLink
                                                             to={`/Student/getdetails`}
                                                             state={{ enrollmentNumber: s.enrollment_number }}
@@ -636,11 +799,31 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                                             {s.name}
                                                         </NavLink>
                                                     </td>
-                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis">{s.enrollment_number}</td>
-                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis">{s.class_name}</td>
-                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis">{s.division}</td>
-                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis">{s.father_name}</td>
-                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis">{s.mobile_number}</td>
+                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis 
+               font-inter font-semibold text-[12px] leading-none tracking-normal capitalize">
+                                                        {s.enrollment_number}
+                                                    </td>
+
+                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis 
+               font-inter font-semibold text-[12px] leading-none tracking-normal capitalize">
+                                                        {s.class_name}
+                                                    </td>
+
+                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis 
+               font-inter font-semibold text-[12px] leading-none tracking-normal capitalize">
+                                                        {s.division}
+                                                    </td>
+
+                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis 
+               font-inter font-semibold text-[12px] leading-none tracking-normal capitalize">
+                                                        {s.father_name}
+                                                    </td>
+
+                                                    <td className="px-4 py-3 h-12 align-middle whitespace-nowrap overflow-hidden text-ellipsis 
+               font-inter font-semibold text-[12px] leading-none tracking-normal capitalize">
+                                                        {s.mobile_number}
+                                                    </td>
+
                                                     <td className="px-4 py-3 h-12 align-middle text-center whitespace-nowrap overflow-hidden text-ellipsis">
                                                         <div className="inline-flex items-center gap-3">
                                                             <button
@@ -664,6 +847,8 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                                                     alt="Edit"
                                                                     width={16}
                                                                     height={16}
+                                                                    className={!isDark ? 'brightness-0 contrast-100' : ''}
+                                                                    style={!isDark ? { filter: 'brightness(0) saturate(100%) invert(20%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%)' } : {}}
                                                                 />
                                                             </button>
                                                             <button
@@ -676,6 +861,8 @@ function StudentsList({ theme, isDark, toggleTheme, sidebardata }) {
                                                                     alt="Delete"
                                                                     width={16}
                                                                     height={16}
+                                                                    className={!isDark ? 'brightness-0 contrast-100' : ''}
+                                                                    style={!isDark ? { filter: 'brightness(0) saturate(100%) invert(20%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%)' } : {}}
                                                                 />
                                                             </button>
                                                         </div>
