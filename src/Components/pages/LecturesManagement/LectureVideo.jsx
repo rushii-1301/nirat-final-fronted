@@ -755,7 +755,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                         allow="autoplay; fullscreen; picture-in-picture; microphone"
                         allowFullScreen
                         style={{ border: 'none' }}
-                        title="Unreal Lecture Viewer"
+                        title="Lecture Viewer"
                     />
                 )}
             </div>

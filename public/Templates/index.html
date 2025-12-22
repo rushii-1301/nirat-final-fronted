@@ -258,16 +258,16 @@
 
   <script type="module">
     // --- Audio Capture Logic (Monkey Patch) - MUST BE FIRST ---
-    let audioDest;
-    const originalConnect = AudioNode.prototype.connect;
-    AudioNode.prototype.connect = function (destination, outputIndex, inputIndex) {
-      if (audioDest && destination === destination.context.destination) {
-        try {
-          originalConnect.call(this, audioDest);
-        } catch (e) { }
-      }
-      return originalConnect.apply(this, arguments);
-    };
+    // let audioDest;
+    // const originalConnect = AudioNode.prototype.connect;
+    // AudioNode.prototype.connect = function (destination, outputIndex, inputIndex) {
+    //   if (audioDest && destination === destination.context.destination) {
+    //     try {
+    //       originalConnect.call(this, audioDest);
+    //     } catch (e) { }
+    //   }
+    //   return originalConnect.apply(this, arguments);
+    // };
 
     import { TalkingHead } from "talkinghead";
     import * as THREE from "three";
@@ -306,7 +306,7 @@
       cameraView: "full"
     });
 
-    audioDest = head.audioCtx.createMediaStreamDestination();
+    // audioDest = head.audioCtx.createMediaStreamDestination();
 
     // --- Voice Recognition Setup ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -526,14 +526,12 @@
           }
         }
 
-        if (head.audioCtx.state === 'running') {
-          try {
-            await head.audioCtx.suspend();
-            console.log('✅ Audio context suspended');
-          } catch (e) {
-            console.error('❌ Failed to suspend audio:', e);
+        const ensureAudioContext = async () => {
+          if (head.audioCtx.state !== 'running') {
+            await head.audioCtx.resume();
+            console.log('✅ AudioContext resumed');
           }
-        }
+        };
 
         head.stop();
         console.log('✅ Avatar stopped');
@@ -1123,8 +1121,112 @@
 
     // --- Setup ---
 
+    // function setupRecorder() {
+    //   console.log('🎬 Setting up recorder...');
+
+    //   const canvas = document.querySelector('#avatar canvas') || document.querySelector('canvas');
+    //   if (!canvas) {
+    //     console.error('❌ Canvas not found!');
+    //     return;
+    //   }
+
+    //   const videoStream = canvas.captureStream(30);
+    //   const combined = new MediaStream([
+    //     ...videoStream.getVideoTracks(),
+    //     ...audioDest.stream.getAudioTracks()
+    //   ]);
+
+    //   // Try different codecs in order of preference
+    //   const codecOptions = [
+    //     { mimeType: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', ext: 'mp4', name: 'MP4 (H.264)' },
+    //     { mimeType: 'video/webm;codecs=vp9,opus', ext: 'webm', name: 'WebM (VP9)' },
+    //     { mimeType: 'video/webm;codecs=vp8,opus', ext: 'webm', name: 'WebM (VP8)' },
+    //     { mimeType: 'video/webm', ext: 'webm', name: 'WebM (default)' }
+    //   ];
+
+    //   let selectedCodec = null;
+    //   for (const codec of codecOptions) {
+    //     if (MediaRecorder.isTypeSupported(codec.mimeType)) {
+    //       selectedCodec = codec;
+    //       console.log(`✅ Using codec: ${codec.name} (${codec.mimeType})`);
+    //       break;
+    //     }
+    //   }
+
+    //   if (!selectedCodec) {
+    //     console.error('❌ No supported codec found!');
+    //     selectedCodec = { mimeType: '', ext: 'webm', name: 'Browser default' };
+    //   }
+
+    //   try {
+    //     const options = {
+    //       videoBitsPerSecond: 5000000, // 5 Mbps for high quality
+    //       audioBitsPerSecond: 128000   // 128 kbps for audio
+    //     };
+
+    //     if (selectedCodec.mimeType) {
+    //       options.mimeType = selectedCodec.mimeType;
+    //     }
+
+    //     mediaRecorder = new MediaRecorder(combined, options);
+
+    //     mediaRecorder.ondataavailable = e => {
+    //       if (e.data.size > 0) {
+    //         recordedChunks.push(e.data);
+    //         console.log(`📦 Chunk received: ${(e.data.size / 1024 / 1024).toFixed(2)} MB`);
+    //       }
+    //     };
+
+    //     mediaRecorder.onstop = () => {
+    //       console.log(`🎬 Recording stopped. Total chunks: ${recordedChunks.length}`);
+    //       const totalSize = recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0);
+    //       console.log(`📊 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+
+    //       const blob = new Blob(recordedChunks, {
+    //         type: selectedCodec.mimeType || 'video/webm'
+    //       });
+
+    //       recordedChunks = [];
+
+    //       // Send to parent with metadata
+    //       window.parent.postMessage({
+    //         type: 'RECORDING_DATA',
+    //         blob: blob,
+    //         extension: selectedCodec.ext,
+    //         codec: selectedCodec.name,
+    //         size: blob.size
+    //       }, '*');
+
+    //       console.log('✅ Recording sent to parent');
+    //     };
+
+    //     mediaRecorder.onerror = (e) => {
+    //       console.error('❌ MediaRecorder error:', e);
+    //     };
+
+    //     mediaRecorder.onstart = () => {
+    //       console.log('🔴 Recording started');
+    //     };
+
+    //     mediaRecorder.onpause = () => {
+    //       console.log('⏸️  Recording paused');
+    //     };
+
+    //     mediaRecorder.onresume = () => {
+    //       console.log('▶️  Recording resumed');
+    //     };
+
+    //     console.log('✅ Recorder setup complete');
+
+    //   } catch (e) {
+    //     console.error('❌ Failed to create MediaRecorder:', e);
+    //   }
+    // }
+
+
+
     function setupRecorder() {
-      console.log('🎬 Setting up recorder...');
+      console.log('🎬 Setting up recorder (Video Only Mode for Lip-Sync Safety)...');
 
       const canvas = document.querySelector('#avatar canvas') || document.querySelector('canvas');
       if (!canvas) {
@@ -1132,17 +1234,19 @@
         return;
       }
 
+      // Sirf Video Stream lein (Audio hata diya taaki Lip-Sync na tute)
       const videoStream = canvas.captureStream(30);
+
+      // 🟢 CHANGE: Humne audioDest hata diya hai
       const combined = new MediaStream([
-        ...videoStream.getVideoTracks(),
-        ...audioDest.stream.getAudioTracks()
+        ...videoStream.getVideoTracks()
+        // Audio tracks removed temporarily to fix lip-sync
       ]);
 
-      // Try different codecs in order of preference
+      // Codecs logic same rahega
       const codecOptions = [
         { mimeType: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', ext: 'mp4', name: 'MP4 (H.264)' },
         { mimeType: 'video/webm;codecs=vp9,opus', ext: 'webm', name: 'WebM (VP9)' },
-        { mimeType: 'video/webm;codecs=vp8,opus', ext: 'webm', name: 'WebM (VP8)' },
         { mimeType: 'video/webm', ext: 'webm', name: 'WebM (default)' }
       ];
 
@@ -1150,76 +1254,35 @@
       for (const codec of codecOptions) {
         if (MediaRecorder.isTypeSupported(codec.mimeType)) {
           selectedCodec = codec;
-          console.log(`✅ Using codec: ${codec.name} (${codec.mimeType})`);
           break;
         }
       }
 
       if (!selectedCodec) {
-        console.error('❌ No supported codec found!');
         selectedCodec = { mimeType: '', ext: 'webm', name: 'Browser default' };
       }
 
       try {
-        const options = {
-          videoBitsPerSecond: 5000000, // 5 Mbps for high quality
-          audioBitsPerSecond: 128000   // 128 kbps for audio
-        };
-
-        if (selectedCodec.mimeType) {
-          options.mimeType = selectedCodec.mimeType;
-        }
-
-        mediaRecorder = new MediaRecorder(combined, options);
+        mediaRecorder = new MediaRecorder(combined, {
+          mimeType: selectedCodec.mimeType,
+          videoBitsPerSecond: 5000000
+        });
 
         mediaRecorder.ondataavailable = e => {
-          if (e.data.size > 0) {
-            recordedChunks.push(e.data);
-            console.log(`📦 Chunk received: ${(e.data.size / 1024 / 1024).toFixed(2)} MB`);
-          }
+          if (e.data.size > 0) recordedChunks.push(e.data);
         };
 
         mediaRecorder.onstop = () => {
-          console.log(`🎬 Recording stopped. Total chunks: ${recordedChunks.length}`);
-          const totalSize = recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0);
-          console.log(`📊 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
-
-          const blob = new Blob(recordedChunks, {
-            type: selectedCodec.mimeType || 'video/webm'
-          });
-
+          const blob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
           recordedChunks = [];
-
-          // Send to parent with metadata
           window.parent.postMessage({
             type: 'RECORDING_DATA',
             blob: blob,
-            extension: selectedCodec.ext,
-            codec: selectedCodec.name,
-            size: blob.size
+            extension: selectedCodec.ext
           }, '*');
-
-          console.log('✅ Recording sent to parent');
         };
 
-        mediaRecorder.onerror = (e) => {
-          console.error('❌ MediaRecorder error:', e);
-        };
-
-        mediaRecorder.onstart = () => {
-          console.log('🔴 Recording started');
-        };
-
-        mediaRecorder.onpause = () => {
-          console.log('⏸️  Recording paused');
-        };
-
-        mediaRecorder.onresume = () => {
-          console.log('▶️  Recording resumed');
-        };
-
-        console.log('✅ Recorder setup complete');
-
+        console.log('✅ Recorder setup complete (Video Only)');
       } catch (e) {
         console.error('❌ Failed to create MediaRecorder:', e);
       }
@@ -1238,21 +1301,20 @@
       loadLectureData();
     });
 
-  </script>
 
-  // Relay activity
-  const report = () => window.parent.postMessage({ type: 'USER_ACTIVITY' }, '*');
-  document.addEventListener('mousemove', report);
-  document.addEventListener('touchstart', report);
-  document.addEventListener('click', report);
+    // Relay activity
+    const report = () => window.parent.postMessage({ type: 'USER_ACTIVITY' }, '*');
+    document.addEventListener('mousemove', report);
+    document.addEventListener('touchstart', report);
+    document.addEventListener('click', report);
 
-  // Auto-resume helper for initial interaction
-  document.addEventListener('click', () => {
-  if (head.audioCtx && head.audioCtx.state === 'suspended' && !isPaused) {
-  head.audioCtx.resume();
-  console.log("AudioContext resumed by user interaction");
-  }
-  }, { once: true });
+    // Auto-resume helper for initial interaction
+    document.addEventListener('click', () => {
+      if (head.audioCtx && head.audioCtx.state === 'suspended' && !isPaused) {
+        head.audioCtx.resume();
+        console.log("AudioContext resumed by user interaction");
+      }
+    }, { once: true });
 
   </script>
 </head>
@@ -1267,10 +1329,10 @@
     <div id="whiteboardTextContent"></div>
   </div>
 
-  <div id="controls">
+  <!-- <div id="controls">
     <button id="unlockAudio">Start</button>
     <textarea id="json" readonly></textarea>
-  </div>
+  </div> -->
   <div id="loading"></div>
 
   <!-- Narration Text Overlay (bottom fallback) -->
