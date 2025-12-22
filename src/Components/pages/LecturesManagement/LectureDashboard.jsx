@@ -465,16 +465,12 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
             track: '#e4e4e7'
         };
 
-    // Calculate total lectures from played + shared
-    const calculatedTotal = (dashboardData.played_lectures || 0) + (dashboardData.shared_lectures || 0);
-    const totalLectures = calculatedTotal > 0 ? calculatedTotal : (dashboardData.total_lectures || 0);
-
     // Chart segments - All Lecture and Pending Lecture
     const chartSegments = useMemo(() => ([
         {
             key: 'all',
             label: 'All Lecture',
-            value: totalLectures,
+            value: dashboardData.total_lectures || 0,
             color: palette.all
         },
         {
@@ -483,7 +479,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
             value: dashboardData.pending_lectures || 0,
             color: palette.pending
         },
-    ]), [totalLectures, dashboardData.pending_lectures, palette.all, palette.pending]);
+    ]), [dashboardData.total_lectures, dashboardData.pending_lectures, palette.all, palette.pending]);
 
     // Circle math
     const baseRadius = 115;
@@ -493,6 +489,8 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
 
     // Progress animation - Always animate
     const [progressFactor, setProgressFactor] = useState(0);
+    const [hoveredSegment, setHoveredSegment] = useState(null);
+    const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
     useEffect(() => {
         setProgressFactor(0);
         const raf = requestAnimationFrame(() => {
@@ -741,6 +739,7 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                                                 opacity: 1
                                                             }}
                                                         />
+                                                        <title>{segment.label}: {segment.value}</title>
                                                     </g>
                                                 );
                                             })}

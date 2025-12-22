@@ -433,7 +433,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                         : "bg-[#6a6dff] text-white hover:bg-[#585bdf]"
                         }`}
                     >
-                      <span>Add Chapter</span>
+                      <span>Add Topic</span>
                       <Plus className="h-3 w-3" />
                     </button>
                   </div>
