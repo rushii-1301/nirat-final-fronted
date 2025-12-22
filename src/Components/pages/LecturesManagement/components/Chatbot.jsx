@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Mic, MicOff, SendHorizontal } from 'lucide-react';
+import { X, Mic, MicOff, SendHorizontal, Bot } from 'lucide-react';
 
 function Chatbot({ messages, onSendMessage, onClose }) {
     const [currentMessage, setCurrentMessage] = useState('');
@@ -87,16 +87,18 @@ function Chatbot({ messages, onSendMessage, onClose }) {
             </div>
 
             {/* Messages */}
-            <div ref={chatContainerRef} className="p-4 space-y-4 max-h-96 overflow-y-auto flex-1">
+            <div ref={chatContainerRef} className="p-4 space-y-4 max-h-96 overflow-y-auto flex-1 scrollbar-none">
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex items-end gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                         {msg.sender === 'system' && (
-                            <div className="shrink-0 w-8 h-8 rounded-full bg-gray-300"></div>
+                            <div className="shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                                <Bot size={18} className="text-gray-600" />
+                            </div>
                         )}
 
                         <div className={`px-4 py-2 text-sm max-w-[80%] ${msg.sender === 'system'
-                                ? 'border rounded-2xl rounded-bl-none bg-gray-100 border-gray-200 text-gray-800'
-                                : 'rounded-2xl rounded-br-none font-medium bg-gray-800 text-white'
+                            ? 'border rounded-2xl rounded-bl-none bg-gray-100 border-gray-200 text-gray-800'
+                            : 'rounded-2xl rounded-br-none font-medium bg-gray-800 text-white'
                             }`}>
                             {msg.text}
                         </div>
@@ -114,8 +116,8 @@ function Chatbot({ messages, onSendMessage, onClose }) {
                     <button
                         onClick={handleMicClick}
                         className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition-all ${micStatus === 'listening'
-                                ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
                     >
                         {micStatus === 'listening' ? <Mic size={20} /> : <Mic size={20} />}
@@ -128,15 +130,15 @@ function Chatbot({ messages, onSendMessage, onClose }) {
                             onChange={(e) => setCurrentMessage(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                             placeholder="Send your message..."
-                            className="w-full pl-4 pr-12 py-3 rounded-full text-sm outline-none border border-gray-200 focus:border-gray-400 bg-gray-50"
+                            className="w-full pl-4 py-3 rounded-full text-sm outline-none border border-gray-200 focus:border-gray-400 bg-gray-50"
                         />
-                        <button
-                            onClick={handleSend}
-                            className="absolute right-1.5 w-9 h-9 rounded-full flex items-center justify-center bg-gray-800 text-white hover:bg-gray-700"
-                        >
-                            <SendHorizontal size={16} className="ml-0.5" />
-                        </button>
                     </div>
+                    <button
+                        onClick={handleSend}
+                        className="w-9 h-9 rounded-full flex items-center justify-center bg-gray-800 text-white hover:bg-gray-700"
+                    >
+                        <SendHorizontal size={16} className="ml-0.5" />
+                    </button>
                 </div>
             </div>
         </div>

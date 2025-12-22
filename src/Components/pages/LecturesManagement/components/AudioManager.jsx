@@ -6,10 +6,17 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
     const slideSourceRef = useRef(null);
     const chatbotSourceRef = useRef(null);
     const [slideAudioBuffer, setSlideAudioBuffer] = useState(null);
-    const [slideStartTime, setSlideStartTime] = useState(0);
-    const [slidePauseTime, setSlidePauseTime] = useState(0);
+    const slideStartTime = useRef(0);
+    const slidePauseTime = useRef(0);
 
     useImperativeHandle(ref, () => ({
+        getSlideElapsed() {
+            if (audioContext) {
+                return audioContext.currentTime - slideStartTime.current;
+            }
+            return 0;
+        },
+
         async playSlideAudio(url, onEnded) {
             try {
                 // Stop any existing audio
@@ -48,17 +55,21 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
                 }
 
                 source.start(0);
-                setSlideStartTime(audioContext.currentTime);
+                slideStartTime.current = audioContext.currentTime;
+
+                // Return duration so parent can handle progress
+                return { duration: audioBuffer.duration };
 
             } catch (error) {
                 console.error('Failed to play slide audio:', error);
+                return { duration: 0 };
             }
         },
 
         pauseSlideAudio() {
             if (slideSourceRef.current && audioContext) {
-                const elapsed = audioContext.currentTime - slideStartTime;
-                setSlidePauseTime(elapsed);
+                const elapsed = audioContext.currentTime - slideStartTime.current;
+                slidePauseTime.current = elapsed;
                 slideSourceRef.current.stop();
                 slideSourceRef.current.disconnect();
                 slideSourceRef.current = null;
@@ -79,8 +90,8 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
                     await audioContext.resume();
                 }
 
-                source.start(0, slidePauseTime);
-                setSlideStartTime(audioContext.currentTime - slidePauseTime);
+                source.start(0, slidePauseTime.current);
+                slideStartTime.current = audioContext.currentTime - slidePauseTime.current;
             }
         },
 
@@ -88,8 +99,8 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
             try {
                 // Pause slide audio
                 if (slideSourceRef.current) {
-                    const elapsed = audioContext.currentTime - slideStartTime;
-                    setSlidePauseTime(elapsed);
+                    const elapsed = audioContext.currentTime - slideStartTime.current;
+                    slidePauseTime.current = elapsed;
                     slideSourceRef.current.stop();
                     slideSourceRef.current.disconnect();
                 }
