@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
 import { getAsset, BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets.js";
-import { ChevronDown, Play, PlusIcon, Share2, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ChevronDown, Play, PlusIcon, Share2, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -279,6 +279,16 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
         fetchLectures();
     };
 
+    const closeFilterPopup = () => {
+        setShowFilter(false);
+        setOpenFilter(null);
+    };
+
+    const closeFilterPopupWithReset = async () => {
+        await resetFilters();
+        closeFilterPopup();
+    };
+
     // Delete Handlers
     const handleDeleteClick = (lecture) => {
         setLectureToDelete(lecture);
@@ -454,151 +464,156 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                         <button
                             type="button"
-                            onClick={() => {
-                                setShowFilter((prev) => !prev);
-                                setOpenFilter(null);
-                            }}
+                            onClick={() => setShowFilter(true)}
                             className={`${isDark
                                 ? "bg-zinc-800 text-gray-100"
                                 : "bg-white text-zinc-800"
                                 } border border-transparent cursor-pointer inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 self-start`}
                         >
                             <SlidersHorizontal className="mr-2 w-4" />
-                            {showFilter ? "Hide Filter" : "Show Filter"}
+                            Filter
                         </button>
                     </div>
 
                     {showFilter && (
                         <div
-                            ref={filterRef}
-                            className={`mb-5 space-y-3 rounded-2xl border border-transparent px-3 sm:px-4 py-3 transition-all duration-200`}
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                            onClick={closeFilterPopupWithReset}
                         >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {/* Class/Standard Dropdown */}
-                                <div className="relative z-30">
+                            <div
+                                ref={filterRef}
+                                className={`${isDark ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"} rounded-2xl p-6 w-[80%] max-w-md max-h-[80vh] overflow-y-auto no-scrollbar shadow-2xl border ${isDark ? "border-zinc-700" : "border-zinc-200"}`}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-xl font-semibold">Filter Lectures</h3>
                                     <button
                                         type="button"
-                                        onClick={() => setOpenFilter((prev) => (prev === "class" ? null : "class"))}
-                                        className={`${isDark
-                                            ? "bg-zinc-900 text-gray-100"
-                                            : "bg-white text-zinc-800"
-                                            } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                        onClick={closeFilterPopupWithReset}
+                                        className={`p-2 cursor-pointer ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
                                     >
-                                        <span className="font-bold text-[16px] leading-[100%]">{selectedClass || "Standard"}</span>
-                                        <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
+                                        <X size={20} />
                                     </button>
-                                    {openFilter === "class" && (
-                                        <div
-                                            className={`${isDark
-                                                ? "bg-zinc-900 text-gray-100"
-                                                : "bg-white text-zinc-800"
-                                                } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150`}
-                                        >
-                                            <div className="flex flex-wrap gap-2">
-                                                {classOptions.length > 0 ? (
-                                                    classOptions.map((item) => (
-                                                        <button
-                                                            key={item}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setSelectedClass(item);
-                                                                setOpenFilter(null);
-                                                            }}
-                                                            className={`${selectedClass === item
-                                                                ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
-                                                                : isDark
-                                                                    ? "bg-zinc-800 text-gray-100"
-                                                                    : "bg-zinc-100 text-zinc-800"
-                                                                } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
-                                                        >
-                                                            {item}
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>No classes available</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
 
-                                {/* Subject Dropdown */}
-                                {selectedClass && (
-                                    <div className="relative z-20">
+                                <div className="space-y-4">
+                                    <div className="relative z-30">
                                         <button
                                             type="button"
-                                            onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
-                                            disabled={!selectedClass}
-                                            className={`${isDark
-                                                ? "bg-zinc-900 text-gray-100"
-                                                : "bg-white text-zinc-800"
-                                                } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                            onClick={() => setOpenFilter((prev) => (prev === "class" ? null : "class"))}
+                                            className={`${isDark ? "bg-zinc-800 text-gray-100" : "bg-gray-100 text-zinc-800"} border border-transparent w-full flex items-center justify-between px-4 py-3 text-sm cursor-pointer transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                         >
-                                            <span className="font-bold text-[16px] leading-[100%]">{selectedSubject || "Subject Name"}</span>
-                                            <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
+                                            <span className="font-medium">{selectedClass || "Select Standard"}</span>
+                                            <span className="text-[10px]"><ChevronDown className={`size-4 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
                                         </button>
-                                        {openFilter === "subject" && selectedClass && (
+                                        {openFilter === "class" && (
                                             <div
-                                                className={`${isDark
-                                                    ? "bg-zinc-900 text-gray-100"
-                                                    : "bg-white text-zinc-800"
-                                                    } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150`}
+                                                className={`${isDark ? "bg-zinc-800 text-gray-100" : "bg-white text-zinc-800"} relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150 max-h-40 overflow-y-auto no-scrollbar`}
                                             >
                                                 <div className="flex flex-wrap gap-2">
-                                                    {subjectOptions.length > 0 ? (
-                                                        subjectOptions.map((item) => (
+                                                    {classOptions.length > 0 ? (
+                                                        classOptions.map((item) => (
                                                             <button
                                                                 key={item}
                                                                 type="button"
                                                                 onClick={() => {
-                                                                    setSelectedSubject(item);
+                                                                    setSelectedClass(item);
                                                                     setOpenFilter(null);
                                                                 }}
-                                                                className={`${selectedSubject === item
+                                                                className={`${selectedClass === item
                                                                     ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
                                                                     : isDark
-                                                                        ? "bg-zinc-800 text-gray-100"
-                                                                        : "bg-zinc-100 text-zinc-800"
-                                                                    } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
+                                                                        ? "bg-zinc-700 text-gray-100"
+                                                                        : "bg-gray-100 text-zinc-800"
+                                                                    } cursor-pointer px-3 py-1 text-sm font-medium capitalize transition-all duration-150 hover:scale-[1.03]`}
                                                             >
                                                                 {item}
                                                             </button>
                                                         ))
                                                     ) : (
-                                                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>No subjects available</p>
+                                                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>No classes available</p>
                                                     )}
                                                 </div>
                                             </div>
                                         )}
                                     </div>
+
+                                    {selectedClass && (
+                                        <div className="relative z-20">
+                                            <button
+                                                type="button"
+                                                onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
+                                                disabled={!selectedClass}
+                                                className={`${isDark ? "bg-zinc-800 text-gray-100" : "bg-gray-100 text-zinc-800"} border border-transparent w-full flex items-center justify-between px-4 py-3 text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                            >
+                                                <span className="font-medium">{selectedSubject || "Select Subject"}</span>
+                                                <span className="text-[10px]"><ChevronDown className={`size-4 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
+                                            </button>
+                                            {openFilter === "subject" && selectedClass && (
+                                                <div
+                                                    className={`${isDark ? "bg-zinc-800 text-gray-100" : "bg-white text-zinc-800"} relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent max-h-40 overflow-y-auto no-scrollbar`}
+                                                >
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {subjectOptions.length > 0 ? (
+                                                            subjectOptions.map((item) => (
+                                                                <button
+                                                                    key={item}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedSubject(item);
+                                                                        setOpenFilter(null);
+                                                                    }}
+                                                                    className={`${selectedSubject === item
+                                                                        ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                        : isDark
+                                                                            ? "bg-zinc-700 text-gray-100"
+                                                                            : "bg-gray-100 text-zinc-800"
+                                                                        } cursor-pointer px-3 py-1 text-sm font-medium capitalize transition-all duration-150 hover:scale-[1.03]`}
+                                                                >
+                                                                    {item}
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>No subjects available</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {selectedClass && selectedSubject && (
+                                    <div className="flex items-center justify-end gap-3 mt-6 pt-4">
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                await resetFilters();
+                                                setOpenFilter(null);
+                                            }}
+                                            className={`${isDark
+                                                ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-800"
+                                                : "bg-transparent text-zinc-800 border border-zinc-300 hover:bg-zinc-100"
+                                                } cursor-pointer rounded-full px-5 py-2 text-sm font-medium`}
+                                        >
+                                            Reset
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                applyFilters();
+                                                closeFilterPopup();
+                                            }}
+                                            className={`${isDark
+                                                ? "bg-white text-black hover:bg-zinc-100"
+                                                : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80"
+                                                } cursor-pointer rounded-full px-5 py-2 text-sm font-medium shadow-sm`}
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
                                 )}
                             </div>
-
-                            {/* Reset / Apply Buttons */}
-                            {selectedClass && selectedSubject && (
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={resetFilters}
-                                        className={`${isDark
-                                            ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900"
-                                            : "bg-transparent text-zinc-800 border border-zinc-300 hover:bg-zinc-100"
-                                            } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
-                                    >
-                                        Reset Filter
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={applyFilters}
-                                        className={`${isDark
-                                            ? "bg-white text-black hover:bg-zinc-100"
-                                            : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80"
-                                            } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
-                                    >
-                                        Apply Filter
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     )}
 

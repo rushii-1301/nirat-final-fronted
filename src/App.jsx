@@ -101,34 +101,34 @@ function App() {
   }, [navigate, location])
 
   // Disable Developer Tools and Right Click
-  useEffect(() => {
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-    };
+  // useEffect(() => {
+  //   const handleContextMenu = (e) => {
+  //     e.preventDefault();
+  //   };
 
-    const handleKeyDown = (e) => {
-      // F12
-      if (e.key === 'F12') {
-        e.preventDefault();
-      }
-      // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
-      if (e.ctrlKey && e.shiftKey && (['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key))) {
-        e.preventDefault();
-      }
-      // Ctrl+U (View Source)
-      if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
-        e.preventDefault();
-      }
-    };
+  //   const handleKeyDown = (e) => {
+  //     // F12
+  //     if (e.key === 'F12') {
+  //       e.preventDefault();
+  //     }
+  //     // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+  //     if (e.ctrlKey && e.shiftKey && (['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key))) {
+  //       e.preventDefault();
+  //     }
+  //     // Ctrl+U (View Source)
+  //     if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+  //       e.preventDefault();
+  //     }
+  //   };
 
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('keydown', handleKeyDown);
+  //   document.addEventListener('contextmenu', handleContextMenu);
+  //   document.addEventListener('keydown', handleKeyDown);
 
-    return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener('contextmenu', handleContextMenu);
+  //     document.removeEventListener('keydown', handleKeyDown);
+  //   };
+  // }, []);
 
   const lectureSidebar = [
     {
@@ -336,6 +336,7 @@ function App() {
         <Route path="/chapter/Narration" element={<NarrationPage theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/SetChapter" />} />
         <Route path="/chapter/CoverPage" element={<CoverPage theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
         <Route path="/chapter/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
+        <Route path="/lecture-player" element={<LectureVideo theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
 
 
 

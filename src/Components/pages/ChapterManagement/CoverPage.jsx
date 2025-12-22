@@ -141,6 +141,20 @@ function CoverPage({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                                                 controls
                                                 className="h-full w-full rounded-lg object-contain bg-black"
                                             />
+                                        ) : location.state?.lectureId ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const url = `/lecture-player?lectureId=${location.state.lectureId}`;
+                                                    window.open(url, '_blank');
+                                                }}
+                                                className={`px-8 py-3 rounded-lg text-sm font-medium cursor-pointer transition-all ${isDark
+                                                    ? "bg-[#696CFF] text-white hover:bg-[#5f62e0] hover:shadow-lg"
+                                                    : "bg-[#696CFF] text-white hover:bg-[#5f62e0] hover:shadow-lg"
+                                                    }`}
+                                            >
+                                                Preview Lecture
+                                            </button>
                                         ) : (
                                             /* Empty state to match design */
                                             <div className="w-full h-full"></div>

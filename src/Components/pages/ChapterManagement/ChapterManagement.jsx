@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Sidebar from "../../Tools/Sidebar";
 import Header from "../../Tools/Header";
-import { Pencil, Trash2, Clock, Video, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { Pencil, Trash2, Clock, Video, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { getAsset, BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets";
 
@@ -49,9 +49,9 @@ const VideoCard = ({ video, index, isDark, isAdminPath, navigate, setDeleteTarge
 
     return (
         <div
-            className={`flex gap-4 rounded-2xl border border-transparent p-4 relative overflow-hidden ${isDark ? 'bg-zinc-900' : 'bg-white'}`}
+            className={`flex gap-4 border border-transparent p-4 relative overflow-hidden ${isDark ? 'bg-zinc-900' : 'bg-white'}`}
         >
-            <div className={`w-28 sm:w-32 h-24 sm:h-28 rounded-xl shrink-0 relative ${isDark ? 'bg-zinc-800' : 'bg-[#e7e6ff]'} overflow-hidden`}>
+            <div className={`w-28 sm:w-32 h-24 sm:h-28 shrink-0 relative ${isDark ? 'bg-zinc-800' : 'bg-[#e7e6ff]'} overflow-hidden`}>
                 {video.thumbnailUrl ? (
                     <img
                         src={video.thumbnailUrl}
@@ -63,7 +63,7 @@ const VideoCard = ({ video, index, isDark, isAdminPath, navigate, setDeleteTarge
                         Thumbnail
                     </div>
                 )}
-                <div className={`absolute bottom-2 right-2 text-[11px] px-2 py-1 rounded-full ${isDark ? 'bg-black/70 text-white' : 'bg-white/90 text-black'}`}>
+                <div className={`absolute bottom-2 right-2 text-[11px] px-2 py-1 ${isDark ? 'bg-black/70 text-white' : 'bg-white/90 text-black'}`}>
                     {video.duration}
                 </div>
             </div>
@@ -131,6 +131,7 @@ const VideoCard = ({ video, index, isDark, isAdminPath, navigate, setDeleteTarge
 function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
     const [openMenu, setOpenMenu] = useState(null);
     const [showFilter, setShowFilter] = useState(false);
+    const [showFilterPopup, setShowFilterPopup] = useState(false);
     const [openFilter, setOpenFilter] = useState(null); // 'class' | 'subject' | 'chapter' | null
     const [selectedClass, setSelectedClass] = useState("");
     const [selectedSubject, setSelectedSubject] = useState("");
@@ -394,7 +395,12 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
         // Fetch with current selections - only when Apply is clicked
         fetchFiltersAndLectures(selectedClass, selectedSubject, selectedChapter);
         setOpenFilter(null);
-        setShowFilter(false);
+        setShowFilterPopup(false);
+    };
+
+    const closeFilterPopup = () => {
+        setShowFilterPopup(false);
+        setOpenFilter(null);
     };
 
 
@@ -501,240 +507,255 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
                         className={`h-full flex flex-col`}
                     >
                         {/* Top Table Container */}
-                        <div className={`w-full max-w-none rounded pb-0 p-3 md:px-5 lg:px-6 overflow-x-auto no-scrollbar transition-colors duration-300`}>
+                        <div className={`w-full max-w-none rounded pb-0 p-3 md:px-3 lg:px-3 overflow-x-auto no-scrollbar transition-colors duration-300`}>
 
                             {/* Top Row */}
 
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                            <div className="flex flex-row items-center justify-end gap-3">
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        const newShowFilter = !showFilter;
-                                        setShowFilter(newShowFilter);
-                                        setOpenFilter(null);
-                                        // Fetch filter options when opening filter panel
-                                        if (newShowFilter) {
-                                            if (selectedClass && selectedSubject) {
-                                                fetchFilterOptions(selectedClass, selectedSubject);
-                                            } else if (selectedClass) {
-                                                fetchFilterOptions(selectedClass);
-                                            } else {
-                                                fetchFilterOptions();
-                                            }
+                                        setShowFilterPopup(true);
+                                        // Fetch filter options when opening filter popup
+                                        if (selectedClass && selectedSubject) {
+                                            fetchFilterOptions(selectedClass, selectedSubject);
+                                        } else if (selectedClass) {
+                                            fetchFilterOptions(selectedClass);
+                                        } else {
+                                            fetchFilterOptions();
                                         }
                                     }}
                                     className={`${isDark
                                         ? "bg-zinc-800 text-gray-100"
                                         : "bg-white text-zinc-800"
-                                        } border border-transparent cursor-pointer inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200 self-start`}
+                                        } border border-transparent cursor-pointer inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-200`}
                                 >
                                     <SlidersHorizontal className="mr-2 w-4" />
-                                    {showFilter ? "Hide Filter" : "Show Filter"}
+                                    Filter
                                 </button>
                             </div>
 
-                            {showFilter && (
+                            {showFilterPopup && (
                                 <div
-                                    ref={filterRef}
-                                    className={`mb-5 space-y-3 rounded-2xl border px-3 sm:px-4 py-3 transition-all duration-200 border-none`}
+                                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                                    onClick={closeFilterPopup}
                                 >
-                                    {/* Dropdown row */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                        {/* Class dropdown */}
-                                        <div className="relative z-30">
+                                    <div
+                                        ref={filterRef}
+                                        className={`${isDark ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
+                                            } rounded-2xl p-6 w-[80%] max-w-md max-h-[80vh] overflow-y-auto no-scrollbar shadow-2xl border ${isDark ? "border-zinc-700" : "border-zinc-200"
+                                            }`}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-xl font-semibold">Filter Chapters</h3>
                                             <button
                                                 type="button"
-                                                onClick={() => setOpenFilter((prev) => (prev === "class" ? null : "class"))}
-                                                className={`${isDark
-                                                    ? "bg-zinc-900 text-gray-100"
-                                                    : "bg-white text-zinc-800"
-                                                    } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                onClick={closeFilterPopup}
+                                                className={`p-2 cursor-pointer ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
                                             >
-                                                <span className="font-bold text-[16px] leading-[100%]">{selectedClass || "Standard"}</span>
-                                                <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
+                                                <X size={20} />
                                             </button>
-                                            {openFilter === "class" && (
-                                                <div
+                                        </div>
+                                        
+                                        {/* Dropdown row */}
+                                        <div className="space-y-4">
+                                            {/* Class dropdown */}
+                                            <div className="relative z-30">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenFilter((prev) => (prev === "class" ? null : "class"))}
                                                     className={`${isDark
-                                                        ? "bg-zinc-900 text-gray-100"
-                                                        : "bg-white text-zinc-800"
-                                                        } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150`}
+                                                        ? "bg-zinc-800 text-gray-100"
+                                                        : "bg-gray-100 text-zinc-800"
+                                                        } border border-transparent w-full flex items-center justify-between px-4 py-3 text-sm cursor-pointer transition-all duration-150 ${openFilter === "class" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
                                                 >
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {standardOptions.map((item) => (
-                                                            <button
-                                                                key={item}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setSelectedClass(item);
-                                                                    setOpenFilter(null);
-                                                                }}
-                                                                className={`${selectedClass === item
-                                                                    ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
-                                                                    : isDark
-                                                                        ? "bg-zinc-800 text-gray-100"
-                                                                        : "bg-zinc-100 text-zinc-800"
-                                                                    } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
-                                                            >
-                                                                {item}
-                                                            </button>
-                                                        ))}
+                                                    <span className="font-medium">{selectedClass || "Select Standard"}</span>
+                                                    <span className="text-[10px]"><ChevronDown className={`size-4 ${openFilter === "class" ? "rotate-180" : ""}`} /></span>
+                                                </button>
+                                                {openFilter === "class" && (
+                                                    <div
+                                                        className={`${isDark
+                                                            ? "bg-zinc-800 text-gray-100"
+                                                            : "bg-white text-zinc-800"
+                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent transition-all duration-150 max-h-40 overflow-y-auto no-scrollbar`}
+                                                    >
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {standardOptions.map((item) => (
+                                                                <button
+                                                                    key={item}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedClass(item);
+                                                                        setOpenFilter(null);
+                                                                    }}
+                                                                    className={`${selectedClass === item
+                                                                        ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                        : isDark
+                                                                            ? "bg-zinc-700 text-gray-100"
+                                                                            : "bg-gray-100 text-zinc-800"
+                                                                        } cursor-pointer px-3 py-1 text-sm font-medium capitalize transition-all duration-150 hover:scale-[1.03]`}
+                                                                >
+                                                                    {item}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
+                                                )}
+                                            </div>
+
+                                            {/* Subject Name dropdown */}
+                                            {selectedClass && (
+                                                <div className="relative z-20">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
+                                                        disabled={!selectedClass}
+                                                        className={`${isDark
+                                                            ? "bg-zinc-800 text-gray-100"
+                                                            : "bg-gray-100 text-zinc-800"
+                                                            } border border-transparent w-full flex items-center justify-between px-4 py-3 text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                    >
+                                                        <span className="font-medium">{selectedSubject || "Select Subject"}</span>
+                                                        <span className="text-[10px]"><ChevronDown className={`size-4 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
+                                                    </button>
+                                                    {openFilter === "subject" && selectedClass && (
+                                                        <div
+                                                            className={`${isDark
+                                                                ? "bg-zinc-800 text-gray-100"
+                                                                : "bg-white text-zinc-800"
+                                                                } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent max-h-40 overflow-y-auto no-scrollbar`}
+                                                        >
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {subjectOptions.map((item) => (
+                                                                    <button
+                                                                        key={item}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setSelectedSubject(item);
+                                                                            setOpenFilter(null);
+                                                                        }}
+                                                                        className={`${selectedSubject === item
+                                                                            ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                            : isDark
+                                                                                ? "bg-zinc-700 text-gray-100"
+                                                                                : "bg-gray-100 text-zinc-800"
+                                                                            } cursor-pointer px-3 py-1 text-sm font-medium capitalize transition-all duration-150 hover:scale-[1.03]`}
+                                                                    >
+                                                                        {item}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Chapter Name dropdown */}
+                                            {selectedSubject && (
+                                                <div className="relative z-10">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setOpenFilter((prev) => (prev === "chapter" ? null : "chapter"))}
+                                                        disabled={!selectedSubject}
+                                                        className={`${isDark
+                                                            ? "bg-zinc-800 text-gray-100"
+                                                            : "bg-gray-100 text-zinc-800"
+                                                            } border border-transparent w-full flex items-center justify-between px-4 py-3 text-sm cursor-pointer ${!selectedSubject ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "chapter" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                    >
+                                                        <span className="font-medium">{selectedChapter || "Select Chapter"}</span>
+                                                        <span className="text-[10px]"><ChevronDown className={`size-4 ${openFilter === "chapter" ? "rotate-180" : ""}`} /></span>
+                                                    </button>
+                                                    {openFilter === "chapter" && selectedSubject && (
+                                                        <div
+                                                            className={`${isDark
+                                                                ? "bg-zinc-800 text-gray-100"
+                                                                : "bg-white text-zinc-800"
+                                                                } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent max-h-40 overflow-y-auto no-scrollbar`}
+                                                        >
+                                                            <div className="flex flex-col gap-2">
+                                                                {chapterOptions.map((item) => (
+                                                                    <button
+                                                                        key={item}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setSelectedChapter(item);
+                                                                            setOpenFilter(null);
+                                                                        }}
+                                                                        className={`${selectedChapter === item
+                                                                            ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
+                                                                            : isDark
+                                                                                ? "bg-zinc-700 text-gray-100"
+                                                                                : "bg-gray-100 text-zinc-800"
+                                                                            } cursor-pointer w-full text-left px-4 py-2 text-sm font-medium capitalize transition-all duration-150 hover:scale-[1.02]`}
+                                                                    >
+                                                                        {item}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* Subject Name dropdown */}
-                                        {selectedClass && (
-                                            <div className="relative z-20">
+                                        {/* Action buttons */}
+                                        {selectedClass && selectedSubject && selectedChapter && (
+                                            <div className="flex items-center justify-end gap-3 mt-6 pt-4">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setOpenFilter((prev) => (prev === "subject" ? null : "subject"))}
-                                                    disabled={!selectedClass}
+                                                    onClick={resetFilters}
                                                     className={`${isDark
-                                                        ? "bg-zinc-900 text-gray-100"
-                                                        : "bg-white text-zinc-800"
-                                                        } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedClass ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "subject" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                        ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-800"
+                                                        : "bg-transparent text-zinc-800 border border-zinc-300 hover:bg-zinc-100"
+                                                        } cursor-pointer rounded-full px-5 py-2 text-sm font-medium`}
                                                 >
-                                                    <span className="font-bold text-[16px] leading-[100%]">{selectedSubject || "Subject Name"}</span>
-                                                    <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "subject" ? "rotate-180" : ""}`} /></span>
+                                                    Reset
                                                 </button>
-                                                {openFilter === "subject" && selectedClass && (
-                                                    <div
-                                                        className={`${isDark
-                                                            ? "bg-zinc-900 text-gray-100"
-                                                            : "bg-white text-zinc-800"
-                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent`}
-                                                    >
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {subjectOptions.map((item) => (
-                                                                <button
-                                                                    key={item}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setSelectedSubject(item);
-                                                                        setOpenFilter(null);
-                                                                    }}
-                                                                    className={`${selectedSubject === item
-                                                                        ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
-                                                                        : isDark
-                                                                            ? "bg-zinc-800 text-gray-100"
-                                                                            : "bg-zinc-100 text-zinc-800"
-                                                                        } cursor-pointer px-3 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.03]`}
-                                                                >
-                                                                    {item}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Chapter Name dropdown */}
-                                        {selectedSubject && (
-                                            <div className="relative z-10">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setOpenFilter((prev) => (prev === "chapter" ? null : "chapter"))}
-                                                    disabled={!selectedSubject}
+                                                    onClick={applyFilters}
                                                     className={`${isDark
-                                                        ? "bg-zinc-900 text-gray-100"
-                                                        : "bg-white text-zinc-800"
-                                                        } border border-transparent w-full flex items-center justify-between px-4 py-2 text-xs sm:text-sm cursor-pointer ${!selectedSubject ? 'opacity-50 cursor-not-allowed' : ''} ${openFilter === "chapter" ? "rounded-t-md rounded-b-none border-b-transparent" : "rounded-md"}`}
+                                                        ? "bg-white text-black hover:bg-zinc-100"
+                                                        : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80"
+                                                        } cursor-pointer rounded-full px-5 py-2 text-sm font-medium shadow-sm`}
                                                 >
-                                                    <span className="font-bold text-[16px] leading-[100%]">{selectedChapter || "Chapter Name"}</span>
-                                                    <span className="text-[10px]"><ChevronDown className={`size-5 ${openFilter === "chapter" ? "rotate-180" : ""}`} /></span>
+                                                    Apply
                                                 </button>
-                                                {openFilter === "chapter" && selectedSubject && (
-                                                    <div
-                                                        className={`${isDark
-                                                            ? "bg-zinc-900 text-gray-100"
-                                                            : "bg-white text-zinc-800"
-                                                            } relative z-100 -mt-px w-full rounded-b-xl rounded-t-none px-3 py-3 border border-transparent`}
-                                                    >
-                                                        <div className="flex flex-col gap-2">
-                                                            {chapterOptions.map((item) => (
-                                                                <button
-                                                                    key={item}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setSelectedChapter(item);
-                                                                        setOpenFilter(null);
-                                                                    }}
-                                                                    className={`${selectedChapter === item
-                                                                        ? `${isDark ? "bg-white text-black" : "bg-[#696CFF] text-white"}`
-                                                                        : isDark
-                                                                            ? "bg-zinc-800 text-gray-100"
-                                                                            : "bg-zinc-100 text-zinc-800"
-                                                                        } cursor-pointer w-full text-left px-4 py-1 lg:px-[15px] lg:py-[5px] xl:px-[20px] xl:py-[8px] rounded-full font-semibold text-[15px] leading-[100%] capitalize transition-all duration-150 hover:scale-[1.02]`}
-                                                                >
-                                                                    {item}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* Reset / Apply row */}
-                                    {selectedClass && selectedSubject && selectedChapter && (
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={resetFilters}
-                                                className={`${isDark
-                                                    ? "bg-transparent text-gray-200 border border-zinc-600 hover:bg-zinc-900"
-                                                    : "bg-transparent text-zinc-800 border border-zinc-300 hover:bg-zinc-100"
-                                                    } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm`}
-                                            >
-                                                Reset Filter
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={applyFilters}
-                                                className={`${isDark
-                                                    ? "bg-white text-black hover:bg-zinc-100"
-                                                    : "bg-[#696CFF] text-white hover:bg-[#696CFF]/80"
-                                                    } cursor-pointer rounded-full px-5 py-1.5 text-xs sm:text-sm shadow-sm`}
-                                            >
-                                                Apply Filter
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
                             {/* Skeleton Loading Cards */}
                             {loadingLectures && (
-                                <div className={`overflow-y-auto no-scrollbar ${showFilter ? "max-h-[calc(100vh-480px)] md:max-h-[calc(100vh-380px)]" : "max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-250px)]"} mt-5`}>
+                                <div className={`overflow-y-auto no-scrollbar ${"max-h-[calc(100vh-220px)] md:max-h-[calc(100vh-230px)]"} mt-5`}>
                                     <h2 className={`font-medium header-3 mb-4 transition-colors duration-300 ${isDark ? "text-white" : "text-[#696CFF]"}`}>Chapter Management</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
                                             <div
                                                 key={item}
-                                                className={`flex gap-4 rounded-2xl border p-4 relative overflow-hidden animate-pulse ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}
+                                                className={`flex gap-4 border p-4 relative overflow-hidden animate-pulse ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}
                                             >
                                                 {/* Skeleton Thumbnail */}
-                                                <div className={`w-28 sm:w-32 h-24 sm:h-28 rounded-xl shrink-0 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
+                                                <div className={`w-28 sm:w-32 h-24 sm:h-28 shrink-0 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
                                                     <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent animate-[shimmer_2s_infinite]" />
                                                 </div>
 
                                                 {/* Skeleton Content */}
                                                 <div className="flex flex-col flex-1 min-w-0 gap-2">
                                                     {/* Subject line */}
-                                                    <div className={`h-3 w-24 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                                                    <div className={`h-3 w-24 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
                                                     {/* Title lines */}
-                                                    <div className={`h-4 w-full rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
-                                                    <div className={`h-4 w-3/4 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                                                    <div className={`h-4 w-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                                                    <div className={`h-4 w-3/4 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
                                                     {/* Size line */}
-                                                    <div className={`h-3 w-16 rounded mt-1 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                                                    <div className={`h-3 w-16 mt-1 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
                                                     {/* Topics skeleton */}
                                                     <div className="mt-2 space-y-1">
-                                                        <div className={`h-3 w-full rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
-                                                        <div className={`h-3 w-5/6 rounded ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                                                        <div className={`h-3 w-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                                                        <div className={`h-3 w-5/6 ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -751,7 +772,7 @@ function ChapterManagement({ isDark, toggleTheme, sidebardata, addchapter }) {
 
                             {!loadingLectures && videos.length !== 0 && (
                                 <div
-                                    className={`overflow-y-auto no-scrollbar ${showFilter ? "max-h-[calc(100vh-480px)] md:max-h-[calc(100vh-380px)]" : "max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-250px)]"} mt-5`}
+                                    className={`overflow-y-auto no-scrollbar ${"max-h-[calc(100vh-220px)] md:max-h-[calc(100vh-230px)]"} mt-5`}
                                 >
                                     <h2 className={`font-medium header-3 mb-4 transition-colors duration-300 ${isDark ? "text-white" : "text-[#696CFF]"}`}>Chapter Management</h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

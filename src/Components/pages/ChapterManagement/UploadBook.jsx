@@ -324,6 +324,12 @@ function UploadBook({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebarda
                 <button
                   type="button"
                   onClick={() => {
+                    // Check if PDF is required but not uploaded
+                    if (!effectiveSuggestion && !uploadedFile) {
+                      handleerror?.("Please upload a PDF file to proceed");
+                      return;
+                    }
+                    
                     // If file is uploaded and suggestion is false, upload the PDF
                     if (uploadedFile && !effectiveSuggestion) {
                       handleUploadPDF();
