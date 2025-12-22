@@ -766,7 +766,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                         // src={`https://mzhyi8c6omxn.id.wasmer.app/?lectureId=${location.state?.lectureId ||
                         src={`/Templates/index.html?lectureId=${location.state?.lectureId ||
                             ((lecturejson && typeof lecturejson === 'string' && lecturejson.match(/(\d+)\.json$/)) ? lecturejson.match(/(\d+)\.json$/)[1] : '2')
-                            }`}
+                            }&apiKey=${encodeURIComponent(import.meta.env.VITE_GROQ_API_KEY || '')}`}
                         className="w-full h-full"
                         allow="autoplay; fullscreen; picture-in-picture; microphone"
                         allowFullScreen

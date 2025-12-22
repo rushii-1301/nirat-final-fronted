@@ -562,7 +562,14 @@
         const audioBuffer = await head.audioCtx.decodeAudioData(ab);
 
         // Hardcoded key as per previous fix
-        const VITE_GROQ_API_KEY = "";
+        // Get API key from URL parameter (passed from React component)
+        const urlParams = new URLSearchParams(window.location.search);
+        const VITE_GROQ_API_KEY = urlParams.get('apiKey') || "";
+
+        if (!VITE_GROQ_API_KEY) {
+          console.warn("⚠️ Groq API key not provided. Transcription will fail.");
+        }
+
 
         let words = [], wtimes = [], wdurations = [];
         let gestures = [];
