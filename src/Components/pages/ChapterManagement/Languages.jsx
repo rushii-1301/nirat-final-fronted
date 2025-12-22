@@ -252,7 +252,7 @@ function Languages({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                     value={model}
                     onChange={setModel}
                     options={[
-                      { value: "inia", label: "inia" },
+                      { value: "inai", label: "inai" },
                       { value: "vinai", label: "vinai" },
                       { value: "aira", label: "aira" },
                     ]}

@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
+import { io } from "socket.io-client";
 import { useLocation, useNavigate } from "react-router-dom";
 import { X, Share2, Download, Play, Square, ChevronLeft, Pause, RotateCcw, Mic, MicOff, MessageCircle, Send, SendHorizontal } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets.js";
+import VoiceOverlay from "./VoiceOverlay.jsx";
 
 function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     const [isShareOpen, setIsShareOpen] = useState(false);
@@ -29,7 +31,14 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
 
     // Mic / Speech Recognition State
     const [micStatus, setMicStatus] = useState('idle'); // 'idle', 'listening', 'denied'
+    const [isVoiceProcessing, setIsVoiceProcessing] = useState(false); // For YouTube-style overlay
+    const voiceTranscriptRef = useRef(''); // Store latest transcript
+
     const recognitionRef = useRef(null);
+
+    // Socket.IO State
+    const socketRef = useRef(null);
+    const audioRef = useRef(null);
 
     // Chat State
     const [currentMessage, setCurrentMessage] = useState("");
@@ -47,6 +56,137 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         }
     }, [messages, isChatOpen]);
 
+    // Socket.IO Connection Setup
+    const [isSocketConnected, setIsSocketConnected] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+
+        if (!token) {
+            console.warn("No auth token found for socket connection");
+            return;
+        }
+
+        // Initialize Socket
+        console.log(`🔌 Connecting to Socket: ${BACKEND_API_URL}/lecture-player`);
+        socketRef.current = io(`${BACKEND_API_URL}/lecture-player`, {
+            transports: ["websocket"],
+            auth: { token },
+            reconnectionAttempts: 10,
+            reconnectionDelay: 2000,
+            timeout: 10000,
+        });
+
+        const socket = socketRef.current;
+
+        socket.on("connect", () => {
+            console.log("✅ Socket connected ID:", socket.id);
+            setIsSocketConnected(true);
+        });
+
+        socket.on("connect_error", (err) => {
+            console.error("❌ Socket connection error:", err);
+            setIsSocketConnected(false);
+        });
+
+        socket.on("disconnect", (reason) => {
+            console.warn("⚠️ Socket disconnected:", reason);
+            setIsSocketConnected(false);
+        });
+
+        // Handle Reply (Text + Audio)
+        socket.on("lecture:reply", (data) => {
+            console.log("📩 Lecture Reply:", data);
+
+            // Add system message
+            const botResponse = {
+                id: Date.now(),
+                text: data.answer || data.display_text || data.message || "Received response",
+                sender: "system"
+            };
+            setMessages(prev => [...prev, botResponse]);
+
+            // Play Audio if provided
+            // Forward to Iframe for playback (LipSync + Audio)
+            const replyText = data.answer || data.display_text || data.message;
+
+            if (videoRef.current && videoRef.current.contentWindow) {
+                console.log("═══════════════════════════════════════════════════════");
+                console.log("📤 FORWARDING CHAT REPLY TO IFRAME");
+                console.log("═══════════════════════════════════════════════════════");
+                console.log("📊 Reply data:", {
+                    text: replyText,
+                    audio_url: data.audio_url,
+                    hasAudio: !!data.audio_url,
+                    textLength: replyText?.length
+                });
+
+                videoRef.current.contentWindow.postMessage({
+                    type: 'CMD_CHAT_REPLY',
+                    text: replyText,
+                    audio_url: data.audio_url
+                }, '*');
+
+                console.log("✅ Message sent to iframe");
+                console.log("═══════════════════════════════════════════════════════");
+            } else if (data.audio_url) {
+                // Fallback: Play locally if iframe is dead (unlikely)
+                console.warn("⚠️ Iframe not available, using fallback audio playback");
+                try {
+                    if (audioRef.current) {
+                        audioRef.current.pause();
+                    }
+                    const audio = new Audio(data.audio_url);
+                    audioRef.current = audio;
+                    audio.play().catch(e => console.error("Audio play failed:", e));
+                } catch (e) {
+                    console.error("Audio initialization failed:", e);
+                }
+            }
+        });
+
+        // Handle Prompt (Pause/Resume instructions)
+        socket.on("lecture:prompt", (data) => {
+            console.log("🔔 Lecture Prompt:", data);
+            const promptMsg = {
+                id: Date.now(),
+                text: data.message,
+                sender: "system"
+            };
+            setMessages(prev => [...prev, promptMsg]);
+
+            if (data.audio_url) {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current = null;
+                }
+                const audio = new Audio(data.audio_url);
+                audioRef.current = audio;
+                audio.play().catch(e => console.warn("Prompt audio play failed:", e));
+            }
+        });
+
+        // Handle Errors
+        socket.on("lecture:error", (data) => {
+            console.error("⚠️ Socket Error Event:", data);
+            const errorMsg = {
+                id: Date.now(),
+                text: `Error: ${data.error || "Unknown server error"}`,
+                sender: "system"
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        });
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+        };
+    }, []);
+
     const handleSendMessage = (textOverride) => {
         const textToSend = textOverride || currentMessage;
         if (!textToSend.trim()) return;
@@ -60,29 +200,43 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         setMessages(prev => [...prev, newUserMessage]);
         setCurrentMessage("");
 
-        // Simulate chatbot API call
-        // In production, this would be your axios.post to /chatbot
-        setTimeout(() => {
-            const botResponseText = "Yes, certainly! I can explain that further. The process involves multiple steps...";
-            const botResponse = {
-                id: Date.now() + 1,
-                text: botResponseText,
-                sender: "system"
-            };
-            setMessages(prev => [...prev, botResponse]);
+        // Determine Lecture ID
+        let lectureId = location.state?.lectureId || new URLSearchParams(window.location.search).get('lectureId');
+        if (!lectureId && lecturejson && typeof lecturejson === 'string') {
+            const match = lecturejson.match(/(\d+)\.json$/);
+            if (match) lectureId = match[1];
+        }
 
-            // Sync with Iframe recording
-            if (videoRef.current && videoRef.current.contentWindow) {
-                videoRef.current.contentWindow.postMessage({
-                    type: 'CMD_CHAT_REPLY',
-                    text: botResponseText
-                }, '*');
-            } else {
-                // Fallback: Browser TTS if iframe is gone
-                const utterance = new SpeechSynthesisUtterance(botResponseText);
-                window.speechSynthesis.speak(utterance);
+        if (!lectureId) {
+            console.error("❌ No Lecture ID found. Cannot send message.");
+            setMessages(prev => [...prev, {
+                id: Date.now() + 1,
+                text: "Error: Could not identify current lecture ID.",
+                sender: "system"
+            }]);
+            return;
+        }
+
+        // Emit to Socket
+        if (socketRef.current && socketRef.current.connected) {
+            socketRef.current.emit("lecture:chat", {
+                lecture_id: lectureId.toString(),
+                question: textToSend
+            });
+        } else {
+            console.warn("Socket not connected");
+            setMessages(prev => [...prev, {
+                id: Date.now() + 1,
+                text: "Connection lost. Reconnecting... Please wait a moment.",
+                sender: "system"
+            }]);
+
+            // Attempt manual reconnect if disconnected
+            if (socketRef.current && !socketRef.current.connected) {
+                console.log("Attempting manual reconnect...");
+                socketRef.current.connect();
             }
-        }, 800);
+        }
     };
 
     const location = useLocation();
@@ -176,6 +330,41 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         };
     }, []);
 
+    // Voice Command Parsing
+    const processVoiceCommand = (transcript) => {
+        if (!transcript || !transcript.trim()) {
+            setIsVoiceProcessing(false);
+            return;
+        }
+
+        const lowerText = transcript.toLowerCase().trim();
+        console.log("🎤 Processing Voice Command:", lowerText);
+
+        const resumeKeywords = ['no', 'nope', 'nah', 'nothing', 'continue', 'next', 'resume', 'skip', 'go ahead', 'proceed'];
+
+        // Check if user said "No" or "Resume"
+        const isResumeCommand = resumeKeywords.some(keyword => lowerText.includes(keyword));
+
+        if (isResumeCommand) {
+            console.log("✅ Resume Command Detected");
+            handlesuccess("Resuming Lecture...");
+            setIsChatOpen(false);
+            setIsVoiceProcessing(false);
+            if (videoRef.current?.contentWindow) {
+                videoRef.current.contentWindow.postMessage({ type: 'CMD_RESUME' }, '*');
+            }
+        } else {
+            console.log("💬 Chat Message Detected - Sending to chatbot");
+            // It's a question or other input -> Send to Chat
+            if (!isChatOpen) {
+                setIsChatOpen(true);
+            }
+            setIsVoiceProcessing(false);
+            handleSendMessage(transcript);
+        }
+    };
+
+
     // Handle Speech Recognition
     const startRecognition = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -191,7 +380,11 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         recognition.lang = 'en-US';
 
         recognition.onstart = () => {
+            console.log('🎤 Voice recognition started');
             setMicStatus('listening');
+            setIsVoiceProcessing(true);
+            setCurrentMessage("");
+            voiceTranscriptRef.current = '';
         };
 
         recognition.onresult = (event) => {
@@ -200,11 +393,15 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 .map(result => result.transcript)
                 .join('');
 
+            // Update both state and ref
             setCurrentMessage(transcript);
+            voiceTranscriptRef.current = transcript;
+            console.log('🎤 Interim transcript:', transcript);
         };
 
         recognition.onerror = (event) => {
             console.error("Speech recognition error", event.error);
+            setIsVoiceProcessing(false);
             if (event.error === 'not-allowed') {
                 setMicStatus('denied');
             } else {
@@ -213,8 +410,20 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         };
 
         recognition.onend = () => {
-            // Only reset to idle if we weren't explicitly stopped/denied during session
+            console.log('🎤 Voice recognition ended');
             setMicStatus(prev => prev === 'denied' ? 'denied' : 'idle');
+
+            // Auto-process the captured transcript
+            const finalTranscript = voiceTranscriptRef.current;
+            if (finalTranscript && finalTranscript.trim()) {
+                console.log('🎤 Final transcript:', finalTranscript);
+                // Small delay to show the transcript before processing
+                setTimeout(() => {
+                    processVoiceCommand(finalTranscript);
+                }, 500);
+            } else {
+                setIsVoiceProcessing(false);
+            }
         };
 
         recognitionRef.current = recognition;
@@ -308,7 +517,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     /* 
     useEffect(() => {
         let styleElement = null;
-
+ 
         if (isRecording) {
             // Create a style element to force cursor hidden on EVERYTHING
             styleElement = document.createElement('style');
@@ -319,7 +528,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             `;
             document.head.appendChild(styleElement);
         }
-
+ 
         return () => {
             if (styleElement) {
                 document.head.removeChild(styleElement);
@@ -412,11 +621,6 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             return;
         }
 
-        if (!isRecording) {
-            setIsRecordModalOpen(true);
-            return;
-        }
-
         if (isPlaying) {
             videoRef.current?.contentWindow.postMessage({ type: 'CMD_PAUSE' }, '*');
         } else {
@@ -425,6 +629,11 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 setIsChatOpen(false);
             }
             videoRef.current?.contentWindow.postMessage({ type: 'CMD_RESUME' }, '*');
+        }
+
+        if (!isRecording) {
+            setIsRecordModalOpen(true);
+            return;
         }
     };
 
@@ -635,37 +844,18 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                     </div>
                 </button>
 
-                {/* Mic Button */}
-                <button
-                    onClick={handleMicClick}
-                    className={`w-16 h-16 flex items-center justify-center rounded-full backdrop-blur-md transition-all duration-200 border border-white/10 cursor-pointer group 
-                        ${micStatus === 'listening' ? 'bg-red-500 hover:bg-red-600 animate-pulse' :
-                            micStatus === 'denied' ? 'bg-zinc-800/80 hover:bg-zinc-800 border-zinc-600' :
-                                'bg-white/20 hover:bg-white/30'}`}
-                    title={micStatus === 'denied' ? "Permission Denied (Click to retry)" : micStatus === 'listening' ? "Stop Listening" : "Start Voice Input"}
-                >
-                    <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center 
-                        ${micStatus === 'listening' ? 'border-white' :
-                            micStatus === 'denied' ? 'border-zinc-500' :
-                                'border-white'}`}>
-                        {micStatus === 'denied' ? (
-                            <MicOff className="w-6 h-6 text-zinc-400" />
-                        ) : (
-                            <Mic className={`w-6 h-6 ${micStatus === 'listening' ? 'text-white' : 'text-white'}`} />
-                        )}
-                    </div>
-                </button>
+
 
                 {/* Chat Button */}
                 <button
                     onClick={() => {
                         if (isChatOpen) {
-                            // Closing chat - resume lecture
-                            setIsChatOpen(false);
-                            if (videoRef.current?.contentWindow) {
-                                videoRef.current.contentWindow.postMessage({ type: 'CMD_RESUME' }, '*');
-                                console.log('📤 Sent CMD_RESUME (closing chat)');
+                            // Closing chat - Do NOT auto-resume. User must click Play.
+                            if (micStatus === 'listening' && recognitionRef.current) {
+                                recognitionRef.current.stop();
                             }
+                            setIsChatOpen(false);
+                            console.log('Chat closed. Waiting for manual resume.');
                         } else {
                             // Opening chat - pause lecture and enter chat mode
                             setIsChatOpen(true);
@@ -703,6 +893,23 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             {isChatOpen && (
                 <div className={`absolute right-6 bottom-6 w-80 rounded-3xl border shadow-2xl overflow-hidden flex flex-col z-50 pointer-events-auto animate-in slide-in-from-bottom-5 fade-in duration-300 ${isDark ? "bg-black border-zinc-800" : "bg-white border-zinc-200"
                     }`}>
+                    {/* Chat Header with Close Button */}
+                    <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? "border-zinc-800 bg-zinc-900/50" : "border-zinc-200 bg-zinc-50/50"}`}>
+                        <h3 className={`font-semibold text-sm ${isDark ? "text-white" : "text-zinc-900"}`}>AI Assistant</h3>
+                        <button
+                            onClick={() => {
+                                if (micStatus === 'listening' && recognitionRef.current) {
+                                    recognitionRef.current.stop();
+                                }
+                                setIsChatOpen(false);
+                            }}
+                            className={`p-1.5 rounded-full cursor-pointer transition-colors ${isDark ? "hover:bg-zinc-800 text-zinc-400 hover:text-white" : "hover:bg-zinc-100 text-zinc-500 hover:text-black"
+                                }`}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+
                     <div ref={chatContainerRef} className="p-4 space-y-4 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] flex-1">
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex items-end gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
@@ -727,32 +934,55 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                     {/* Input */}
                     <div className={`p-3 border-t relative ${isDark ? "bg-black border-zinc-800" : "bg-white border-zinc-200"
                         }`}>
-                        <div className="relative flex items-center">
-                            <input
-                                type="text"
-                                value={currentMessage}
-                                onChange={(e) => setCurrentMessage(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                placeholder="send your message..."
-                                className={`w-full pl-4 pr-12 py-3 rounded-full text-sm outline-none border transition-colors ${isDark
-                                    ? "bg-zinc-900 text-white border-zinc-800 focus:border-zinc-700 placeholder:text-zinc-500"
-                                    : "bg-zinc-100 text-zinc-900 border-zinc-200 focus:border-zinc-300 placeholder:text-zinc-400"
-                                    }`}
-                            />
+                        <div className="flex items-center gap-2">
+                            {/* Mic Button in Chat */}
                             <button
-                                onClick={handleSendMessage}
-                                className={`absolute right-1.5 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-95 cursor-pointer border ${isDark
-                                    ? "bg-black border-zinc-700 text-white hover:bg-zinc-900"
-                                    : "bg-white border-zinc-300 text-black hover:bg-zinc-50"
+                                onClick={handleMicClick}
+                                className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${micStatus === 'listening'
+                                    ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white shadow-lg shadow-red-500/30'
+                                    : micStatus === 'denied'
+                                        ? 'bg-zinc-200 text-zinc-400'
+                                        : isDark
+                                            ? 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'
+                                            : 'bg-zinc-100 text-zinc-500 hover:text-black hover:bg-zinc-200'
                                     }`}
+                                title={micStatus === 'listening' ? "Stop Listening" : "Start Voice Input"}
                             >
-                                <SendHorizontal size={16} className="ml-0.5" fill="none" />
+                                {micStatus === 'listening' ? <Mic size={20} /> : <MicOff size={20} className={micStatus === 'denied' ? '' : 'hidden'} />}
+                                {micStatus === 'idle' && <Mic size={20} />}
                             </button>
+
+                            <div className="relative flex-1 flex items-center">
+                                <input
+                                    type="text"
+                                    value={currentMessage}
+                                    onChange={(e) => setCurrentMessage(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                    placeholder="send your message..."
+                                    className={`w-full pl-4 pr-12 py-3 rounded-full text-sm outline-none border transition-colors ${isDark
+                                        ? "bg-zinc-900 text-white border-zinc-800 focus:border-zinc-700 placeholder:text-zinc-500"
+                                        : "bg-zinc-100 text-zinc-900 border-zinc-200 focus:border-zinc-300 placeholder:text-zinc-400"
+                                        }`}
+                                />
+                                <button
+                                    onClick={() => handleSendMessage()}
+                                    className={`absolute right-1.5 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-95 cursor-pointer border ${isDark
+                                        ? "bg-black border-zinc-700 text-white hover:bg-zinc-900"
+                                        : "bg-white border-zinc-300 text-black hover:bg-zinc-50"
+                                        }`}
+                                >
+                                    <SendHorizontal size={16} className="ml-0.5" fill="none" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )
             }
+
+            {/* YouTube-style Voice Overlay */}
+            <VoiceOverlay isVoiceProcessing={isVoiceProcessing} currentMessage={currentMessage} isDark={isDark} />
+
 
             {/* Bottom Gradient Overlay */}
             <div
