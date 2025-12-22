@@ -134,6 +134,75 @@
       color: #333;
     }
 
+    /* Narration styling (shown when no bullets) */
+    #whiteboardTextContent .slide-narration {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #222;
+      text-align: left;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    #whiteboardTextContent .slide-narration p {
+      margin: 0 0 12px 0;
+    }
+
+    #whiteboardTextContent .slide-narration strong {
+      color: #000;
+      font-weight: 600;
+    }
+
+    /* Subnarrations styling */
+    #whiteboardTextContent .slide-subnarrations {
+      width: 100%;
+    }
+
+    #whiteboardTextContent .subnarration-item {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      border-left: 3px solid #2563eb;
+    }
+
+    #whiteboardTextContent .subnarration-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+
+    #whiteboardTextContent .subnarration-summary {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #475569;
+    }
+
+    /* Questions styling (last slide) */
+    #whiteboardTextContent .slide-questions {
+      width: 100%;
+    }
+
+    #whiteboardTextContent .question-list {
+      list-style: decimal;
+      padding-left: 24px;
+      margin: 0;
+    }
+
+    #whiteboardTextContent .question-list li {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1e293b;
+      margin-bottom: 12px;
+      padding-left: 8px;
+    }
+
+    #whiteboardTextContent .question-list li::marker {
+      color: #2563eb;
+      font-weight: 600;
+    }
+
     /* Scrollbar for board text */
     #whiteboardTextContent::-webkit-scrollbar {
       width: 4px;
@@ -311,26 +380,86 @@
     // --- Voice Recognition Setup ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
+    let lastTranscript = '';
+
     if (SpeechRecognition) {
       recognition = new SpeechRecognition();
       recognition.lang = 'en-IN';
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.continuous = true; // Keep listening
+      recognition.interimResults = true; // Get interim results for display
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        console.log("Voice Input:", transcript);
-        const yesKeywords = ["yes", "ha", "haan", "haa", "yeah", "yep", "sure"];
-        if (yesKeywords.some(kw => transcript.includes(kw))) {
-          handleYesResponse();
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        transcript = transcript.toLowerCase().trim();
+        lastTranscript = transcript;
+
+        console.log("🎤 Voice Input:", transcript);
+
+        // Send transcript to React for display in overlay
+        window.parent.postMessage({
+          type: 'EVT_VOICE_TRANSCRIPT',
+          transcript: transcript
+        }, '*');
+
+        // Check for final result
+        if (event.results[event.results.length - 1].isFinal) {
+          console.log("🎤 Final transcript:", transcript);
+
+          // Yes keywords - open chat
+          const yesKeywords = ["yes", "ha", "haan", "haa", "yeah", "yep", "sure", "okay", "ok", "question", "doubt", "ask"];
+          // No keywords - continue to next slide
+          const noKeywords = ["no", "nope", "nahi", "na", "next", "continue", "skip", "no question", "nothing"];
+
+          if (yesKeywords.some(kw => transcript.includes(kw))) {
+            console.log("✅ YES detected - Opening chat");
+            handleYesResponse();
+          } else if (noKeywords.some(kw => transcript.includes(kw))) {
+            console.log("✅ NO detected - Moving to next slide");
+            handleNoResponse();
+          }
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("🎤 Recognition error:", event.error);
+        if (event.error === 'no-speech') {
+          // No speech detected, just continue
+          console.log("🎤 No speech detected, waiting...");
         }
       };
 
       recognition.onend = () => {
+        console.log("🎤 Recognition ended, state:", currentState);
+        // Restart if still waiting for question
         if (currentState === STATE.WAITING_FOR_QUESTION) {
-          // If we finished listening and no "yes" was caught, the 5s timer will handle the fallback
+          try {
+            recognition.start();
+            console.log("🎤 Restarted recognition");
+          } catch (e) {
+            console.warn("🎤 Could not restart recognition:", e);
+          }
         }
       };
+    }
+
+    // Handle NO response - move to next slide
+    async function handleNoResponse() {
+      if (currentState !== STATE.WAITING_FOR_QUESTION) return;
+      console.log("➡️ No response - continuing to next slide");
+
+      // Stop recognition
+      if (recognition) {
+        try { recognition.stop(); } catch (e) { }
+      }
+
+      // Notify React
+      window.parent.postMessage({ type: 'EVT_VOICE_TRIGGER', response: 'NO' }, '*');
+
+      // Move to next slide
+      await setMachineState(STATE.PLAYING);
     }
 
     // --- Preloading Logic ---
@@ -352,11 +481,14 @@
         const detailRes = await fetch(detailUrl);
         const detailData = await detailRes.json();
 
-        lectureData = (detailData.slides || []).map(slide => ({
+        lectureData = (detailData.slides || []).map((slide, index) => ({
           audio_url: "https://api.edinai.inaiverse.com" + slide.audio_url,
-          narration: slide.narration || "",
+          narration: "",
           title: slide.title || "",
-          bullets: slide.bullets || []
+          bullets: slide.bullets || [],
+          subnarrations: slide.subnarrations || [],
+          question: slide.question || "",
+          isLastSlide: index === (detailData.slides || []).length - 1
         }));
 
         await preloadSlides();
@@ -623,34 +755,99 @@
         }
 
         if (slideAudio) {
-          // Show title and bullets ON WHITEBOARD
+          // Show content ON WHITEBOARD based on priority
           const currentSlide = lectureData[currentSlideIndex];
-          if (currentSlide && (currentSlide.title || currentSlide.bullets?.length > 0)) {
-            // Clear previous content
-            whiteboardTextContent.innerHTML = '';
 
-            // Add title if exists
-            if (currentSlide.title) {
-              const titleEl = document.createElement('div');
-              titleEl.className = 'slide-title';
-              titleEl.textContent = currentSlide.title;
-              whiteboardTextContent.appendChild(titleEl);
-            }
+          // Content flags
+          const hasTitle = currentSlide && currentSlide.title;
+          const hasBullets = currentSlide && currentSlide.bullets && currentSlide.bullets.length > 0;
+          const hasSubnarrations = currentSlide && currentSlide.subnarrations && currentSlide.subnarrations.length > 0;
+          const hasQuestion = currentSlide && currentSlide.question && currentSlide.question.trim();
+          const isLastSlide = currentSlide && currentSlide.isLastSlide;
 
-            // Add bullets if exist
-            if (currentSlide.bullets && currentSlide.bullets.length > 0) {
-              const bulletList = document.createElement('ul');
-              bulletList.className = 'slide-bullets';
-              currentSlide.bullets.forEach(bullet => {
-                const li = document.createElement('li');
-                li.textContent = bullet;
-                bulletList.appendChild(li);
-              });
-              whiteboardTextContent.appendChild(bulletList);
-            }
+          // Clear previous content
+          whiteboardTextContent.innerHTML = '';
 
+          // Always show title if exists
+          if (hasTitle) {
+            const titleEl = document.createElement('div');
+            titleEl.className = 'slide-title';
+            titleEl.textContent = currentSlide.title;
+            whiteboardTextContent.appendChild(titleEl);
+          }
+
+          // PRIORITY 1: If last slide and has question, show questions
+          if (isLastSlide && hasQuestion) {
+            const questionContainer = document.createElement('div');
+            questionContainer.className = 'slide-questions';
+
+            // Parse questions (split by newlines and number prefix)
+            const questions = currentSlide.question.split('\n').filter(q => q.trim());
+
+            const questionList = document.createElement('ol');
+            questionList.className = 'question-list';
+
+            questions.forEach(q => {
+              const li = document.createElement('li');
+              // Remove leading number and dot if present
+              li.textContent = q.replace(/^\d+\.\s*/, '').trim();
+              questionList.appendChild(li);
+            });
+
+            questionContainer.appendChild(questionList);
+            whiteboardTextContent.appendChild(questionContainer);
+            console.log(`📝 Displaying questions on whiteboard (last slide)`);
+          }
+          // PRIORITY 2: If bullets exist, show bullets
+          else if (hasBullets) {
+            const bulletList = document.createElement('ul');
+            bulletList.className = 'slide-bullets';
+            currentSlide.bullets.forEach(bullet => {
+              const li = document.createElement('li');
+              li.textContent = bullet;
+              bulletList.appendChild(li);
+            });
+            whiteboardTextContent.appendChild(bulletList);
+            console.log(`📝 Displaying bullets on whiteboard`);
+          }
+          // PRIORITY 3: If NO bullets but subnarrations exist, show subnarrations
+          else if (hasSubnarrations) {
+            const subContainer = document.createElement('div');
+            subContainer.className = 'slide-subnarrations';
+
+            currentSlide.subnarrations.forEach(sub => {
+              const subItem = document.createElement('div');
+              subItem.className = 'subnarration-item';
+
+              if (sub.title) {
+                const subTitle = document.createElement('div');
+                subTitle.className = 'subnarration-title';
+                subTitle.textContent = sub.title;
+                subItem.appendChild(subTitle);
+              }
+
+              if (sub.summary) {
+                const subSummary = document.createElement('div');
+                subSummary.className = 'subnarration-summary';
+                subSummary.textContent = sub.summary;
+                subItem.appendChild(subSummary);
+              }
+
+              subContainer.appendChild(subItem);
+            });
+
+            whiteboardTextContent.appendChild(subContainer);
+            console.log(`📝 Displaying subnarrations on whiteboard (no bullets)`);
+          }
+          // PRIORITY 4: If no bullets and no subnarrations, just show title (already added above)
+          else {
+            console.log(`📝 Displaying only title on whiteboard`);
+          }
+
+          // Show whiteboard if we have any content
+          if (hasTitle || hasBullets || hasSubnarrations || (isLastSlide && hasQuestion)) {
             whiteboardText.classList.add('visible');
-            console.log(`📝 Displaying on whiteboard - Title: ${currentSlide.title}, Bullets: ${currentSlide.bullets?.length || 0}`);
+            console.log(`📝 Whiteboard visible - Title: ${hasTitle ? 'Yes' : 'No'}, Bullets: ${hasBullets ? currentSlide.bullets.length : 0}, Subnarrations: ${hasSubnarrations ? currentSlide.subnarrations.length : 0}, Questions: ${isLastSlide && hasQuestion ? 'Yes' : 'No'}`);
           }
 
           console.log('🎵 Starting audio playback...');
@@ -671,14 +868,23 @@
           // Slide Ended -> Trigger Prompt
           await handleSlideBoundary();
 
-          // CRITICAL: After handleSlideBoundary, check if we entered CHAT_MODE
+          // CRITICAL: After handleSlideBoundary, check if we entered CHAT_MODE or CHAT_SPEAKING
           // If yes, we need to HOLD here and wait for explicit resume
-          while (currentState === STATE.CHAT_MODE) {
+          // Also wait for CHAT_SPEAKING to finish (chatbot audio playing)
+          while (currentState === STATE.CHAT_MODE || currentState === STATE.CHAT_SPEAKING) {
+            console.log('💬 Waiting in chat mode... Current state:', currentState);
             await new Promise(r => setTimeout(r, 200));
           }
 
-          // If we're still paused after chat, replay this slide
-          if (currentState === STATE.PAUSED) {
+          // If we're still paused after chat, wait for manual resume
+          while (currentState === STATE.PAUSED) {
+            console.log('⏸️  Lecture paused, waiting for manual resume...');
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          // Only continue to next slide if in PLAYING state
+          if (currentState !== STATE.PLAYING) {
+            console.log('⚠️ State is not PLAYING, waiting...');
             currentSlideIndex--;
             continue;
           }
@@ -692,85 +898,138 @@
     async function waitForAudioEndOrPause() {
       return new Promise(resolve => {
         const check = () => {
-          if (currentState === STATE.PAUSED || currentState === STATE.CHAT_MODE) { resolve(); return; }
-          if (!head.isAudioPlaying) resolve();
-          else setTimeout(check, 100);
+          if (currentState === STATE.PAUSED || currentState === STATE.CHAT_MODE || currentState === STATE.CHAT_SPEAKING) {
+            console.log('⏸️  Audio wait interrupted by state change:', currentState);
+            resolve();
+            return;
+          }
+          if (!head.isAudioPlaying) {
+            console.log('✅ Audio playback completed naturally');
+            resolve();
+          } else {
+            setTimeout(check, 100);
+          }
         };
         check();
       });
     }
 
     async function handleSlideBoundary() {
+      console.log('\n🎯 ========== SLIDE BOUNDARY ==========');
+      console.log('📊 Current state:', currentState);
+      console.log('📊 Current slide:', currentSlideIndex + 1);
+
       // Automatically pause all
       await setMachineState(STATE.WAITING_FOR_QUESTION);
 
-      // ✅ REMOVED: 5-second wait before question
-      // Question should be asked immediately after slide ends
+      // ✅ CRITICAL: Add delay BEFORE asking question
+      // This ensures slide audio is completely finished and there's a natural pause
+      console.log('⏳ Waiting 2 seconds before asking question...');
+      await new Promise(r => setTimeout(r, 2000));
 
-      // --- 1. System asks verbally using browser TTS ---
-      const questionText = "Do you have any questions?";
-      const utterance = new SpeechSynthesisUtterance(questionText);
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      utterance.lang = "en-US";
-
-      window.speechSynthesis.speak(utterance);
-      console.log(`🗣️ Speaking: "${questionText}"`);
-
-      // Wait for speech to finish
-      await new Promise(resolve => {
-        utterance.onend = () => {
-          console.log('✅ Question prompt finished');
-          resolve();
-        };
-        utterance.onerror = (e) => {
-          console.error('❌ Speech error:', e);
-          resolve();
-        };
-
-        // Fallback timeout
-        setTimeout(resolve, 5000);
-      });
-
-      // Check again after speaking
+      // Check if state changed during the wait
       if (currentState !== STATE.WAITING_FOR_QUESTION) {
-        console.log("State changed during question prompt. Aborting.");
+        console.log('⚠️ State changed during pre-question wait. Aborting question prompt.');
         return;
       }
 
-      // --- 2. Open microphone ---
-      if (recognition && currentState === STATE.WAITING_FOR_QUESTION) {
-        try { recognition.start(); } catch (e) { console.warn("Recognition start failed:", e); }
-      }
+      // --- 1. System asks verbally using browser TTS with GLB lip-sync ---
+      const questionText = "Do you have any questions?";
 
-      // --- 3. Wait for user response (10 SECONDS) ---
-      console.log("⏳ Waiting for user response (10 seconds)...");
-      let responseWait = 0;
-      const maxResponseWait = 10000;  // ✅ INCREASED to 10 seconds
-      while (responseWait < maxResponseWait && currentState === STATE.WAITING_FOR_QUESTION) {
+      console.log('🗣️ Preparing to ask question with GLB lip-sync...');
+
+      // ✅ Use GLB for question instead of browser TTS for lip-sync
+      try {
+        // Ensure AudioContext is running
+        if (head.audioCtx.state !== 'running') {
+          await head.audioCtx.resume();
+          let attempts = 0;
+          while (head.audioCtx.state !== 'running' && attempts < 10) {
+            await new Promise(r => setTimeout(r, 50));
+            attempts++;
+          }
+        }
+
+        // Start GLB animation
+        head.start();
         await new Promise(r => setTimeout(r, 100));
-        responseWait += 100;
+
+        // Use browser TTS but with GLB animation
+        const utterance = new SpeechSynthesisUtterance(questionText);
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        utterance.lang = "en-US";
+
+        window.speechSynthesis.speak(utterance);
+        console.log(`🗣️ Speaking with GLB: "${questionText}"`);
+
+        // Wait for speech to finish
+        await new Promise(resolve => {
+          utterance.onend = () => {
+            console.log('✅ Question prompt finished');
+            head.stop(); // Stop GLB animation
+            resolve();
+          };
+          utterance.onerror = (e) => {
+            console.error('❌ Speech error:', e);
+            head.stop();
+            resolve();
+          };
+
+          // Fallback timeout
+          setTimeout(() => {
+            head.stop();
+            resolve();
+          }, 5000);
+        });
+      } catch (e) {
+        console.error('❌ Question prompt error:', e);
       }
 
-      console.log(`⏱️ Response wait completed: ${responseWait}ms / ${maxResponseWait}ms`);
-
-      // Cleanup recognition
-      if (recognition) {
-        try { recognition.stop(); } catch (e) { }
+      // Check again after speaking
+      if (currentState !== STATE.WAITING_FOR_QUESTION) {
+        console.log("⚠️ State changed during question prompt. Aborting.");
+        return;
       }
 
-      // --- 4. Auto-move to next slide ONLY if still in WAITING_FOR_QUESTION state ---
+      // --- 2. Notify React to show Question Popup ---
+      // React's QuestionPopup will handle:
+      // - Voice recognition
+      // - Text input
+      // - Keyword detection
+      // - 10 second timeout
+      // - Sending CMD_QUESTION_RESPONSE back to iframe
+      console.log('📢 Waiting for React QuestionPopup response...');
+
+      // Wait for state change from React (via CMD_QUESTION_RESPONSE)
+      // Maximum wait time: 15 seconds (fallback if React fails)
+      let waitTime = 0;
+      const maxWaitTime = 15000;
+
+      while (currentState === STATE.WAITING_FOR_QUESTION && waitTime < maxWaitTime) {
+        await new Promise(r => setTimeout(r, 200));
+        waitTime += 200;
+      }
+
+      // If still waiting after 15s, auto-continue (fallback)
       if (currentState === STATE.WAITING_FOR_QUESTION) {
-        console.log("✅ No response detected after 10 seconds. Moving to next slide.");
+        console.log('⏱️ Fallback: No response after 15s, auto-continuing');
         await setMachineState(STATE.PLAYING);
-      } else {
-        console.log("✅ User responded or state changed. Not auto-progressing.");
       }
+
+      console.log('🎯 ========== END SLIDE BOUNDARY ==========\n');
     }
 
     async function handleYesResponse() {
       if (currentState !== STATE.WAITING_FOR_QUESTION) return;
+      console.log("✅ YES response - entering chat mode");
+
+      // Stop recognition before changing state
+      if (recognition) {
+        try { recognition.stop(); } catch (e) { }
+      }
+
       await setMachineState(STATE.CHAT_MODE);
       window.parent.postMessage({ type: 'EVT_VOICE_TRIGGER', response: 'YES' }, '*');
     }
@@ -811,23 +1070,80 @@
           break;
         case 'CMD_ENTER_CHAT':
           // User manually opened chat - enter CHAT_MODE
-          console.log('💬 Entering CHAT_MODE (manual)');
+          console.log('\n💬 ========== ENTERING CHAT MODE ==========');
           console.log('📊 Current state before chat:', currentState);
+          console.log('📊 Audio playing:', head.isAudioPlaying);
+          console.log('📊 AudioContext state:', head.audioCtx.state);
 
           // ✅ CRITICAL: Stop all audio when entering chat
           console.log('🛑 Stopping all audio for chat mode...');
+
+          // Stop slide audio
           head.stop();
+
+          // Cancel any TTS
           window.speechSynthesis.cancel();
 
           // Wait for cleanup
-          await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 150));
 
-          // ✅ CRITICAL FIX: Don't suspend AudioContext - chatbot needs it!
-          // Keep it running so chatbot audio can play
+          // ✅ CRITICAL FIX: Keep AudioContext running for chatbot
+          if (head.audioCtx.state === 'suspended') {
+            console.log('🔊 Resuming AudioContext for chat...');
+            await head.audioCtx.resume();
+            let attempts = 0;
+            while (head.audioCtx.state !== 'running' && attempts < 10) {
+              await new Promise(r => setTimeout(r, 50));
+              attempts++;
+            }
+          }
+
           console.log('✅ AudioContext kept running for chatbot');
+          console.log('📊 AudioContext state after cleanup:', head.audioCtx.state);
 
           await setMachineState(STATE.CHAT_MODE);
           console.log('✅ Entered CHAT_MODE');
+          console.log('💬 ========== CHAT MODE READY ==========\n');
+          break;
+        case 'CMD_EXIT_CHAT':
+          // User closed chat - stay paused, don't auto-resume
+          console.log('\n💬 ========== EXITING CHAT MODE ==========');
+          console.log('📊 Current state:', currentState);
+
+          // Stop any chat audio that might be playing
+          head.stop();
+          window.speechSynthesis.cancel();
+
+          // Transition to PAUSED state (not PLAYING)
+          await setMachineState(STATE.PAUSED);
+
+          console.log('✅ Chat exited. Slide is PAUSED. User must click Play to resume.');
+          console.log('💬 ========== CHAT EXIT COMPLETE ==========\n');
+          break;
+
+        case 'CMD_QUESTION_RESPONSE':
+          // Response from React QuestionPopup (SEPARATE from chatbot)
+          const { response } = e.data;
+          console.log('\n📢 ========== QUESTION RESPONSE RECEIVED ==========');
+          console.log('📊 Response:', response);
+          console.log('📊 Current state:', currentState);
+
+          // Stop voice recognition since React handled it
+          if (recognition) {
+            try { recognition.stop(); } catch (e) { }
+          }
+
+          if (response === 'YES') {
+            // User wants to ask a question → Enter CHAT_MODE
+            console.log('✅ User said YES - entering CHAT_MODE');
+            await setMachineState(STATE.CHAT_MODE);
+          } else {
+            // User said NO or timeout → Continue to next slide
+            console.log('✅ User said NO/TIMEOUT - continuing lecture');
+            await setMachineState(STATE.PLAYING);
+          }
+
+          console.log('📢 ========== QUESTION RESPONSE HANDLED ==========\n');
           break;
         case 'CMD_RESUME':
           // Stop any active voice recognition
@@ -873,141 +1189,130 @@
               window.speechSynthesis.cancel();
 
               // Wait for cleanup
-              await new Promise(r => setTimeout(r, 150));
+              await new Promise(r => setTimeout(r, 200));
               console.log("✅ Audio cleanup complete");
 
               // ========================================
-              // STEP 2: PREPARE CHATBOT AUDIO
+              // STEP 2: ENSURE AUDIOCONTEXT IS RUNNING
               // ========================================
-              console.log("📥 Loading chat audio from:", audio_url);
-              const preparedChatAudio = await prepareSlideAudio(audio_url, text || "");
-
-              if (!preparedChatAudio) {
-                throw new Error("prepareSlideAudio returned null/undefined");
-              }
-
-              if (!preparedChatAudio.audio) {
-                throw new Error("preparedChatAudio.audio is null/undefined");
-              }
-
-              console.log("✅ Audio prepared successfully");
-
-              // ========================================
-              // STEP 3: CRITICAL - ENSURE AUDIOCONTEXT IS RUNNING
-              // This is the key fix for the pause → chat bug
-              // ========================================
-              console.log("🔊 AudioContext state before:", head.audioCtx.state);
+              console.log("� AudioContext state:", head.audioCtx.state);
 
               if (head.audioCtx.state !== 'running') {
                 console.log("⚠️ AudioContext not running, attempting resume...");
+                await head.audioCtx.resume();
 
-                try {
-                  // Request resume
-                  await head.audioCtx.resume();
-
-                  // ✅ CRITICAL: Wait for ACTUAL state change
-                  // This prevents the race condition where speakAudio() is called
-                  // before the context is fully running
-                  let attempts = 0;
-                  const maxAttempts = 30; // Increased timeout
-
-                  while (head.audioCtx.state !== 'running' && attempts < maxAttempts) {
-                    console.log(`⏳ Waiting for AudioContext... (${attempts + 1}/${maxAttempts}, state: ${head.audioCtx.state})`);
-                    await new Promise(r => setTimeout(r, 100)); // Increased wait time
-                    attempts++;
-                  }
-
-                  if (head.audioCtx.state !== 'running') {
-                    throw new Error(`AudioContext failed to resume after ${maxAttempts} attempts (final state: ${head.audioCtx.state})`);
-                  }
-
-                  console.log("✅ AudioContext successfully resumed");
-                } catch (resumeError) {
-                  console.error("❌ AudioContext resume error:", resumeError);
-                  throw new Error(`AudioContext resume failed: ${resumeError.message}`);
+                let attempts = 0;
+                while (head.audioCtx.state !== 'running' && attempts < 20) {
+                  await new Promise(r => setTimeout(r, 100));
+                  attempts++;
                 }
-              } else {
-                console.log("✅ AudioContext already running");
+                console.log("✅ AudioContext resumed:", head.audioCtx.state);
               }
 
               // ========================================
-              // STEP 4: VERIFY AUDIOCONTEXT IS RUNNING
-              // ========================================
-              if (head.audioCtx.state !== 'running') {
-                throw new Error(`AudioContext verification failed (state: ${head.audioCtx.state})`);
-              }
-
-              console.log("🔊 AudioContext state after:", head.audioCtx.state);
-
-              // ========================================
-              // STEP 5: TRANSITION TO CHAT_SPEAKING STATE
+              // STEP 3: TRANSITION TO CHAT_SPEAKING STATE
               // ========================================
               await setMachineState(STATE.CHAT_SPEAKING);
-              console.log("✅ State transitioned to CHAT_SPEAKING");
+              console.log("✅ State: CHAT_SPEAKING");
 
               // ========================================
-              // STEP 6: START GLB ANIMATION
+              // STEP 4: TRY GLB LIP-SYNC AUDIO
               // ========================================
-              console.log("🎭 Starting GLB animation...");
-              head.start();
-              await new Promise(r => setTimeout(r, 100)); // Give animation time to start
-              console.log("✅ GLB animation started");
+              let audioPlayed = false;
 
-              // ========================================
-              // STEP 7: PLAY CHATBOT AUDIO WITH LIP-SYNC
-              // ========================================
-              console.log("🎵 Playing chatbot audio with lip-sync...");
-              console.log("📊 Audio data:", {
-                hasAudio: !!preparedChatAudio.audio,
-                hasWords: preparedChatAudio.words?.length > 0,
-                wordCount: preparedChatAudio.words?.length,
-                hasGestures: preparedChatAudio.gestures?.length > 0,
-                duration: preparedChatAudio.audio?.duration
-              });
+              try {
+                console.log("📥 Loading chat audio for lip-sync...");
+                const preparedChatAudio = await prepareSlideAudio(audio_url, text || "");
 
-              head.speakAudio(preparedChatAudio);
-              console.log("✅ Chatbot audio playback started with lip-sync");
+                if (preparedChatAudio && preparedChatAudio.audio) {
+                  // Start GLB animation
+                  head.start();
+                  await new Promise(r => setTimeout(r, 100));
 
-              // ========================================
-              // STEP 8: VERIFY AUDIO IS ACTUALLY PLAYING
-              // ========================================
-              await new Promise(r => setTimeout(r, 500)); // Increased verification delay
+                  // Play with lip-sync
+                  console.log("🎵 Playing with lip-sync...");
+                  head.speakAudio(preparedChatAudio);
 
-              if (!head.isAudioPlaying) {
-                console.error("⚠️ Audio not playing after 500ms, checking state...");
-                console.error("📊 Debug state:", {
-                  contextState: head.audioCtx.state,
-                  isPlaying: head.isAudioPlaying,
-                  isSpeaking: head.isSpeaking,
-                  currentState: currentState,
-                  audioBuffer: !!preparedChatAudio.audio,
-                  audioBufferDuration: preparedChatAudio.audio?.duration
-                });
-                throw new Error("Chatbot audio failed to start playing (head.isAudioPlaying is false)");
+                  // Wait a bit and check
+                  await new Promise(r => setTimeout(r, 500));
+
+                  if (head.isAudioPlaying) {
+                    audioPlayed = true;
+                    console.log("✅ GLB lip-sync audio playing!");
+
+                    // Monitor for completion
+                    const checkEnd = setInterval(() => {
+                      if (!head.isAudioPlaying) {
+                        clearInterval(checkEnd);
+                        console.log("✅ Chatbot audio finished");
+                        setMachineState(STATE.CHAT_MODE).catch(console.error);
+                      }
+                    }, 100);
+                  } else {
+                    console.warn("⚠️ GLB audio not playing, trying fallback...");
+                  }
+                }
+              } catch (glbError) {
+                console.error("❌ GLB audio error:", glbError.message);
               }
 
-              console.log("✅ Chatbot audio playing successfully with lip-sync");
-              console.log("📊 Playback state:", {
-                contextState: head.audioCtx.state,
-                isPlaying: head.isAudioPlaying,
-                isSpeaking: head.isSpeaking,
-                currentState: currentState
-              });
-
               // ========================================
-              // STEP 9: MONITOR FOR AUDIO COMPLETION
+              // STEP 5: FALLBACK - Direct Audio Element
               // ========================================
-              const checkChatAudioEnd = setInterval(() => {
-                if (!head.isAudioPlaying) {
-                  clearInterval(checkChatAudioEnd);
-                  console.log("✅ Chatbot audio finished");
+              if (!audioPlayed) {
+                console.log("� FALLBACK: Playing audio directly...");
 
-                  // Return to CHAT_MODE (waiting for next question)
-                  setMachineState(STATE.CHAT_MODE).catch(e => {
-                    console.error("Failed to return to CHAT_MODE:", e);
-                  });
+                try {
+                  const audioElement = new Audio(audio_url);
+                  audioElement.volume = 1;
+
+                  // Start GLB animation (no lip-sync but at least moves)
+                  head.start();
+
+                  audioElement.onplay = () => {
+                    console.log("✅ Fallback audio started playing");
+                  };
+
+                  audioElement.onended = () => {
+                    console.log("✅ Fallback audio finished");
+                    head.stop();
+                    setMachineState(STATE.CHAT_MODE).catch(console.error);
+                  };
+
+                  audioElement.onerror = (e) => {
+                    console.error("❌ Fallback audio error:", e);
+                    head.stop();
+                    setMachineState(STATE.CHAT_MODE).catch(console.error);
+                  };
+
+                  await audioElement.play();
+                  audioPlayed = true;
+                  console.log("✅ Fallback audio playing!");
+                } catch (fallbackError) {
+                  console.error("❌ Fallback audio failed:", fallbackError);
                 }
-              }, 100);
+              }
+
+              // ========================================
+              // STEP 6: FINAL FALLBACK - TTS
+              // ========================================
+              if (!audioPlayed && text) {
+                console.log("🗣️ FINAL FALLBACK: Using TTS...");
+
+                head.start();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = "en-IN";
+                utterance.rate = 1;
+
+                utterance.onend = () => {
+                  head.stop();
+                  setMachineState(STATE.CHAT_MODE).catch(console.error);
+                };
+
+                window.speechSynthesis.speak(utterance);
+                console.log("✅ TTS fallback playing");
+              }
 
             } catch (err) {
               // ========================================
@@ -1241,16 +1546,16 @@
   </script>
 
   // Relay activity
-  const report = () => window.parent.postMessage({ type: 'USER_ACTIVITY' }, '*');
+  co nst report = () => window.parent.postMessage({ type: 'USER_ACTIVITY' }, '*');
   document.addEventListener('mousemove', report);
-  document.addEventListener('touchstart', report);
-  document.addEventListener('click', report);
+  do cument.addEventListener('touchstart', report);
+  do cument.addEventListener('click', report);
 
   // Auto-resume helper for initial interaction
-  document.addEventListener('click', () => {
-  if (head.audioCtx && head.audioCtx.state === 'suspended' && !isPaused) {
+  do cument.addEventListener('click', () => {
+  if ( head.audioCtx && head.audioCtx.state === 'suspended' && !isPaused) {
   head.audioCtx.resume();
-  console.log("AudioContext resumed by user interaction");
+  consol e.log("AudioContext resumed by user interaction");
   }
   }, { once: true });
 

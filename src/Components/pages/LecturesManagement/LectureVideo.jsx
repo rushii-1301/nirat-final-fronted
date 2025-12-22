@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { X, Share2, Download, Play, Square, ChevronLeft, Pause, RotateCcw, Mic, MicOff, MessageCircle, Send, SendHorizontal } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets.js";
-import VoiceOverlay from "./VoiceOverlay.jsx";
+import QuestionPopup from "./QuestionPopup.jsx";
 
 function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     const [isShareOpen, setIsShareOpen] = useState(false);
@@ -29,11 +29,15 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isLectureReady, setIsLectureReady] = useState(false); // Track if first slide is loaded
 
-    // Mic / Speech Recognition State
-    const [micStatus, setMicStatus] = useState('idle'); // 'idle', 'listening', 'denied'
-    const [isVoiceProcessing, setIsVoiceProcessing] = useState(false); // For YouTube-style overlay
-    const voiceTranscriptRef = useRef(''); // Store latest transcript
+    // ========================================
+    // QUESTION POPUP STATE (SEPARATE from chatbot)
+    // This is for "Do you have any questions?" popup
+    // ========================================
+    const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
 
+    // Chatbot Mic / Speech Recognition State
+    const [micStatus, setMicStatus] = useState('idle'); // 'idle', 'listening', 'denied'
+    const voiceTranscriptRef = useRef(''); // Store latest transcript
     const recognitionRef = useRef(null);
 
     // Socket.IO State
@@ -44,7 +48,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     const [currentMessage, setCurrentMessage] = useState("");
     const [messages, setMessages] = useState([
         { id: 1, text: "Hi, Welcome To Class", sender: "system" },
-        { id: 2, text: "I Hope You Are Enjoy", sender: "system" }
+        // { id: 2, text: "I Hope You Are Enjoy", sender: "system" }
     ]);
 
     const chatContainerRef = useRef(null);
@@ -330,42 +334,8 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         };
     }, []);
 
-    // Voice Command Parsing
-    const processVoiceCommand = (transcript) => {
-        if (!transcript || !transcript.trim()) {
-            setIsVoiceProcessing(false);
-            return;
-        }
 
-        const lowerText = transcript.toLowerCase().trim();
-        console.log("🎤 Processing Voice Command:", lowerText);
-
-        const resumeKeywords = ['no', 'nope', 'nah', 'nothing', 'continue', 'next', 'resume', 'skip', 'go ahead', 'proceed'];
-
-        // Check if user said "No" or "Resume"
-        const isResumeCommand = resumeKeywords.some(keyword => lowerText.includes(keyword));
-
-        if (isResumeCommand) {
-            console.log("✅ Resume Command Detected");
-            handlesuccess("Resuming Lecture...");
-            setIsChatOpen(false);
-            setIsVoiceProcessing(false);
-            if (videoRef.current?.contentWindow) {
-                videoRef.current.contentWindow.postMessage({ type: 'CMD_RESUME' }, '*');
-            }
-        } else {
-            console.log("💬 Chat Message Detected - Sending to chatbot");
-            // It's a question or other input -> Send to Chat
-            if (!isChatOpen) {
-                setIsChatOpen(true);
-            }
-            setIsVoiceProcessing(false);
-            handleSendMessage(transcript);
-        }
-    };
-
-
-    // Handle Speech Recognition
+    // Handle Speech Recognition for CHATBOT (NOT for question popup)
     const startRecognition = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -380,9 +350,10 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         recognition.lang = 'en-US';
 
         recognition.onstart = () => {
-            console.log('🎤 Voice recognition started');
+            console.log('🎤 Chatbot voice recognition started');
             setMicStatus('listening');
-            setIsVoiceProcessing(true);
+            // NO POPUP - just blink the mic button
+            // setIsVoiceProcessing is NOT set here
             setCurrentMessage("");
             voiceTranscriptRef.current = '';
         };
@@ -401,7 +372,6 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
 
         recognition.onerror = (event) => {
             console.error("Speech recognition error", event.error);
-            setIsVoiceProcessing(false);
             if (event.error === 'not-allowed') {
                 setMicStatus('denied');
             } else {
@@ -410,19 +380,15 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         };
 
         recognition.onend = () => {
-            console.log('🎤 Voice recognition ended');
+            console.log('🎤 Chatbot voice recognition ended');
             setMicStatus(prev => prev === 'denied' ? 'denied' : 'idle');
 
-            // Auto-process the captured transcript
+            // Auto-send the captured transcript to chatbot
             const finalTranscript = voiceTranscriptRef.current;
             if (finalTranscript && finalTranscript.trim()) {
                 console.log('🎤 Final transcript:', finalTranscript);
-                // Small delay to show the transcript before processing
-                setTimeout(() => {
-                    processVoiceCommand(finalTranscript);
-                }, 500);
-            } else {
-                setIsVoiceProcessing(false);
+                // Send directly to chatbot
+                handleSendMessage(finalTranscript);
             }
         };
 
@@ -558,9 +524,24 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                     // Update playing state - consider CHAT_MODE as paused
                     setIsPlaying(state === 'PLAYING');
 
+                    // ========================================
+                    // QUESTION POPUP LOGIC (SEPARATE from chatbot)
+                    // ========================================
+                    if (state === 'WAITING_FOR_QUESTION') {
+                        // Only show question popup if chat is NOT open
+                        if (!isChatOpen) {
+                            setIsQuestionPopupOpen(true);
+                            console.log('📢 Question popup opened - WAITING_FOR_QUESTION');
+                        }
+                    } else {
+                        // Close question popup when state changes
+                        setIsQuestionPopupOpen(false);
+                    }
+
                     // Auto-open chat when entering CHAT_MODE
                     if (state === 'CHAT_MODE') {
                         setIsChatOpen(true);
+                        setIsQuestionPopupOpen(false); // Ensure popup is closed
                     }
 
                     // Log detailed state info
@@ -569,8 +550,20 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 case 'EVT_VOICE_TRIGGER':
                     if (response === 'YES') {
                         setIsChatOpen(true);
+                        setIsVoiceProcessing(false);
                         handlesuccess("Opening Chatbot...");
-                        // Optionally auto-open mic for chat or wait for user
+                    } else if (response === 'NO') {
+                        setIsVoiceProcessing(false);
+                        console.log('📤 NO response - continuing to next slide');
+                    }
+                    break;
+                case 'EVT_VOICE_TRANSCRIPT':
+                    // Update transcript for display in voice overlay
+                    const { transcript } = event.data;
+                    if (transcript) {
+                        voiceTranscriptRef.current = transcript;
+                        setCurrentMessage(transcript); // Update state for re-render
+                        console.log('🎤 Transcript received:', transcript);
                     }
                     break;
                 case 'RECORDING_DATA':
@@ -644,10 +637,33 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         setRecordedBlob(null);
     };
 
+    // ========================================
+    // QUESTION POPUP RESPONSE HANDLER
+    // This sends decision to iframe (NOT to chatbot)
+    // ========================================
+    const handleQuestionResponse = (response) => {
+        console.log('📤 Question popup response:', response);
+        setIsQuestionPopupOpen(false);
 
-
-
-
+        if (videoRef.current?.contentWindow) {
+            if (response === 'YES') {
+                // User wants to ask a question → Enter CHAT_MODE
+                videoRef.current.contentWindow.postMessage({
+                    type: 'CMD_QUESTION_RESPONSE',
+                    response: 'YES'
+                }, '*');
+                // Also open chatbot
+                setIsChatOpen(true);
+                handlesuccess("Opening Chatbot...");
+            } else {
+                // User said NO or timeout → Continue lecture
+                videoRef.current.contentWindow.postMessage({
+                    type: 'CMD_QUESTION_RESPONSE',
+                    response: 'NO'
+                }, '*');
+            }
+        }
+    };
 
 
     // Download recorded video (Replaces Upload functionality)
@@ -854,8 +870,17 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                             if (micStatus === 'listening' && recognitionRef.current) {
                                 recognitionRef.current.stop();
                             }
+
+                            // Close chat UI
                             setIsChatOpen(false);
-                            console.log('Chat closed. Waiting for manual resume.');
+
+                            // Send command to iframe to exit chat mode but stay paused
+                            if (videoRef.current?.contentWindow) {
+                                videoRef.current.contentWindow.postMessage({ type: 'CMD_EXIT_CHAT' }, '*');
+                                console.log('📤 Sent CMD_EXIT_CHAT - Slide will stay paused');
+                            }
+
+                            console.log('✅ Chat closed. Slide remains paused. User must click Play to resume.');
                         } else {
                             // Opening chat - pause lecture and enter chat mode
                             setIsChatOpen(true);
@@ -935,18 +960,21 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                     <div className={`p-3 border-t relative ${isDark ? "bg-black border-zinc-800" : "bg-white border-zinc-200"
                         }`}>
                         <div className="flex items-center gap-2">
-                            {/* Mic Button in Chat */}
+                            {/* Mic Button in Chat - DISABLED when question popup is open */}
                             <button
                                 onClick={handleMicClick}
-                                className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${micStatus === 'listening'
-                                    ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white shadow-lg shadow-red-500/30'
-                                    : micStatus === 'denied'
-                                        ? 'bg-zinc-200 text-zinc-400'
-                                        : isDark
-                                            ? 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'
-                                            : 'bg-zinc-100 text-zinc-500 hover:text-black hover:bg-zinc-200'
+                                disabled={isQuestionPopupOpen}
+                                className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition-all duration-200 ${isQuestionPopupOpen
+                                    ? 'bg-zinc-300 text-zinc-400 cursor-not-allowed opacity-50'
+                                    : micStatus === 'listening'
+                                        ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white shadow-lg shadow-red-500/30 cursor-pointer'
+                                        : micStatus === 'denied'
+                                            ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                                            : isDark
+                                                ? 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 cursor-pointer'
+                                                : 'bg-zinc-100 text-zinc-500 hover:text-black hover:bg-zinc-200 cursor-pointer'
                                     }`}
-                                title={micStatus === 'listening' ? "Stop Listening" : "Start Voice Input"}
+                                title={isQuestionPopupOpen ? "Disabled during question" : micStatus === 'listening' ? "Stop Listening" : "Start Voice Input"}
                             >
                                 {micStatus === 'listening' ? <Mic size={20} /> : <MicOff size={20} className={micStatus === 'denied' ? '' : 'hidden'} />}
                                 {micStatus === 'idle' && <Mic size={20} />}
@@ -980,8 +1008,17 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             )
             }
 
-            {/* YouTube-style Voice Overlay */}
-            <VoiceOverlay isVoiceProcessing={isVoiceProcessing} currentMessage={currentMessage} isDark={isDark} />
+            {/* ========================================
+                QUESTION POPUP (SEPARATE from chatbot)
+                Shows when "Do you have any questions?" is asked
+            ======================================== */}
+            <QuestionPopup
+                isOpen={isQuestionPopupOpen && !isChatOpen}
+                onResponse={handleQuestionResponse}
+                onClose={() => handleQuestionResponse('NO')}
+                isDark={isDark}
+                timeoutSeconds={10}
+            />
 
 
             {/* Bottom Gradient Overlay */}
