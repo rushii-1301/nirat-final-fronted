@@ -566,6 +566,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const VITE_GROQ_API_KEY = urlParams.get('apiKey') || "";
 
+        console.log('🔑 API Key received:', VITE_GROQ_API_KEY ? `${VITE_GROQ_API_KEY.substring(0, 10)}...` : 'EMPTY');
+        console.log('🔗 Full URL:', window.location.href);
+
         if (!VITE_GROQ_API_KEY) {
           console.warn("⚠️ Groq API key not provided. Transcription will fail.");
         }
