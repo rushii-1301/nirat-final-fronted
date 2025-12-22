@@ -8,10 +8,18 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
     const [slideAudioBuffer, setSlideAudioBuffer] = useState(null);
     const slideStartTime = useRef(0);
     const slidePauseTime = useRef(0);
+    const isPaused = useRef(false);
+
+    const currentOnEndedCallback = useRef(null);
 
     useImperativeHandle(ref, () => ({
         getSlideElapsed() {
             if (audioContext) {
+                // If paused, return the frozen time
+                if (isPaused.current) {
+                    return slidePauseTime.current;
+                }
+                // Otherwise calculate live
                 return audioContext.currentTime - slideStartTime.current;
             }
             return 0;
@@ -28,6 +36,11 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
                     chatbotSourceRef.current.stop();
                     chatbotSourceRef.current.disconnect();
                 }
+
+                // Reset pause state
+                isPaused.current = false;
+                slidePauseTime.current = 0;
+                currentOnEndedCallback.current = onEnded;
 
                 // Fetch and decode audio
                 const response = await fetch(url);
@@ -46,7 +59,8 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
                 onAudioSourceChange(source);
 
                 source.onended = () => {
-                    if (onEnded) onEnded();
+                    if (isPaused.current) return;
+                    if (currentOnEndedCallback.current) currentOnEndedCallback.current();
                 };
 
                 // Resume context if suspended
@@ -67,9 +81,12 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
         },
 
         pauseSlideAudio() {
-            if (slideSourceRef.current && audioContext) {
+            if (slideSourceRef.current && audioContext && !isPaused.current) {
+                isPaused.current = true;
                 const elapsed = audioContext.currentTime - slideStartTime.current;
                 slidePauseTime.current = elapsed;
+
+                // We stop the source node
                 slideSourceRef.current.stop();
                 slideSourceRef.current.disconnect();
                 slideSourceRef.current = null;
@@ -77,7 +94,9 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
         },
 
         async resumeSlideAudio() {
-            if (slideAudioBuffer && audioContext) {
+            if (slideAudioBuffer && audioContext && isPaused.current) {
+                isPaused.current = false;
+
                 const source = audioContext.createBufferSource();
                 source.buffer = slideAudioBuffer;
                 source.connect(analyserNode);
@@ -86,11 +105,18 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
                 slideSourceRef.current = source;
                 onAudioSourceChange(source);
 
+                // Re-attach the original onEnded callback
+                source.onended = () => {
+                    if (isPaused.current) return;
+                    if (currentOnEndedCallback.current) currentOnEndedCallback.current();
+                };
+
                 if (audioContext.state === 'suspended') {
                     await audioContext.resume();
                 }
 
                 source.start(0, slidePauseTime.current);
+                // Adjust start time so (currentTime - start) equals the offset we resumed at
                 slideStartTime.current = audioContext.currentTime - slidePauseTime.current;
             }
         },
@@ -101,6 +127,8 @@ const AudioManager = forwardRef(({ audioContext, analyserNode, onAudioSourceChan
                 if (slideSourceRef.current) {
                     const elapsed = audioContext.currentTime - slideStartTime.current;
                     slidePauseTime.current = elapsed;
+                    isPaused.current = true; // Mark as paused
+
                     slideSourceRef.current.stop();
                     slideSourceRef.current.disconnect();
                 }

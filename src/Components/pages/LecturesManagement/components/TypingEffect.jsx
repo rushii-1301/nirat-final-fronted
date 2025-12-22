@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-const TypingEffect = ({ text, progress, isBullet = false }) => {
+const TypingEffect = ({ text, progress, isBullet = false, isTyping = true }) => {
     // Memoize the visible text calculation to avoid unnecessary recalculations
     const visibleText = useMemo(() => {
         if (!text) return '';
@@ -17,8 +17,10 @@ const TypingEffect = ({ text, progress, isBullet = false }) => {
     return (
         <span>
             {visibleText}
-            {/* Blinking cursor effect */}
-            <span className="inline-block w-0.5 h-4 ml-0.5 bg-gray-800 animate-pulse align-middle"></span>
+            {/* Blinking cursor effect - only show if actively typing */}
+            {isTyping && (
+                <span className="inline-block w-0.5 h-4 ml-0.5 bg-gray-800 animate-pulse align-middle"></span>
+            )}
         </span>
     );
 };

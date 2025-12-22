@@ -239,16 +239,18 @@ function LectureVideo({ theme, isDark }) {
                 audioManagerRef.current.pauseSlideAudio();
             }
         } else {
-            // 3. User said NO or Timeout -> Treat as "Proceed" -> Next Slide
-            if (currentSlideIndex < lectureData.length - 1) {
-                playSlide(currentSlideIndex + 1);
+            // 3. User said NO or Timeout
+            if (currentState === STATES.SLIDE_PAUSED) {
+                // If we were paused manually, RESUME
+                audioManagerRef.current?.resumeSlideAudio();
+                setCurrentState(STATES.SLIDE_PLAYING);
             } else {
-                // End of lecture
+                // Normal end-of-slide Question -> Stay IDLE or Next
+                // User request: "resume the task from where we pasued" -> which implies staying on the current finished slide.
                 setCurrentState(STATES.IDLE);
-                if (isRecording) stopRecording();
             }
         }
-    }, [currentSlideIndex, lectureData.length, playSlide, isRecording, stopRecording]);
+    }, [currentState, currentSlideIndex, lectureData.length, playSlide, isRecording, stopRecording]);
 
     // Start Recording
     const startRecording = useCallback(async () => {
@@ -425,14 +427,22 @@ function LectureVideo({ theme, isDark }) {
                                                 return (
                                                     <li key={i} className="relative pl-6 text-gray-800 text-base">
                                                         <span className="absolute left-0 text-xl font-bold">•</span>
-                                                        <TypingEffect text={bullet} progress={localProgress} />
+                                                        <TypingEffect
+                                                            text={bullet}
+                                                            progress={localProgress}
+                                                            isTyping={currentState === STATES.SLIDE_PLAYING && localProgress < 1 && localProgress > 0}
+                                                        />
                                                     </li>
                                                 );
                                             })}
                                         </ul>
                                     ) : currentSlide.narration && (
                                         <div className="text-gray-800 text-base leading-relaxed">
-                                            <TypingEffect text={currentSlide.narration} progress={playbackProgress} />
+                                            <TypingEffect
+                                                text={currentSlide.narration}
+                                                progress={playbackProgress}
+                                                isTyping={currentState === STATES.SLIDE_PLAYING}
+                                            />
                                         </div>
                                     )}
                                 </div>
@@ -482,9 +492,11 @@ function LectureVideo({ theme, isDark }) {
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50">
                 <button
                     onClick={() => {
+                        // removed debugger as it is not needed
                         if (currentState === STATES.SLIDE_PLAYING) {
                             audioManagerRef.current?.pauseSlideAudio();
                             setCurrentState(STATES.SLIDE_PAUSED);
+                            setIsQuestionPopupOpen(true);
                         } else {
                             // If Slide is Paused -> Resume
                             if (currentState === STATES.SLIDE_PAUSED) {
