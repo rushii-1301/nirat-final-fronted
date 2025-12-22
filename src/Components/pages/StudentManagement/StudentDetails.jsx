@@ -253,43 +253,37 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                 }
             );
 
-            if (response.data?.status && Array.isArray(response.data?.data?.cards)) {
-                const cards = response.data.data.cards;
-                const totalLectures = cards.length;
+            if (response.data?.status && response.data?.data?.videos) {
+                const videos = response.data.data.videos;
+                const summary = response.data.data.summary;
 
-                // Calculate progress based on watched lectures
-                const completedVideos = cards.filter(card => {
-                    const [watched, total] = card.progress.split('/').map(Number);
-                    return watched > 0;
-                }).length;
-
-                const overallProgress = totalLectures > 0
-                    ? Math.round((completedVideos / totalLectures) * 100)
-                    : 0;
-
-                // Calculate total watched minutes
-                const totalWatchedMinutes = cards.reduce((sum, card) => {
-                    const [watched] = card.progress.split('/').map(Number);
-                    return sum + (watched || 0);
-                }, 0);
-
+                // Update progress data with API summary
                 setProgressData({
-                    overallProgress,
-                    totalLectures,
-                    watchedMinutes: totalWatchedMinutes,
+                    overallProgress: summary?.completed_videos || 0,
+                    totalLectures: summary?.total_records || 0,
+                    watchedMinutes: Math.floor((summary?.total_watch_seconds || 0) / 60),
                     totalMinutes: 0,
-                    completion: overallProgress,
+                    completion: summary?.watched_videos || 0,
                 });
 
-                // Format the lectures data to match the expected structure
-                const formattedLectures = cards.map(card => ({
-                    title: card.title,
-                    subject: card.subject,
-                    chapter: card.chapter,
-                    progress: card.progress,
-                    date: card.watched_date || new Date().toLocaleDateString('en-GB'),
-                    summary: card.summary || 'No summary available',
-                }));
+                // Format the watched lectures data
+                const formattedLectures = videos.map(video => {
+                    const progressPercentage = video.duration_seconds > 0 
+                        ? Math.round((video.user_watch_duration_seconds || video.watch_duration_seconds || 0) / video.duration_seconds * 100)
+                        : 0;
+                    
+                    return {
+                        id: video.id,
+                        title: video.title,
+                        subject: video.subject,
+                        chapter: video.chapter_name,
+                        progress: `${progressPercentage}%`,
+                        date: video.user_last_watched_at || video.last_watched_at || new Date().toLocaleDateString('en-GB'),
+                        watchDuration: video.user_watch_duration_seconds || video.watch_duration_seconds || 0,
+                        totalDuration: video.duration_seconds,
+                        summary: video.description || 'No summary available',
+                    };
+                });
 
                 setLectures(formattedLectures);
             } else {
@@ -299,6 +293,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
         } catch (error) {
             console.error('Failed to fetch watched lectures:', error);
             setLecturesError(error.response?.data?.message || 'Failed to fetch watched lectures');
+            setLectures([]);
         } finally {
             setLecturesLoading(false);
         }
@@ -589,7 +584,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                             ) : (
                                                 lectures.map((lec, i) => (
                                                     <tr
-                                                        key={i}
+                                                        key={lec.id || i}
                                                         className={`border-b ${isDark ? 'border-zinc-800/50 hover:bg-zinc-800/30' : 'border-zinc-200 hover:bg-zinc-50'} transition-colors`}
                                                     >
                                                         <td className="py-3 md:py-4 px-6 whitespace-nowrap overflow-hidden text-ellipsis">
@@ -607,7 +602,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                                     <div
                                                                         className={`h-full ${isDark ? 'bg-blue-500' : 'bg-[#696CFF]'} rounded-full`}
                                                                         style={{
-                                                                            width: `${Math.min((parseInt(lec.progress?.split('/')[0]) || 0) / (parseInt(lec.progress?.split('/')[1]) || 1) * 100, 100)}%`,
+                                                                            width: `${parseInt(lec.progress) || 0}%`,
                                                                         }}
                                                                     ></div>
                                                                 </div>

@@ -1713,11 +1713,67 @@ function Videos({ isDark, toggleTheme, sidebardata }) {
                                             </div>
                                         </>
                                     ) : (
-                                        <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5 text-center`}>
-                                            <div className={`text-sm ${subText}`}>
-                                                No related videos available
+                                        <>
+                                            {/* Related Videos Section */}
+                                            <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5`}>
+                                                <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Related Videos</h3>
+                                                {pageData.relatedVideos && pageData.relatedVideos.length > 0 ? (
+                                                    <div className="space-y-3 max-h-[500px] overflow-y-auto no-scrollbar">
+                                                        {pageData.relatedVideos.map((video) => (
+                                                            <div
+                                                                key={video.id}
+                                                                className={`cursor-pointer group rounded-lg overflow-hidden border transition-all hover:shadow-md ${isDark ? 'border-zinc-800 hover:border-zinc-700' : 'border-zinc-200 hover:border-zinc-300'}`}
+                                                                onClick={() => {
+                                                                    // Navigate to related video
+                                                                    navigate(`/student-portal/videos/${video.id}`, { state: { video: video } });
+                                                                }}
+                                                            >
+                                                                <div className="flex gap-3 p-2">
+                                                                    {/* Thumbnail */}
+                                                                    <div className="relative flex-shrink-0">
+                                                                        <div className="w-32 h-20 rounded-md overflow-hidden bg-zinc-200">
+                                                                            {video.thumb ? (
+                                                                                <img
+                                                                                    src={video.thumb}
+                                                                                    alt={video.title}
+                                                                                    className="w-full h-full object-cover"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-zinc-800' : 'bg-zinc-300'}`}>
+                                                                                    <Play className="w-6 h-6 text-zinc-500" />
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        {/* Duration badge */}
+                                                                        <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                                                                            {video.duration}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Video Info */}
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h4 className={`text-sm font-medium line-clamp-2 mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                                                            {video.title}
+                                                                        </h4>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className={`text-xs ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>
+                                                                                {video.duration}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className={`border ${panelBg} rounded-xl p-3 sm:p-4 md:p-5 text-center`}>
+                                                        <div className={`text-sm ${subText}`}>
+                                                            No related videos available
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
+                                        </>
                                     )}
                                 </aside>
                             </div>
