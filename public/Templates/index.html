@@ -41,12 +41,12 @@
     /* Whiteboard Board Image Container */
     #whiteboardBoard {
       position: absolute;
-      top: 5%;
+      top: -5%;
       right: 2%;
       width: 65%;
       height: 85%;
       z-index: 2;
-      opacity: 0;
+      opacity: 1;
       transition: opacity 0.5s ease;
       pointer-events: none;
       display: flex;
@@ -313,6 +313,86 @@
       background: rgba(255, 255, 255, 0.3);
       border-radius: 2px;
     }
+
+    /* Slide Progress Bar */
+    #slideProgressContainer {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #slideProgressContainer.visible {
+      opacity: 1;
+    }
+
+    #slideProgressInfo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 0 5px;
+    }
+
+    #slideProgressText {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    #slideProgressPercentage {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    #slideProgressBarBg {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    #slideProgressBarFill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #slideProgressBarFill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
   </style>
 
   <script type="importmap">
@@ -347,6 +427,13 @@
     const narrationText = document.getElementById('narrationText');
     const whiteboardText = document.getElementById('whiteboardBoard'); // Updated to use Board Container
     const whiteboardTextContent = document.getElementById('whiteboardTextContent');
+
+    // Progress bar elements
+    const slideProgressContainer = document.getElementById('slideProgressContainer');
+    const slideProgressText = document.getElementById('slideProgressText');
+    const slideProgressPercentage = document.getElementById('slideProgressPercentage');
+    const slideProgressBarFill = document.getElementById('slideProgressBarFill');
+
 
     // --- State Management ---
     const STATE = {
@@ -462,6 +549,25 @@
       await setMachineState(STATE.PLAYING);
     }
 
+    // --- Update Slide Progress Bar ---
+    function updateSlideProgress() {
+      const totalSlides = lectureData.length;
+      const currentSlide = currentSlideIndex + 1;
+      const percentage = totalSlides > 0 ? Math.round((currentSlide / totalSlides) * 100) : 0;
+
+      slideProgressText.textContent = `Slide ${currentSlide} / ${totalSlides}`;
+      slideProgressPercentage.textContent = `${percentage}%`;
+      slideProgressBarFill.style.width = `${percentage}%`;
+
+      // Show progress bar when lecture starts
+      if (totalSlides > 0) {
+        slideProgressContainer.classList.add('visible');
+      }
+
+      console.log(`📊 Progress: Slide ${currentSlide}/${totalSlides} (${percentage}%)`);
+    }
+
+
     // --- Preloading Logic ---
 
     async function loadLectureData() {
@@ -469,7 +575,7 @@
       currentState = STATE.PRELOADING;
 
       try {
-        nodeLoading.textContent = "Analyzing Lecture...";
+        // nodeLoading.textContent = "Analyzing Lecture...";
         const lectureId = new URLSearchParams(window.location.search).get('lectureId');
         if (!lectureId) throw new Error("No Lecture ID provided");
 
@@ -496,7 +602,7 @@
         // Only set to IDLE if we haven't started playing yet
         if (currentState === STATE.PRELOADING) {
           currentState = STATE.IDLE;
-          nodeLoading.textContent = "Ready to Begin";
+          // nodeLoading.textContent = "Ready to Begin";
           // Send READY again just in case
           window.parent.postMessage({ type: 'EVT_READY' }, '*');
         }
@@ -510,11 +616,11 @@
     async function preloadSlides() {
       for (let i = 0; i < lectureData.length; i++) {
         // If first slide is already done, show generic loading
-        if (i > 0) {
-          nodeLoading.textContent = `Preloading Slide ${i + 1}/${lectureData.length}...`;
-        } else {
-          nodeLoading.textContent = `Loading First Slide...`;
-        }
+        // if (i > 0) {
+        //   nodeLoading.textContent = `Preloading Slide ${i + 1}/${lectureData.length}...`;
+        // } else {
+        //   nodeLoading.textContent = `Loading First Slide...`;
+        // }
 
         try {
           const slide = lectureData[i];
@@ -525,7 +631,7 @@
           if (i === 0) {
             console.log('✅ First slide loaded - Enabling Start');
             window.parent.postMessage({ type: 'EVT_READY' }, '*');
-            nodeLoading.textContent = "Ready to Begin (Background loading...)";
+            // nodeLoading.textContent = "Ready to Begin (Background loading...)";
 
             // Allow state transition to IDLE or Playable so buttons work
             // But we keep 'currentState' as PRELOADING locally until loadLectureData finishes?
@@ -650,7 +756,8 @@
         state: newState,
         oldState: oldState,
         timestamp: Date.now(),
-        slideIndex: currentSlideIndex
+        slideIndex: currentSlideIndex,
+        totalSlides: lectureData.length
       }, '*');
 
       // Handle state-specific actions
@@ -686,6 +793,9 @@
 
         head.stop();
         console.log('✅ Avatar stopped');
+
+        // Clear only the text content, keep board image visible
+        // whiteboardTextContent.innerHTML = '';
       }
       else if (newState === STATE.CHAT_MODE) {
         // ✅ CRITICAL: Don't suspend AudioContext - chatbot needs it!
@@ -772,6 +882,9 @@
         }
 
         if (slideAudio) {
+          // Update progress bar for current slide
+          updateSlideProgress();
+
           // Show content ON WHITEBOARD based on priority
           const currentSlide = lectureData[currentSlideIndex];
 
@@ -1588,10 +1701,21 @@
     <div id="whiteboardTextContent"></div>
   </div>
 
-  <div id="controls">
+  <!-- Slide Progress Bar -->
+  <div id="slideProgressContainer">
+    <div id="slideProgressInfo">
+      <span id="slideProgressText">Slide 1 / 1</span>
+      <span id="slideProgressPercentage">0%</span>
+    </div>
+    <div id="slideProgressBarBg">
+      <div id="slideProgressBarFill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- <div id="controls">
     <button id="unlockAudio">Start</button>
     <textarea id="json" readonly></textarea>
-  </div>
+  </div> -->
   <div id="loading"></div>
 
   <!-- Narration Text Overlay (bottom fallback) -->
