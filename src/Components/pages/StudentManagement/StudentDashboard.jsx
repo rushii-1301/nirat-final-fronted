@@ -135,10 +135,10 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 {/* ===== Main Section (scrollable) ===== */}
                 <main className="mt-6 flex-1 overflow-y-auto no-scrollbar space-y-6">
                     {/* ---- Stat Cards (Top Row) ---- */}
-                    <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-6 auto-rows-[minmax(90px,auto)]">
+                    <div className={`grid grid-cols-2 md:grid-cols-2 gap-6 auto-rows-[minmax(90px,auto)] ${isAdminPath ? 'xl:grid-cols-3' : 'xl:grid-cols-4'}`}>
                         {loading ? (
                             // Loading skeleton cards
-                            [...Array(4)].map((_, i) => (
+                            [...Array(isAdminPath ? 3 : 4)].map((_, i) => (
                                 <div key={`skeleton-${i}`} className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] animate-pulse`}>
                                     <div className="flex items-center gap-2">
                                         <div className={`w-4 h-4 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
@@ -152,7 +152,7 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                 { title: 'Total Student', value: totalStudent, to: '/student/list' },
                                 { title: 'Total Lectures List', value: totalWatchedLecture, to: '/student/lectures' },
                                 { title: 'Total Paid', value: totalPaid, to: '/student/paid' },
-                                { title: 'Add Student', value: 'none', to: '/student/Add' },
+                                ...(isAdminPath ? [] : [{ title: 'Add Student', value: 'none', to: '/student/Add' }]),
                             ].map((card, i) => {
                                 const cardClass = `${isDark ? 'bg-zinc-900' : 'bg-white'} border border-transparent rounded-2xl p-5 flex flex-col justify-between min-h-[120px] transition ${isAdminPath ? 'cursor-default' : 'cursor-pointer'}`;
                                 const content = (
