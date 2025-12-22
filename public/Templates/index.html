@@ -327,16 +327,16 @@
 
   <script type="module">
     // --- Audio Capture Logic (Monkey Patch) - MUST BE FIRST ---
-    let audioDest;
-    const originalConnect = AudioNode.prototype.connect;
-    AudioNode.prototype.connect = function (destination, outputIndex, inputIndex) {
-      if (audioDest && destination === destination.context.destination) {
-        try {
-          originalConnect.call(this, audioDest);
-        } catch (e) { }
-      }
-      return originalConnect.apply(this, arguments);
-    };
+    // let audioDest;
+    // const originalConnect = AudioNode.prototype.connect;
+    // AudioNode.prototype.connect = function (destination, outputIndex, inputIndex) {
+    //   if (audioDest && destination === destination.context.destination) {
+    //     try {
+    //       originalConnect.call(this, audioDest);
+    //     } catch (e) { }
+    //   }
+    //   return originalConnect.apply(this, arguments);
+    // };
 
     import { TalkingHead } from "talkinghead";
     import * as THREE from "three";
@@ -375,7 +375,7 @@
       cameraView: "full"
     });
 
-    audioDest = head.audioCtx.createMediaStreamDestination();
+    // audioDest = head.audioCtx.createMediaStreamDestination();
 
     // --- Voice Recognition Setup ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -658,14 +658,21 @@
           }
         }
 
-        if (head.audioCtx.state === 'running') {
-          try {
-            await head.audioCtx.suspend();
-            console.log('✅ Audio context suspended');
-          } catch (e) {
-            console.error('❌ Failed to suspend audio:', e);
+        // if (head.audioCtx.state === 'running') {
+        //   try {
+        //     await head.audioCtx.suspend();
+        //     console.log('✅ Audio context suspended');
+        //   } catch (e) {
+        //     console.error('❌ Failed to suspend audio:', e);
+        //   }
+        // }
+
+        const ensureAudioContext = async () => {
+          if (head.audioCtx.state !== 'running') {
+            await head.audioCtx.resume();
+            console.log(':white_tick: AudioContext resumed');
           }
-        }
+        };
 
         head.stop();
         console.log('✅ Avatar stopped');
@@ -1440,7 +1447,7 @@
       const videoStream = canvas.captureStream(30);
       const combined = new MediaStream([
         ...videoStream.getVideoTracks(),
-        ...audioDest.stream.getAudioTracks()
+        // ...audioDest.stream.getAudioTracks()
       ]);
 
       // Try different codecs in order of preference
@@ -1543,21 +1550,20 @@
       loadLectureData();
     });
 
-  </script>
 
-  // Relay activity
-  co nst report = () => window.parent.postMessage({ type: 'USER_ACTIVITY' }, '*');
-  document.addEventListener('mousemove', report);
-  do cument.addEventListener('touchstart', report);
-  do cument.addEventListener('click', report);
+    // Relay activity
+    const report = () => window.parent.postMessage({ type: 'USER_ACTIVITY' }, '*');
+    document.addEventListener('mousemove', report);
+    document.addEventListener('touchstart', report);
+    document.addEventListener('click', report);
 
-  // Auto-resume helper for initial interaction
-  do cument.addEventListener('click', () => {
-  if ( head.audioCtx && head.audioCtx.state === 'suspended' && !isPaused) {
-  head.audioCtx.resume();
-  consol e.log("AudioContext resumed by user interaction");
-  }
-  }, { once: true });
+    // Auto-resume helper for initial interaction
+    document.addEventListener('click', () => {
+      if (head.audioCtx && head.audioCtx.state === 'suspended' && !isPaused) {
+        head.audioCtx.resume();
+        console.log("AudioContext resumed by user interaction");
+      }
+    }, { once: true });
 
   </script>
 </head>

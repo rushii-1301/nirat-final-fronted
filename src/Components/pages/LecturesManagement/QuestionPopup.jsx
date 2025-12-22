@@ -199,7 +199,7 @@ function QuestionPopup({
                 handleResponse(keyword);
             } else {
                 // Default to YES if typed something that's not recognized
-                handleResponse('YES');
+                handleResponse('no');
             }
         }
     };
