@@ -1,4 +1,3 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useLocation, useNavigate } from "react-router-dom";
 import { X, ChevronLeft, Pause, Play, MessageCircle, Mic, MicOff, SendHorizontal, Download } from "lucide-react";
@@ -202,6 +201,7 @@ function LectureVideo({ theme, isDark }) {
         setCurrentSlideIndex(index);
         setCurrentState(STATES.SLIDE_PLAYING);
         setPlaybackProgress(0); // Reset progress
+        setSlideDuration(0); // Reset duration to prevent flash of content
 
         const slide = lectureData[index];
         if (audioManagerRef.current) {
@@ -226,7 +226,6 @@ function LectureVideo({ theme, isDark }) {
     }, [lectureData, audioContext, isRecording, stopRecording, currentState]);
 
     // Handle Question Response
-    // New Code (Fixed)
     const handleQuestionResponse = useCallback((response) => {
         // 1. Just close the popup
         setIsQuestionPopupOpen(false);
@@ -245,9 +244,14 @@ function LectureVideo({ theme, isDark }) {
                 audioManagerRef.current?.resumeSlideAudio();
                 setCurrentState(STATES.SLIDE_PLAYING);
             } else {
-                // Normal end-of-slide Question -> Stay IDLE or Next
-                // User request: "resume the task from where we pasued" -> which implies staying on the current finished slide.
-                setCurrentState(STATES.IDLE);
+                // Normal end-of-slide Question -> Auto-advance to next slide
+                if (currentSlideIndex < lectureData.length - 1) {
+                    playSlide(currentSlideIndex + 1);
+                } else {
+                    // Last slide finished
+                    setCurrentState(STATES.IDLE);
+                    if (isRecording) stopRecording();
+                }
             }
         }
     }, [currentState, currentSlideIndex, lectureData.length, playSlide, isRecording, stopRecording]);
@@ -513,7 +517,7 @@ function LectureVideo({ theme, isDark }) {
                             }
                         }
                     }}
-                    disabled={currentState === STATES.IDLE && lectureData.length === 0}
+                    disabled={(currentState === STATES.IDLE && lectureData.length === 0) || (currentState === STATES.SLIDE_PLAYING && slideDuration === 0)}
                     className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-800 border-2 border-gray-900 hover:bg-gray-700 disabled:opacity-50"
                 >
                     {currentState === STATES.SLIDE_PLAYING ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white ml-1" />}
