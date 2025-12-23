@@ -193,7 +193,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
   return (
     <div
       className={`flex ${isDark ? "bg-black text-gray-100" : "bg-[#F5F5F9] text-[#232347]"
-        } h-screen overflow-hidden transition-colors duration-300`}
+        } h-screen overflow-hidden no-scrollbar transition-colors duration-300`}
     >
       {/* Sidebar */}
       <Sidebar isDark={isDark} sidebardata={sidebardata} />
@@ -210,7 +210,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
         </div>
 
         {/* Scrollable content */}
-        <main className="mt-4 sm:mt-5 flex-1 overflow-y-hidden no-scrollbar">
+        <main className="mt-4 sm:mt-5 flex-1 overflow-y-scroll no-scrollbar">
           <div className="w-full mx-auto flex flex-col space-y-4">
             {/* Toolbar row (sticky) */}
             <div
@@ -285,7 +285,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                   </div>
 
                   {/* Book list (topics from API) */}
-                  <div className="space-y-4 max-h-[53vh] overflow-y-auto pr-2 no-scrollbar">
+                  <div className="space-y-4 max-h-[49vh] overflow-y-auto pr-2 no-scrollbar">
                     {books.length === 0 && (
                       <div className="text-xs text-gray-400">No topics available.</div>
                     )}
@@ -475,7 +475,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                         No chapters selected yet
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-2 max-h-[35vh] overflow-y-scroll no-scrollbar">
                         {confirmedChapters.map((item) => (
                           <div
                             key={`${item.bookId}-${item.chapterId}`}

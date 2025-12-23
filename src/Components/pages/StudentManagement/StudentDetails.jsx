@@ -244,7 +244,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             }
 
             const response = await axios.get(
-                `${BACKEND_API_URL}/school-portal/watched-lectures/cards?enrollment_number=${encodeURIComponent(enrollmentNumber)}`,
+                `${BACKEND_API_URL}/student-management/watched-lectures/cards?enrollment_number=${encodeURIComponent(enrollmentNumber)}`,
                 {
                     headers: {
                         'Accept': 'application/json',
@@ -253,35 +253,42 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                 }
             );
 
-            if (response.data?.status && response.data?.data?.videos) {
-                const videos = response.data.data.videos;
-                const summary = response.data.data.summary;
+            if (response.data?.status && response.data?.data?.lectures) {
+                const lectures = response.data.data.lectures;
 
                 // Update progress data with API summary
                 setProgressData({
-                    overallProgress: summary?.completed_videos || 0,
-                    totalLectures: summary?.total_records || 0,
-                    watchedMinutes: Math.floor((summary?.total_watch_seconds || 0) / 60),
-                    totalMinutes: 0,
-                    completion: summary?.watched_videos || 0,
+                    overallProgress: lectures.length > 0 ? Math.round((lectures.reduce((acc, lec) => {
+                        const [watched, total] = lec.progress.split('/').map(s => parseInt(s) || 0);
+                        return acc + (watched / total) * 100;
+                    }, 0) / lectures.length)) : 0,
+                    totalLectures: lectures.length,
+                    watchedMinutes: lectures.reduce((acc, lec) => {
+                        const [watched] = lec.progress.split('/').map(s => parseInt(s) || 0);
+                        return acc + watched;
+                    }, 0),
+                    totalMinutes: lectures.reduce((acc, lec) => {
+                        const [, total] = lec.progress.split('/').map(s => parseInt(s) || 0);
+                        return acc + total;
+                    }, 0),
+                    completion: lectures.length,
                 });
 
                 // Format the watched lectures data
-                const formattedLectures = videos.map(video => {
-                    const progressPercentage = video.duration_seconds > 0 
-                        ? Math.round((video.user_watch_duration_seconds || video.watch_duration_seconds || 0) / video.duration_seconds * 100)
-                        : 0;
+                const formattedLectures = lectures.map(lecture => {
+                    const [watched, total] = lecture.progress.split('/').map(s => parseInt(s) || 0);
+                    const progressPercentage = total > 0 ? Math.round((watched / total) * 100) : 0;
                     
                     return {
-                        id: video.id,
-                        title: video.title,
-                        subject: video.subject,
-                        chapter: video.chapter_name,
+                        id: lecture.lecture_title,
+                        title: lecture.lecture_title,
+                        subject: lecture.subject,
+                        chapter: lecture.chapter,
                         progress: `${progressPercentage}%`,
-                        date: video.user_last_watched_at || video.last_watched_at || new Date().toLocaleDateString('en-GB'),
-                        watchDuration: video.user_watch_duration_seconds || video.watch_duration_seconds || 0,
-                        totalDuration: video.duration_seconds,
-                        summary: video.description || 'No summary available',
+                        date: lecture.watched_date,
+                        watchDuration: watched,
+                        totalDuration: total,
+                        summary: lecture.summary,
                     };
                 });
 
@@ -607,7 +614,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                                     ></div>
                                                                 </div>
                                                                 <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-zinc-500'}`}>
-                                                                    {lec.progress}
+                                                                    {lec.watchDuration}/{lec.totalDuration} Min
                                                                 </span>
                                                             </div>
                                                         </td>
