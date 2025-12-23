@@ -157,11 +157,11 @@ function App() {
       to: "/lecture/Sharedlecture",
       icon: ["share_trap_dark", "share_trap_light", "current_share_trap_light"]
     },
-    {
-      label: "Q&A Section",
-      to: "/lecture/QandA",
-      icon: ["q_dark", "q_light"]
-    }
+    // {
+    //   label: "Q&A Section",
+    //   to: "/lecture/QandA",
+    //   icon: ["q_dark", "q_light"]
+    // }
     // {
     //   label: "Start New Lecture",
     //   to: "/lecture/newlecture",
@@ -351,7 +351,7 @@ function App() {
         <Route path="/lecture/newlecture" element={<StartNewLecture theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
         <Route path="/lecture/addlecture" element={<AddLecture theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
         <Route path="/lecture/LectureVideo" element={<LectureVideo theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
-        <Route path="/lecture/QandA" element={<QwestionAndAnswer theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} />
+        {/* <Route path="/lecture/QandA" element={<QwestionAndAnswer theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={lectureSidebar} />} /> */}
 
 
 

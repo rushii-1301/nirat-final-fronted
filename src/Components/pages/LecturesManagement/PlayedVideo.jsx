@@ -289,48 +289,62 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
     };
 
     // Q&A State
-    const [qaItems, setQaItems] = useState([
-        {
-            id: 1,
-            question: "What is AI history ?",
-            answer:
-                "Answer - Reinforcement learning is a branch of machine learning where an agent learns to make decisions by interacting with an environment, receiving rewards or penalties based on its actions, and optimizing its strategy over time.",
-            open: false,
-        },
-        {
-            id: 2,
-            question: "What is AI history ?",
-            answer:
-                "Reinforcement learning is a branch of machine learning where an agent learns to make decisions by interacting with an environment, receiving rewards or penalties based on its actions.",
-            open: false,
-        },
-        {
-            id: 3,
-            question: "What is AI history ?",
-            answer:
-                "Agents learn policies that maximize cumulative reward across episodes.",
-            open: false,
-        },
-        {
-            id: 4,
-            question: "What is AI history ?",
-            answer:
-                "Common algorithms include Q-learning, SARSA, policy gradients, and actor-critic methods.",
-            open: false,
-        },
-        {
-            id: 5,
-            question: "What is AI history ?",
-            answer:
-                "Use cases span robotics, recommender systems, game playing, and operations research.",
-            open: false,
-        },
-    ]);
+    const [qaItems, setQaItems] = useState([]);
+    const [isLoadingQA, setIsLoadingQA] = useState(false);
 
     const toggleQaItem = (id) => {
         setQaItems((prev) =>
-            prev.map((it) => (it.id === id ? { ...it, open: !it.open } : it))
+            prev.map((it) => {
+                // If this is the clicked item, toggle it
+                // If it's any other item, close it
+                if (it.id === id) {
+                    return { ...it, open: !it.open };
+                } else {
+                    return { ...it, open: false };
+                }
+            })
         );
+    };
+
+    // Fetch Q&A data from API
+    const fetchQAData = async (lectureId) => {
+        if (!lectureId) return;
+
+        try {
+            setIsLoadingQA(true);
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+
+            const response = await axios.get(
+                `https://api.edinai.inaiverse.com/lectures/${lectureId}/qa`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data?.status && response.data?.data) {
+                // Map API response to UI format
+                const formattedQA = response.data.data.map(item => ({
+                    id: item.id,
+                    question: item.question,
+                    answer: item.response_text,
+                    open: false,
+                    audio_url: item.audio_url,
+                    language: item.language
+                }));
+
+                setQaItems(formattedQA);
+                console.log("Q&A data fetched successfully:", formattedQA);
+            }
+        } catch (error) {
+            console.error("Failed to fetch Q&A data:", error);
+            // Keep empty array on error
+            setQaItems([]);
+        } finally {
+            setIsLoadingQA(false);
+        }
     };
 
     const location = useLocation();
@@ -364,13 +378,21 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
                     }
                 } catch (error) {
                     console.error("Failed to fetch lecture data:", error);
-                    setSpeechError("Failed to load lecture data");
+                    // Removed setSpeechError as it's not defined
                 }
             }
         };
 
         fetchLectureData();
     }, [location.state?.lecturejson, location.state?.lectureId]);
+
+    // Fetch Q&A data when lectureId is available
+    useEffect(() => {
+        const lectureId = location.state?.lectureId;
+        if (lectureId) {
+            fetchQAData(lectureId);
+        }
+    }, [location.state?.lectureId]);
 
     // Handle viewport resize and orientation changes
     useEffect(() => {
@@ -748,13 +770,13 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
                             <span className={`font-semibold text-base md:text-[17px] ${isDark ? "text-white" : "text-[#696CFF]"}`}>Live Lecture</span>
                         </div>
 
-                        <button
+                        {/* <button
                             onClick={() => setIsShareOpen(true)}
                             className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'bg-white text-black hover:bg-zinc-100' : 'bg-[#696CFF] text-white hover:bg-[#696CFF]/90'} rounded-md transition-all cursor-pointer text-sm font-medium active:scale-95`}
                         >
                             <span>Share With Student</span>
                             <Share2 className="w-4 h-4" />
-                        </button>
+                        </button> */}
                     </div>
                 </div>
 
@@ -1073,38 +1095,48 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
 
                         {/* Q&A List */}
                         <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-3">
-                            {qaItems.map((item) => (
-                                <div key={item.id} className={`rounded mb-2 ${isDark ? "bg-zinc-800" : "bg-zinc-50"} border border-transparent`}>
-                                    <button
-                                        className="cursor-pointer w-full flex items-center justify-between px-3 py-3 text-left"
-                                        onClick={() => toggleQaItem(item.id)}
-                                    >
-                                        <span
-                                            className={`font-inter font-semibold text-[16px] leading-[100%] capitalize ${isDark ? "text-gray-200" : "text-zinc-800"
-                                                }`}
-                                        >
-                                            {item.question}
-                                        </span>
-
-                                        <svg
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 24 24"
-                                            className={`${item.open ? "rotate-180" : ""} transition-transform`}
-                                            fill="none"
-                                        >
-                                            <path d="M6 9l6 6 6-6" stroke={isDark ? "#d4d4d8" : "#3f3f46"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </button>
-                                    {item.open && (
-                                        <div className={`px-3 pb-3`}>
-                                            <div className={`${isDark ? "bg-zinc-800" : "bg-white"} border border-transparent rounded px-3 py-2 text-[15px] ${isDark ? "text-zinc-300" : "text-zinc-700"}`}>
-                                                {item.answer}
-                                            </div>
-                                        </div>
-                                    )}
+                            {isLoadingQA ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#696CFF]"></div>
                                 </div>
-                            ))}
+                            ) : qaItems.length === 0 ? (
+                                <div className={`text-center py-8 px-4 ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>
+                                    <p className="text-sm">No Q&A available for this lecture.</p>
+                                </div>
+                            ) : (
+                                qaItems.map((item) => (
+                                    <div key={item.id} className={`rounded mb-2 ${isDark ? "bg-zinc-800" : "bg-zinc-50"} border border-transparent`}>
+                                        <button
+                                            className="cursor-pointer w-full flex items-center justify-between px-3 py-3 text-left"
+                                            onClick={() => toggleQaItem(item.id)}
+                                        >
+                                            <span
+                                                className={`font-inter font-semibold text-[16px] leading-[100%] ${isDark ? "text-gray-200" : "text-zinc-800"
+                                                    }`}
+                                            >
+                                                {item.question}
+                                            </span>
+
+                                            <svg
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                className={`${item.open ? "rotate-180" : ""} transition-transform shrink-0 ml-2`}
+                                                fill="none"
+                                            >
+                                                <path d="M6 9l6 6 6-6" stroke={isDark ? "#d4d4d8" : "#3f3f46"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </button>
+                                        {item.open && (
+                                            <div className={`px-3 pb-3`}>
+                                                <div className={`${isDark ? "bg-zinc-900" : "bg-white"} border border-transparent rounded px-3 py-2 text-[15px] ${isDark ? "text-zinc-300" : "text-zinc-700"} leading-relaxed`}>
+                                                    {item.answer}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </main>

@@ -289,6 +289,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
     const closeFilterPopupWithReset = async () => {
         await resetFilters();
         closeFilterPopup();
+
     };
 
     // Delete Handlers
@@ -590,6 +591,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                                         <button
                                             type="button"
                                             onClick={async () => {
+                                                setShowFilter(false);
                                                 await resetFilters();
                                                 setOpenFilter(null);
                                             }}

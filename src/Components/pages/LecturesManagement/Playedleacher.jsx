@@ -62,7 +62,7 @@ const LectureCard = ({ lecture, isDark, onShare }) => {
 
 
                     </p>
-                    <img
+                    {/* <img
                         src={isDark ? getAsset('sharearrow_dark') : getAsset('sharearrow_light')}
                         alt="share arrow"
                         className="w-5 h-5 shrink-0 mt-0.5 cursor-pointer"
@@ -70,7 +70,7 @@ const LectureCard = ({ lecture, isDark, onShare }) => {
                             e.stopPropagation();
                             onShare(lecture);
                         }}
-                    />
+                    /> */}
                 </div>
                 <p className={`${isDark ? 'text-white' : 'text-black'} text-xs`}>
                     <span className="font-inter font-bold text-[17px] leading-[100%] tracking-normal capitalize">Subject:- </span>

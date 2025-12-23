@@ -636,8 +636,8 @@ function LectureDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                     },
                                     {
                                         name: "Generate lecture",
-                                        value: dashboardData.qa_sessions,
-                                        
+                                        value: dashboardData.total_lectures,
+
                                     }
                                 ].map((items, i) => (
                                     <div
