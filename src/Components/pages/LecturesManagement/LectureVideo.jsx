@@ -4,10 +4,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { X, ChevronLeft, Pause, Play, MessageCircle, Mic, MicOff, SendHorizontal, Download } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets.js";
-import Avatar from "./components/Avatar";
-import QuestionPopup from "./components/QuestionPopup";
+// import Avatar from "./components/Avatar";
 import Chatbot from "./components/Chatbot";
-import AudioManager from "./components/AudioManager";
+import QuestionPopup from "./components/QuestionPopup";
+import AudioManager from "./components/AudioManager"; // Keeping original import
+import TypingEffect from "./components/TypingEffect";
 
 // STATE MACHINE
 const STATES = {
@@ -34,6 +35,9 @@ function LectureVideo({ theme, isDark }) {
     const [audioContext, setAudioContext] = useState(null);
     const [analyserNode, setAnalyserNode] = useState(null);
     const [currentAudioSource, setCurrentAudioSource] = useState(null);
+    const [playbackProgress, setPlaybackProgress] = useState(0);
+    const [slideDuration, setSlideDuration] = useState(0);
+    const progressFrameRef = useRef(null);
     const audioManagerRef = useRef(null);
 
     // Chat State
@@ -93,6 +97,8 @@ function LectureVideo({ theme, isDark }) {
                         subnarrations: slide.subnarrations || [],
                         narration: slide.narration || "",
                         question: slide.question || "",
+                        content_url: slide.content_url || slide.visual_url || slide.image_url || "",
+                        video_url: slide.video_url || "", // Map video_url from backend
                         isLastSlide: index === (detailRes.data.slides || []).length - 1
                     }));
 
@@ -111,6 +117,45 @@ function LectureVideo({ theme, isDark }) {
 
         fetchLectureData();
     }, [location.state?.lectureId]);
+
+    // Progress Tracking Loop
+    useEffect(() => {
+        let animationFrameId;
+
+        const animateProgress = () => {
+            if (currentState === STATES.SLIDE_PLAYING && slideDuration > 0 && audioManagerRef.current && lectureData[currentSlideIndex]) {
+                const elapsed = audioManagerRef.current.getSlideElapsed();
+
+                // Calculate Total Typing Duration based on char count
+                const slide = lectureData[currentSlideIndex];
+                const titleLen = slide.title?.length || 0;
+                const bulletsLen = slide.bullets.reduce((acc, b) => acc + b.length, 0);
+                const narrationLen = slide.narration?.length || 0;
+                const totalChars = titleLen + bulletsLen + narrationLen;
+
+                // Fixed speed: 40ms per char, min 2s duration
+                const typingDuration = Math.max(2, totalChars * 0.04);
+
+                const prog = Math.min(elapsed / typingDuration, 1);
+                setPlaybackProgress(prog);
+
+                // Continue loop until AUDIO finishes (elapsed < slideDuration)
+                if (elapsed < slideDuration) {
+                    animationFrameId = requestAnimationFrame(animateProgress);
+                } else {
+                    setPlaybackProgress(1); // Ensure final state is 1 on completion
+                }
+            }
+        };
+
+        if (currentState === STATES.SLIDE_PLAYING && slideDuration > 0) {
+            animationFrameId = requestAnimationFrame(animateProgress);
+        }
+
+        return () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
+    }, [currentState, slideDuration, currentSlideIndex, lectureData]);
 
     // Socket.IO Setup
     useEffect(() => {
@@ -142,17 +187,30 @@ function LectureVideo({ theme, isDark }) {
         };
     }, []);
 
-    // Play Slide
+    // Stop Recording (Moved up due to dependency in playSlide)
+    const stopRecording = useCallback(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    }, []);
+
+    // Play Slide (Depends on stopRecording)
     const playSlide = useCallback(async (index) => {
         if (!lectureData[index] || !audioContext) return;
 
         setCurrentSlideIndex(index);
         setCurrentState(STATES.SLIDE_PLAYING);
+        setPlaybackProgress(0); // Reset progress
+        setSlideDuration(0); // Reset duration to prevent flash of content
 
         const slide = lectureData[index];
         if (audioManagerRef.current) {
-            await audioManagerRef.current.playSlideAudio(slide.audio_url, () => {
+            const { duration } = await audioManagerRef.current.playSlideAudio(slide.audio_url, () => {
                 // Slide finished
+                if (progressFrameRef.current) cancelAnimationFrame(progressFrameRef.current);
+                setPlaybackProgress(1); // Ensure it completes visually
+
                 if (!slide.isLastSlide) {
                     setCurrentState(STATES.QUESTION_WAIT);
                     setTimeout(() => {
@@ -162,14 +220,18 @@ function LectureVideo({ theme, isDark }) {
                     setCurrentState(STATES.IDLE);
                     if (isRecording) stopRecording();
                 }
-            });
+            }) || { duration: 0 };
+
+            setSlideDuration(duration || 0);
         }
-    }, [lectureData, audioContext, isRecording]);
+    }, [lectureData, audioContext, isRecording, stopRecording, currentState]);
 
     // Handle Question Response
     const handleQuestionResponse = useCallback((response) => {
+        // 1. Just close the popup
         setIsQuestionPopupOpen(false);
 
+        // 2. Only do something if the answer is YES
         if (response === 'YES') {
             setCurrentState(STATES.CHATBOT_ACTIVE);
             setIsChatOpen(true);
@@ -177,12 +239,23 @@ function LectureVideo({ theme, isDark }) {
                 audioManagerRef.current.pauseSlideAudio();
             }
         } else {
-            // Move to next slide
-            if (currentSlideIndex < lectureData.length - 1) {
-                playSlide(currentSlideIndex + 1);
+            // 3. User said NO or Timeout
+            if (currentState === STATES.SLIDE_PAUSED) {
+                // If we were paused manually, RESUME
+                audioManagerRef.current?.resumeSlideAudio();
+                setCurrentState(STATES.SLIDE_PLAYING);
+            } else {
+                // Normal end-of-slide Question -> Auto-advance to next slide
+                if (currentSlideIndex < lectureData.length - 1) {
+                    playSlide(currentSlideIndex + 1);
+                } else {
+                    // Last slide finished
+                    setCurrentState(STATES.IDLE);
+                    if (isRecording) stopRecording();
+                }
             }
         }
-    }, [currentSlideIndex, lectureData.length, playSlide]);
+    }, [currentState, currentSlideIndex, lectureData.length, playSlide, isRecording, stopRecording]);
 
     // Start Recording
     const startRecording = useCallback(async () => {
@@ -230,14 +303,6 @@ function LectureVideo({ theme, isDark }) {
             handleerror("Failed to start recording");
         }
     }, [audioContext, currentAudioSource, playSlide]);
-
-    // Stop Recording
-    const stopRecording = useCallback(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-        }
-    }, []);
 
     // Download Recording
     const downloadRecording = useCallback(() => {
@@ -294,14 +359,14 @@ function LectureVideo({ theme, isDark }) {
             />
 
             {/* Main Canvas */}
-            <canvas
+            {/* <canvas
                 id="lecture-canvas"
                 className="absolute inset-0 w-full h-full"
                 style={{ display: 'none' }}
-            />
+            /> */}
 
             {/* Top Bar */}
-            <div className="absolute top-0 left-0 right-0 z-30 bg-white border-b border-gray-200">
+            {/* <div className="absolute top-0 left-0 right-0 z-30 bg-white border-b border-gray-200">
                 <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200">
@@ -322,24 +387,27 @@ function LectureVideo({ theme, isDark }) {
                         Download
                     </button>
                 </div>
-            </div>
+            </div> */}
 
             {/* Main Content */}
-            <div className="absolute inset-0 top-20 flex items-center justify-between px-8 py-6">
+            <div className="absolute inset-0 flex flex-col items-center justify-between px-8 py-6">
                 {/* Left: Avatar & Logo */}
-                <div className="w-1/3 h-full flex flex-col items-center justify-center gap-8">
+                <div className="flex flex-col items-center justify-center gap-8">
                     <img src="/inai-logo-light.png" alt="INAI" className="w-32 h-auto" />
-                    <Avatar analyserNode={analyserNode} isPlaying={currentState === STATES.SLIDE_PLAYING || currentState === STATES.CHATBOT_ACTIVE} />
+                    {/* <Avatar analyserNode={analyserNode} isPlaying={currentState === STATES.SLIDE_PLAYING || currentState === STATES.CHATBOT_ACTIVE} /> */}
                 </div>
 
                 {/* Right: Whiteboard */}
-                <div className="w-2/3 h-full flex items-center justify-center relative">
-                    <div className="relative w-full h-full">
-                        <img src="/backgrounds/board.png" alt="Board" className="w-full h-5/6 object-contain" style={{ filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.2))' }} />
+                <div
+                    className="w-full h-full flex flex-1 items-center justify-center relative"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="flex-1 relative w-full h-full">
+                        {/* <img src="/backgrounds/board.png" alt="Board" className="w-full h-5/6 object-contain" style={{ filter: 'drop-shadow(0 8px 30px rgba(0,0,0,0.2))' }} /> */}
 
                         {currentSlide && (
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-4/5 h-4/5 overflow-y-auto p-8">
+                                <div className="w-full h-4/5 overflow-y-auto p-8">
                                     {currentSlide.title && (
                                         <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-gray-800 text-center">
                                             {currentSlide.title}
@@ -348,28 +416,106 @@ function LectureVideo({ theme, isDark }) {
 
                                     {currentSlide.bullets.length > 0 ? (
                                         <ul className="space-y-3">
-                                            {currentSlide.bullets.map((bullet, i) => (
-                                                <li key={i} className="relative pl-6 text-gray-800 text-base">
-                                                    <span className="absolute left-0 text-xl font-bold">•</span>
-                                                    {bullet}
-                                                </li>
-                                            ))}
+                                            {currentSlide.bullets.map((bullet, i) => {
+                                                const totalBullets = currentSlide.bullets.length;
+                                                const step = 1 / totalBullets;
+                                                const start = i * step;
+                                                // Calculate local progress for this specific bullet
+                                                // If global progress is before this bullet, it's 0.
+                                                // If after, it's 1.
+                                                // If inside, it scales 0->1.
+                                                const localProgress = Math.max(0, Math.min(1, (playbackProgress - start) / step));
+
+                                                return (
+                                                    <li key={i} className="relative pl-6 text-gray-800 text-base">
+                                                        <span className="absolute left-0 text-xl font-bold">•</span>
+                                                        <TypingEffect
+                                                            text={bullet}
+                                                            progress={localProgress}
+                                                            isTyping={currentState === STATES.SLIDE_PLAYING && localProgress < 1 && localProgress > 0}
+                                                        />
+                                                    </li>
+                                                );
+                                            })}
                                         </ul>
                                     ) : currentSlide.narration && (
-                                        <p className="text-gray-800 text-base leading-relaxed">{currentSlide.narration}</p>
+                                        <div className="text-gray-800 text-base leading-relaxed">
+                                            <TypingEffect
+                                                text={currentSlide.narration}
+                                                progress={playbackProgress}
+                                                isTyping={currentState === STATES.SLIDE_PLAYING}
+                                            />
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         )}
                     </div>
+                    {currentSlide?.video_url ? (
+                        <div className="flex-1 w-full h-full flex items-center justify-center p-4">
+                            <video
+                                src={currentSlide.video_url}
+                                className="max-w-full max-h-full rounded-lg shadow-lg"
+                                controls
+                                autoPlay
+                                playsInline
+                            >
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    ) : currentSlide?.content_url ? (
+                        <div className="flex-1 w-full h-full flex items-center justify-center p-4">
+                            {/* Check if it's an image based on extension */}
+                            {currentSlide.content_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                                <img
+                                    src={currentSlide.content_url}
+                                    alt="Slide Content"
+                                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                                />
+                            ) : (
+                                /* Fallback for non-image URLs (e.g. YouTube, PDFs) - using iframe */
+                                <iframe
+                                    src={currentSlide.content_url}
+                                    className="w-full h-full border-0 rounded-lg shadow-lg"
+                                    title="Slide Content"
+                                    allowFullScreen
+                                />
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex items-center justify-center text-gray-400 font-medium text-lg italic">
+
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Controls */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50">
                 <button
-                    onClick={() => currentState === STATES.SLIDE_PLAYING ? audioManagerRef.current?.pauseSlideAudio() : playSlide(currentSlideIndex)}
-                    disabled={currentState === STATES.IDLE && lectureData.length === 0}
+                    onClick={() => {
+                        // removed debugger as it is not needed
+                        if (currentState === STATES.SLIDE_PLAYING) {
+                            audioManagerRef.current?.pauseSlideAudio();
+                            setCurrentState(STATES.SLIDE_PAUSED);
+                            setIsQuestionPopupOpen(true);
+                        } else {
+                            // If Slide is Paused -> Resume
+                            if (currentState === STATES.SLIDE_PAUSED) {
+                                audioManagerRef.current?.resumeSlideAudio();
+                                setCurrentState(STATES.SLIDE_PLAYING);
+                            }
+                            // If Slide Finished -> Next
+                            else if (playbackProgress >= 1 && currentSlideIndex < lectureData.length - 1) {
+                                playSlide(currentSlideIndex + 1);
+                            }
+                            // Otherwise -> Start/Replay
+                            else {
+                                playSlide(currentSlideIndex);
+                            }
+                        }
+                    }}
+                    disabled={(currentState === STATES.IDLE && lectureData.length === 0) || (currentState === STATES.SLIDE_PLAYING && slideDuration === 0)}
                     className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-800 border-2 border-gray-900 hover:bg-gray-700 disabled:opacity-50"
                 >
                     {currentState === STATES.SLIDE_PLAYING ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white ml-1" />}
@@ -391,7 +537,7 @@ function LectureVideo({ theme, isDark }) {
 
             {/* Progress */}
             {lectureData.length > 0 && (
-                <div className="absolute top-24 left-0 right-0 px-6 z-20">
+                <div className="absolute bottom-26 left-0 right-0 px-6 z-20">
                     <div className="max-w-2xl mx-auto">
                         <div className="flex justify-between mb-2 text-sm font-semibold text-gray-800">
                             <span>Slide {currentSlideIndex + 1} / {lectureData.length}</span>

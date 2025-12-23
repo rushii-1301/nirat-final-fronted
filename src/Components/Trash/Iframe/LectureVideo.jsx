@@ -15,7 +15,11 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
     const [isRecording, setIsRecording] = useState(false);
     const [recordedBlob, setRecordedBlob] = useState(null);
     const [mediaRecorder, setMediaRecorder] = useState(null);
-    const autoUploadRef = useRef(false); // To track if upload should happen automatically
+
+    // autoUploadRef was unused or causing issues, removing it.
+
+    // Added missing state
+    const [isVoiceProcessing, setIsVoiceProcessing] = useState(false);
     const [viewportDimensions, setViewportDimensions] = useState({
         width: window.innerWidth,
         height: window.innerHeight,
@@ -296,7 +300,8 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
                 } catch (error) {
                     console.error("Failed to fetch lecture data:", error);
                     setPageError("Failed to load lecture data. Please check your connection.");
-                    setSpeechError("Failed to load lecture data");
+                    // setSpeechError was undefined, using console error instead or just relying on pageError
+                    console.error("Failed to load lecture data");
                 } finally {
                     setIsLoading(false);
                 }
@@ -459,7 +464,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
             if (event.data === "LectureCompleted" || event.data?.type === "LectureCompleted") {
                 console.log("Lecture completed received");
                 if (isRecording) {
-                    autoUploadRef.current = true;
+                    // autoUploadRef removed
                     stopRecording();
                 }
             }
@@ -483,29 +488,7 @@ function LectureVideo({ theme, isDark, toggleTheme, sidebardata }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isRecording, mediaRecorder]);
 
-    // Hide cursor when recording - DISABLED to fix UI interaction issues
-    /* 
-    useEffect(() => {
-        let styleElement = null;
- 
-        if (isRecording) {
-            // Create a style element to force cursor hidden on EVERYTHING
-            styleElement = document.createElement('style');
-            styleElement.textContent = `
-                *, *::before, *::after {
-                    cursor: none !important;
-                }
-            `;
-            document.head.appendChild(styleElement);
-        }
- 
-        return () => {
-            if (styleElement) {
-                document.head.removeChild(styleElement);
-            }
-        };
-    }, [isRecording]); 
-    */
+    // Cursor hiding logic removed as it was buggy and commented out
 
 
 

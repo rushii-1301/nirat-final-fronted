@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
 import { getAsset, BACKEND_API_URL, handlesuccess, handleerror } from "../../../utils/assets.js";
-import { ChevronDown, Play, PlusIcon, Share2, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { ChevronDown, Play, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -117,6 +117,9 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
     const [lectureToDelete, setLectureToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // AbortController refs
+    const fetchLecturesAbortController = useRef(null);
+
     const navigate = useNavigate();
     const filterRef = useRef(null);
     const location = useLocation();
@@ -170,39 +173,40 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
         }
     };
 
-    // Get filtered subjects based on selected class
-    const getFilteredSubjects = () => {
+    // Memoized filtered subjects
+    const filteredSubjects = React.useMemo(() => {
         if (!selectedClass) {
-            // No class selected - show all subjects
             const allSubjects = allFilterData.flatMap(item => item.subject || []);
             return [...new Set(allSubjects)]
                 .map(subject => subject.charAt(0).toUpperCase() + subject.slice(1).toLowerCase())
                 .sort();
         } else {
-            // Class selected - show only subjects for that class
             const classData = allFilterData.filter(item => item.std === selectedClass);
             const classSubjects = classData.flatMap(item => item.subject || []);
             return [...new Set(classSubjects)]
                 .map(subject => subject.charAt(0).toUpperCase() + subject.slice(1).toLowerCase())
                 .sort();
         }
-    };
+    }, [selectedClass, allFilterData]);
 
     // Update subjects when class selection changes
     useEffect(() => {
-        if (allFilterData.length > 0) {
-            const filteredSubjects = getFilteredSubjects();
-            setSubjectOptions(filteredSubjects);
+        setSubjectOptions(filteredSubjects);
 
-            // Clear subject selection if it's not available for the selected class
-            if (selectedClass && selectedSubject && !filteredSubjects.includes(selectedSubject)) {
-                setSelectedSubject("");
-            }
+        // Clear subject selection if it's not available for the selected class
+        if (selectedClass && selectedSubject && !filteredSubjects.includes(selectedSubject)) {
+            setSelectedSubject("");
         }
-    }, [selectedClass, allFilterData]);
+    }, [filteredSubjects, selectedClass, selectedSubject]);
 
     // Fetch lectures from API
-    const fetchLectures = async () => {
+    const fetchLectures = async (filters = {}) => {
+        // Cancel previous request if exists
+        if (fetchLecturesAbortController.current) {
+            fetchLecturesAbortController.current.abort();
+        }
+        fetchLecturesAbortController.current = new AbortController();
+
         setIsLoading(true);
         try {
             const token = localStorage.getItem("access_token");
@@ -210,8 +214,12 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
 
             // Build query params based on filters
             const params = new URLSearchParams();
-            if (selectedClass) params.append('std', selectedClass);
-            if (selectedSubject) params.append('subject', selectedSubject.toLowerCase());
+            // Use filters passed in or state (prefer passed in for atomic updates)
+            const activeStd = filters.hasOwnProperty('std') ? filters.std : selectedClass;
+            const activeSub = filters.hasOwnProperty('subject') ? filters.subject : selectedSubject;
+
+            if (activeStd) params.append('std', activeStd);
+            if (activeSub) params.append('subject', activeSub.toLowerCase());
 
             const queryString = params.toString();
             if (queryString) {
@@ -223,6 +231,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                     'Accept': 'application/json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
+                signal: fetchLecturesAbortController.current.signal,
             });
 
             // Handle the response
@@ -235,10 +244,17 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                 setLectureData([]);
             }
         } catch (error) {
-            console.error("Error fetching lectures:", error);
-            setLectureData([]);
+            if (axios.isCancel(error)) {
+                console.log("Fetch aborted");
+            } else {
+                console.error("Error fetching lectures:", error);
+                setLectureData([]);
+            }
         } finally {
-            setIsLoading(false);
+            // Only stop loading if not aborted (because another request might have started)
+            if (fetchLecturesAbortController.current && !fetchLecturesAbortController.current.signal.aborted) {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -246,32 +262,18 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
     useEffect(() => {
         fetchFilters();
         fetchLectures();
+
+        return () => {
+            if (fetchLecturesAbortController.current) {
+                fetchLecturesAbortController.current.abort();
+            }
+        }
     }, []);
 
     const resetFilters = async () => {
         setSelectedClass("");
         setSelectedSubject("");
-
-        setIsLoading(true);
-        try {
-            const token = localStorage.getItem("access_token");
-            const response = await axios.get(`${BACKEND_API_URL}/lectures/`, {
-                headers: {
-                    'Accept': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-            });
-
-            if (response.data?.data?.lectures && Array.isArray(response.data.data.lectures)) {
-                setLectureData(response.data.data.lectures);
-            } else if (response.data && Array.isArray(response.data)) {
-                setLectureData(response.data);
-            }
-        } catch (error) {
-            console.error("Error resetting lectures:", error);
-        } finally {
-            setIsLoading(false);
-        }
+        await fetchLectures({ std: "", subject: "" });
     };
 
     const applyFilters = () => {
@@ -427,7 +429,7 @@ function LectureHome({ theme, isDark, toggleTheme, sidebardata }) {
                         isSearchbar={true}
                         searchValue={searchValue}
                         setSearchValue={setSearchValue}
-                        isBack={isAdminPath ? true : false}
+                        isBack={!!isAdminPath}
                         backValue={isAdminPath ? -1 : 0}
                     />
                 </div>

@@ -457,7 +457,7 @@
     // Initialize TalkingHead with dummy TTS endpoint (we'll use browser SpeechSynthesis instead)
     const head = new TalkingHead(nodeAvatar, {
       ttsEndpoint: "https://texttospeech.googleapis.com/v1beta1/text:synthesize",
-      ttsApikey: "dummy", // Won't be used, but library requires it
+      ttsApikey: "", // Won't be used, but library requires it
       lipsyncModules: ["en", "fi"],
       cameraView: "full"
     });
@@ -653,6 +653,26 @@
       }
     }
 
+    // async function prepareSlideAudio(url, narration, forcePreload = false) {
+    //   console.log(`📥 Preparing audio: ${url}`);
+    //   try {
+    //     const resp = await fetch(url);
+    //     if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+
+    //     const blob = await resp.blob();
+    //     // Force mp3 mime type if missing, critical for Groq
+    //     const mimeType = blob.type && blob.type !== "" ? blob.type : "audio/mpeg";
+    //     const file = new File([blob], "audio.mp3", { type: mimeType });
+
+    //     const ab = await file.arrayBuffer();
+    //     const audioBuffer = await head.audioCtx.decodeAudioData(ab);
+
+    //     // Hardcoded key as per previous fix
+    //     const VITE_GROQ_API_KEY = "";
+
+    //     let words = [], wtimes = [], wdurations = [];
+    //     let gestures = [];
+
     async function prepareSlideAudio(url, narration, forcePreload = false) {
       console.log(`📥 Preparing audio: ${url}`);
       try {
@@ -678,7 +698,10 @@
         if (!VITE_GROQ_API_KEY) {
           console.warn("⚠️ Groq API key not provided. Transcription will fail.");
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> raj_dev
 
         let words = [], wtimes = [], wdurations = [];
         let gestures = [];
@@ -775,6 +798,7 @@
           }
         }
 
+<<<<<<< HEAD
         // if (head.audioCtx.state === 'running') {
         //   try {
         //     await head.audioCtx.suspend();
@@ -783,6 +807,8 @@
         //     console.error('❌ Failed to suspend audio:', e);
         //   }
         // }
+=======
+>>>>>>> raj_dev
 
         const ensureAudioContext = async () => {
           if (head.audioCtx.state !== 'running') {
@@ -864,6 +890,10 @@
         console.error('❌ No slides preloaded!');
         return;
       }
+
+      // Calculate Total Duration
+      const totalDuration = preloadedSlides.reduce((acc, s) => acc + (s.audio ? s.audio.duration : 0), 0);
+      console.log(`⏱️ Total Lecture Duration: ${totalDuration.toFixed(2)}s`);
 
       if (head.audioCtx.state === 'suspended') {
         console.log('🔊 Resuming audio context...');
@@ -981,9 +1011,41 @@
           }
 
           console.log('🎵 Starting audio playback...');
+
+          // Calculate previous duration for progress bar
+          let previousDuration = 0;
+          for (let k = 0; k < currentSlideIndex; k++) {
+            previousDuration += (preloadedSlides[k].audio ? preloadedSlides[k].audio.duration : 0);
+          }
+
+          let slideStartTime = head.audioCtx.currentTime;
+
+          // Start Progress Timer - Increased frequency for accuracy
+          const progressTimer = setInterval(() => {
+            if (currentState === STATE.PLAYING) {
+              // Note: head.isAudioPlaying might glitch, checking state is safer
+              const elapsed = head.audioCtx.currentTime - slideStartTime;
+              const currentTotal = previousDuration + elapsed;
+              const progressPercent = totalDuration > 0 ? Math.min((currentTotal / totalDuration) * 100, 100) : 0;
+
+              // Send progress to parent
+              window.parent.postMessage({
+                type: 'EVT_PROGRESS',
+                progress: progressPercent,
+                currentTime: currentTotal,
+                totalDuration: totalDuration
+              }, '*');
+            }
+          }, 50);
+
           head.speakAudio(slideAudio);
           await waitForAudioEndOrPause();
+
+          clearInterval(progressTimer);
           console.log('✅ Audio playback finished');
+
+          // Send 100% for this slide (or up to next start) to ensure it updates to full if we are at end of lecture
+          // window.parent.postMessage({ type: 'EVT_PROGRESS', ... }) - handled by next loop or end
 
           // Hide whiteboard text when slide ends
           whiteboardText.classList.remove('visible');
@@ -1558,8 +1620,112 @@
 
     // --- Setup ---
 
+    // function setupRecorder() {
+    //   console.log('🎬 Setting up recorder...');
+
+    //   const canvas = document.querySelector('#avatar canvas') || document.querySelector('canvas');
+    //   if (!canvas) {
+    //     console.error('❌ Canvas not found!');
+    //     return;
+    //   }
+
+    //   const videoStream = canvas.captureStream(30);
+    //   const combined = new MediaStream([
+    //     ...videoStream.getVideoTracks(),
+    //     ...audioDest.stream.getAudioTracks()
+    //   ]);
+
+    //   // Try different codecs in order of preference
+    //   const codecOptions = [
+    //     { mimeType: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', ext: 'mp4', name: 'MP4 (H.264)' },
+    //     { mimeType: 'video/webm;codecs=vp9,opus', ext: 'webm', name: 'WebM (VP9)' },
+    //     { mimeType: 'video/webm;codecs=vp8,opus', ext: 'webm', name: 'WebM (VP8)' },
+    //     { mimeType: 'video/webm', ext: 'webm', name: 'WebM (default)' }
+    //   ];
+
+    //   let selectedCodec = null;
+    //   for (const codec of codecOptions) {
+    //     if (MediaRecorder.isTypeSupported(codec.mimeType)) {
+    //       selectedCodec = codec;
+    //       console.log(`✅ Using codec: ${codec.name} (${codec.mimeType})`);
+    //       break;
+    //     }
+    //   }
+
+    //   if (!selectedCodec) {
+    //     console.error('❌ No supported codec found!');
+    //     selectedCodec = { mimeType: '', ext: 'webm', name: 'Browser default' };
+    //   }
+
+    //   try {
+    //     const options = {
+    //       videoBitsPerSecond: 5000000, // 5 Mbps for high quality
+    //       audioBitsPerSecond: 128000   // 128 kbps for audio
+    //     };
+
+    //     if (selectedCodec.mimeType) {
+    //       options.mimeType = selectedCodec.mimeType;
+    //     }
+
+    //     mediaRecorder = new MediaRecorder(combined, options);
+
+    //     mediaRecorder.ondataavailable = e => {
+    //       if (e.data.size > 0) {
+    //         recordedChunks.push(e.data);
+    //         console.log(`📦 Chunk received: ${(e.data.size / 1024 / 1024).toFixed(2)} MB`);
+    //       }
+    //     };
+
+    //     mediaRecorder.onstop = () => {
+    //       console.log(`🎬 Recording stopped. Total chunks: ${recordedChunks.length}`);
+    //       const totalSize = recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0);
+    //       console.log(`📊 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+
+    //       const blob = new Blob(recordedChunks, {
+    //         type: selectedCodec.mimeType || 'video/webm'
+    //       });
+
+    //       recordedChunks = [];
+
+    //       // Send to parent with metadata
+    //       window.parent.postMessage({
+    //         type: 'RECORDING_DATA',
+    //         blob: blob,
+    //         extension: selectedCodec.ext,
+    //         codec: selectedCodec.name,
+    //         size: blob.size
+    //       }, '*');
+
+    //       console.log('✅ Recording sent to parent');
+    //     };
+
+    //     mediaRecorder.onerror = (e) => {
+    //       console.error('❌ MediaRecorder error:', e);
+    //     };
+
+    //     mediaRecorder.onstart = () => {
+    //       console.log('🔴 Recording started');
+    //     };
+
+    //     mediaRecorder.onpause = () => {
+    //       console.log('⏸️  Recording paused');
+    //     };
+
+    //     mediaRecorder.onresume = () => {
+    //       console.log('▶️  Recording resumed');
+    //     };
+
+    //     console.log('✅ Recorder setup complete');
+
+    //   } catch (e) {
+    //     console.error('❌ Failed to create MediaRecorder:', e);
+    //   }
+    // }
+
+
+
     function setupRecorder() {
-      console.log('🎬 Setting up recorder...');
+      console.log('🎬 Setting up recorder (Video Only Mode for Lip-Sync Safety)...');
 
       const canvas = document.querySelector('#avatar canvas') || document.querySelector('canvas');
       if (!canvas) {
@@ -1567,17 +1733,24 @@
         return;
       }
 
+      // Sirf Video Stream lein (Audio hata diya taaki Lip-Sync na tute)
       const videoStream = canvas.captureStream(30);
+
+      // 🟢 CHANGE: Humne audioDest hata diya hai
       const combined = new MediaStream([
+<<<<<<< HEAD
         ...videoStream.getVideoTracks(),
         // ...audioDest.stream.getAudioTracks()
+=======
+        ...videoStream.getVideoTracks()
+        // Audio tracks removed temporarily to fix lip-sync
+>>>>>>> raj_dev
       ]);
 
-      // Try different codecs in order of preference
+      // Codecs logic same rahega
       const codecOptions = [
         { mimeType: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', ext: 'mp4', name: 'MP4 (H.264)' },
         { mimeType: 'video/webm;codecs=vp9,opus', ext: 'webm', name: 'WebM (VP9)' },
-        { mimeType: 'video/webm;codecs=vp8,opus', ext: 'webm', name: 'WebM (VP8)' },
         { mimeType: 'video/webm', ext: 'webm', name: 'WebM (default)' }
       ];
 
@@ -1585,76 +1758,35 @@
       for (const codec of codecOptions) {
         if (MediaRecorder.isTypeSupported(codec.mimeType)) {
           selectedCodec = codec;
-          console.log(`✅ Using codec: ${codec.name} (${codec.mimeType})`);
           break;
         }
       }
 
       if (!selectedCodec) {
-        console.error('❌ No supported codec found!');
         selectedCodec = { mimeType: '', ext: 'webm', name: 'Browser default' };
       }
 
       try {
-        const options = {
-          videoBitsPerSecond: 5000000, // 5 Mbps for high quality
-          audioBitsPerSecond: 128000   // 128 kbps for audio
-        };
-
-        if (selectedCodec.mimeType) {
-          options.mimeType = selectedCodec.mimeType;
-        }
-
-        mediaRecorder = new MediaRecorder(combined, options);
+        mediaRecorder = new MediaRecorder(combined, {
+          mimeType: selectedCodec.mimeType,
+          videoBitsPerSecond: 5000000
+        });
 
         mediaRecorder.ondataavailable = e => {
-          if (e.data.size > 0) {
-            recordedChunks.push(e.data);
-            console.log(`📦 Chunk received: ${(e.data.size / 1024 / 1024).toFixed(2)} MB`);
-          }
+          if (e.data.size > 0) recordedChunks.push(e.data);
         };
 
         mediaRecorder.onstop = () => {
-          console.log(`🎬 Recording stopped. Total chunks: ${recordedChunks.length}`);
-          const totalSize = recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0);
-          console.log(`📊 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
-
-          const blob = new Blob(recordedChunks, {
-            type: selectedCodec.mimeType || 'video/webm'
-          });
-
+          const blob = new Blob(recordedChunks, { type: selectedCodec.mimeType });
           recordedChunks = [];
-
-          // Send to parent with metadata
           window.parent.postMessage({
             type: 'RECORDING_DATA',
             blob: blob,
-            extension: selectedCodec.ext,
-            codec: selectedCodec.name,
-            size: blob.size
+            extension: selectedCodec.ext
           }, '*');
-
-          console.log('✅ Recording sent to parent');
         };
 
-        mediaRecorder.onerror = (e) => {
-          console.error('❌ MediaRecorder error:', e);
-        };
-
-        mediaRecorder.onstart = () => {
-          console.log('🔴 Recording started');
-        };
-
-        mediaRecorder.onpause = () => {
-          console.log('⏸️  Recording paused');
-        };
-
-        mediaRecorder.onresume = () => {
-          console.log('▶️  Recording resumed');
-        };
-
-        console.log('✅ Recorder setup complete');
-
+        console.log('✅ Recorder setup complete (Video Only)');
       } catch (e) {
         console.error('❌ Failed to create MediaRecorder:', e);
       }
@@ -1696,11 +1828,24 @@
   <div id="avatar"></div>
 
   <!-- Whiteboard Board Area -->
-  <div id="whiteboardBoard">
+  <!-- <div id="whiteboardBoard">
     <img src="/backgrounds/board.png" alt="Whiteboard" />
     <div id="whiteboardTextContent"></div>
+  </div> -->
+
+
+  <!-- Slide Progress Bar -->
+  <div id="slideProgressContainer">
+    <div id="slideProgressInfo">
+      <span id="slideProgressText">Slide 1 / 1</span>
+      <span id="slideProgressPercentage">0%</span>
+    </div>
+    <div id="slideProgressBarBg">
+      <div id="slideProgressBarFill" style="width: 0%"></div>
+    </div>
   </div>
 
+<<<<<<< HEAD
   <!-- Slide Progress Bar -->
   <div id="slideProgressContainer">
     <div id="slideProgressInfo">
@@ -1716,6 +1861,8 @@
     <button id="unlockAudio">Start</button>
     <textarea id="json" readonly></textarea>
   </div> -->
+=======
+>>>>>>> raj_dev
   <div id="loading"></div>
 
   <!-- Narration Text Overlay (bottom fallback) -->

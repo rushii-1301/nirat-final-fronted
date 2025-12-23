@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Mic, MicOff, SendHorizontal } from 'lucide-react';
+import { X, Mic, MicOff, SendHorizontal, Bot } from 'lucide-react';
 
 function Chatbot({ messages, onSendMessage, onClose }) {
     const [currentMessage, setCurrentMessage] = useState('');
@@ -95,8 +95,33 @@ function Chatbot({ messages, onSendMessage, onClose }) {
                         )}
 
                         <div className={`px-4 py-2 text-sm max-w-[80%] ${msg.sender === 'system'
-                                ? 'border rounded-2xl rounded-bl-none bg-gray-100 border-gray-200 text-gray-800'
-                                : 'rounded-2xl rounded-br-none font-medium bg-gray-800 text-white'
+                            ? 'border rounded-2xl rounded-bl-none bg-gray-100 border-gray-200 text-gray-800'
+                            : 'rounded-2xl rounded-br-none font-medium bg-gray-800 text-white'
+                            }`}
+                        >
+                            {msg.text}
+                        </div>
+
+                        {msg.sender === 'user' && (
+                            <div className="w-8 h-8 rounded-full shrink-0 bg-gray-400"></div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {/* Input */}
+            <div ref={chatContainerRef} className="p-4 space-y-4 max-h-96 overflow-y-auto flex-1 scrollbar-none">
+                {messages.map((msg) => (
+                    <div key={msg.id} className={`flex items-end gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                        {msg.sender === 'system' && (
+                            <div className="shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                                <Bot size={18} className="text-gray-600" />
+                            </div>
+                        )}
+
+                        <div className={`px-4 py-2 text-sm max-w-[80%] ${msg.sender === 'system'
+                            ? 'border rounded-2xl rounded-bl-none bg-gray-100 border-gray-200 text-gray-800'
+                            : 'rounded-2xl rounded-br-none font-medium bg-gray-800 text-white'
                             }`}>
                             {msg.text}
                         </div>
@@ -114,8 +139,8 @@ function Chatbot({ messages, onSendMessage, onClose }) {
                     <button
                         onClick={handleMicClick}
                         className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition-all ${micStatus === 'listening'
-                                ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-red-500 hover:bg-red-600 animate-pulse text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
                     >
                         {micStatus === 'listening' ? <Mic size={20} /> : <Mic size={20} />}
