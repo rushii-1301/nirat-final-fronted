@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useLocation, useNavigate } from "react-router-dom";
 import { X, ChevronLeft, Pause, Play, MessageCircle, Mic, MicOff, SendHorizontal, Download } from "lucide-react";
@@ -486,7 +487,7 @@ function LectureVideo({ theme, isDark }) {
                         </div>
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-gray-400 font-medium text-lg italic">
-                            No visual content
+
                         </div>
                     )}
                 </div>
