@@ -336,7 +336,7 @@ function App() {
         <Route path="/chapter/Narration" element={<NarrationPage theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/SetChapter" />} />
         <Route path="/chapter/CoverPage" element={<CoverPage theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
         <Route path="/chapter/Notification" element={<Notifications theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
-        <Route path="/lecture-player" element={<LectureVideo theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
+        <Route path="/chapter/lecture-priview" element={<LectureVideo theme={theme} isDark={isDark} toggleTheme={toggleTheme} sidebardata={chapterSidebar} backto="/chapter/Narration" />} />
 
 
 

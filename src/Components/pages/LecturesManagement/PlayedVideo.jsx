@@ -64,7 +64,6 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
     const [skipAccumulator, setSkipAccumulator] = useState(0);
     const skipTimeoutRef = useRef(null);
 
-    const TEMP_VIDEO_URL = "https://edinai-storage.s3.ap-south-1.amazonaws.com/lectures/2/32/592da35f-3615-4c92-ae23-22be02a6b66b.mp4";
 
     // Format duration from seconds to MM:SS
     const formatDuration = (seconds) => {
@@ -807,7 +806,7 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
                                     <video
                                         ref={videoRef}
                                         className="absolute inset-0 w-full h-full object-contain"
-                                        src={TEMP_VIDEO_URL}
+                                        src={location.state?.video_url}
                                         autoPlay={false} // Don't autoplay to avoid noise
                                         controls={false}
                                         playsInline
@@ -828,8 +827,8 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
                                         </div>
                                     )}
 
-                                    {/* Center Controls - YouTube Style */}
-                                    {canPlayVideo && (
+                                    {/* Center Controls - Only show if video can play and no error */}
+                                    {canPlayVideo && !videoError && (
                                         <div className={`absolute inset-0 flex items-center justify-center z-10 pointer-events-none transition-opacity duration-200 ${showControls || showSettings ? 'opacity-100' : 'opacity-0'}`}>
                                             <div className="flex items-center justify-center gap-5 md:gap-7 lg:gap-7 xl:gap-7 pointer-events-auto">
                                                 {/* Skip Backward */}
@@ -877,18 +876,20 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
                                         </div>
                                     )}
 
-                                    {/* Static Title Header Overlay - YouTube Style */}
-                                    <div className={`absolute top-0 left-0 right-0 p-4 md:px-6 md:py-4 z-20 bg-linear-to-b from-black/80 to-transparent transition-opacity duration-300 pointer-events-none ${showControls || showSettings ? 'opacity-100' : 'opacity-0'}`}>
-                                        <h1 className="text-white text-base md:text-[17px] font-bold truncate capitalize shadow-black/50 drop-shadow-md">
-                                            {location.state?.title || "Introduction TO Quantum Physics"}
-                                        </h1>
-                                        <p className="text-zinc-300 text-xs md:text-sm mt-0.5 truncate capitalize shadow-black/50 drop-shadow-md">
-                                            {location.state?.subject || "Dr Evelyn Reed"}
-                                        </p>
-                                    </div>
+                                    {/* Static Title Header Overlay - Only show if no video error */}
+                                    {!videoError && (
+                                        <div className={`absolute top-0 left-0 right-0 p-4 md:px-6 md:py-4 z-20 bg-linear-to-b from-black/80 to-transparent transition-opacity duration-300 pointer-events-none ${showControls || showSettings ? 'opacity-100' : 'opacity-0'}`}>
+                                            <h1 className="text-white text-base md:text-[17px] font-bold truncate capitalize shadow-black/50 drop-shadow-md">
+                                                {location.state?.title || "Introduction TO Quantum Physics"}
+                                            </h1>
+                                            <p className="text-zinc-300 text-xs md:text-sm mt-0.5 truncate capitalize shadow-black/50 drop-shadow-md">
+                                                {location.state?.subject || "Dr Evelyn Reed"}
+                                            </p>
+                                        </div>
+                                    )}
 
-                                    {/* Bottom Controls Overlay */}
-                                    {canPlayVideo && (
+                                    {/* Bottom Controls Overlay - Hide if video error */}
+                                    {canPlayVideo && !videoError && (
                                         <div
                                             className={`absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/90 via-black/60 to-transparent px-4 py-4 pt-12 transition-opacity duration-300 ${showControls || showSettings ? 'opacity-100' : 'opacity-0'}`}
                                             onClick={(e) => e.stopPropagation()} // Prevent closing/toggling

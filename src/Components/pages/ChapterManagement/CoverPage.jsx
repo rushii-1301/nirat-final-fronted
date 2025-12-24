@@ -145,8 +145,10 @@ function CoverPage({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebardat
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    const url = `/lecture-player?lectureId=${location.state.lectureId}`;
-                                                    window.open(url, '_blank');
+                                                    const lectureId = location.state.lectureId;
+
+                                                    // Open in new tab with lectureId in URL
+                                                    window.open(`/chapter/lecture-priview?lectureId=${lectureId}`, '_blank');
                                                 }}
                                                 className={`px-8 py-3 rounded-lg text-sm font-medium cursor-pointer transition-all ${isDark
                                                     ? "bg-[#696CFF] text-white hover:bg-[#5f62e0] hover:shadow-lg"

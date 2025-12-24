@@ -33,7 +33,8 @@ const LectureCard = ({ lecture, isDark, onShare }) => {
                             lecturejson: lecture.lecture_url,
                             lectureId: lecture.lecture_id,
                             subject: lecture.language,
-                            title: lecture.title
+                            title: lecture.title,
+                            video_url: lecture.video_url
                         }
                     })}
                     className="absolute cursor-pointer inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-all duration-200">
