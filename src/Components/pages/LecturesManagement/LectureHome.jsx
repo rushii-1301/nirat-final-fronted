@@ -9,6 +9,9 @@ import axios from "axios";
 // Chapter Card Component
 const ChapterCard = ({ data, isDark, onDelete, onShare }) => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const pathname = location.pathname || "";
+    const isAdminPath = /^\/admin\//i.test(pathname);
     const [showAll, setShowAll] = useState(false);
     const [imgError, setImgError] = useState(false);
     const defaultIcon = isDark ? getAsset("lectureicon_dark") : getAsset("lectureicon_light");
@@ -76,13 +79,15 @@ const ChapterCard = ({ data, isDark, onDelete, onShare }) => {
                         <Share2 fill="currentColor" className="w-4 h-4" />
                     </button> */}
                     {/* Remove Button */}
-                    <button
-                        onClick={() => onDelete(data)}
-                        className={`cursor-pointer w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}
-                    >
-                        <span>Remove</span>
-                        <Trash2 className="w-4 h-4" />
-                    </button>
+                    {!isAdminPath && (
+                        <button
+                            onClick={() => onDelete(data)}
+                            className={`cursor-pointer w-full justify-center px-2 inline-flex items-center gap-2 h-8 text-[13px] md:h-10 md:text-[14px] lg:h-8 lg:text-[13px] rounded-md font-medium transition-colors duration-150 ${isDark ? 'bg-zinc-700 text-white hover:bg-white hover:text-black' : 'bg-zinc-300 hover:bg-[#696CFF] text-zinc-800 hover:text-white'}`}
+                        >
+                            <span>Remove</span>
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
