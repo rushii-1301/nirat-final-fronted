@@ -56,9 +56,11 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                     }
                 );
 
+                // Handle the new API response structure
                 const root = res.data || {};
-                const data = root.data || root;
-                // API response has student_metrics at root.data level based on user JSON
+                const data = root.data || {};
+
+                // API response has student_metrics at root.data level based on new JSON structure
                 const metrics = data.student_metrics || {};
                 const progress = metrics.progress || {};
 

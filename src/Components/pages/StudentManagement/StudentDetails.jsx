@@ -138,22 +138,23 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
     const location = useLocation();
     const navigate = useNavigate();
     const stateFirstName = location.state?.firstName;
-    const stateMiddleName = location.state?.middleName;
     const stateLastName = location.state?.lastName;
     const [activeTab, setActiveTab] = useState("history");
+
     const [selectedTransaction, setSelectedTransaction] = useState(null); // State for Transaction Details modal
     const [selectedLecture, setSelectedLecture] = useState(null); // **NEW State for Lecture Summary modal**
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
 
     // Lecture stats / ratio data (now driven by API summary)
-    const [progressData, setProgressData] = useState({
+    const defaultProgressData = {
         overallProgress: 0,
         totalLectures: 0,
         watchedMinutes: 0,
         totalMinutes: 0,
         completion: 0,
-    });
+    };
+    const [progressData, setProgressData] = useState(defaultProgressData);
 
     // Lecture list data (will be fetched from API)
     const [lectures, setLectures] = useState([]);
@@ -231,6 +232,54 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
         .filter(p => p.status === "Completed")
         .reduce((sum, p) => sum + parseInt(p.amount.replace(/[₹,]/g, "")), 0);
 
+    const fetchLectureWatchRatio = async (enrollmentNumber, std) => {
+        const safeEnrollment = enrollmentNumber ? String(enrollmentNumber) : '';
+        const safeStd = std ?? '';
+
+        if (!safeEnrollment || safeStd === '') {
+            setProgressData(defaultProgressData);
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                setProgressData(defaultProgressData);
+                return;
+            }
+
+            const response = await axios.get(
+                `${BACKEND_API_URL}/school-portal/watched-lectures/ratio?enrollment_number=${encodeURIComponent(safeEnrollment)}&std=${encodeURIComponent(String(safeStd))}`,
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const summary = response.data?.data?.summary;
+            const totalLectures = Number(summary?.total_lectures) || 0;
+            const completionRatio = Number(summary?.completion_ratio) || 0;
+
+            const watchedText = String(summary?.watched_duration_text || '0/0');
+            const match = watchedText.match(/(\d+)\s*\/\s*(\d+)/);
+            const watchedMinutes = match ? Number(match[1]) || 0 : 0;
+            const totalMinutes = match ? Number(match[2]) || 0 : 0;
+
+            setProgressData({
+                overallProgress: completionRatio,
+                totalLectures,
+                watchedMinutes,
+                totalMinutes,
+                completion: completionRatio,
+            });
+        } catch (error) {
+            console.error('Failed to fetch lecture watch ratio:', error);
+            setProgressData(defaultProgressData);
+        }
+    };
+
     const fetchWatchedLectures = async (enrollmentNumber) => {
         setLecturesLoading(true);
         setLecturesError(null);
@@ -256,39 +305,25 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             if (response.data?.status && response.data?.data?.lectures) {
                 const lectures = response.data.data.lectures;
 
-                // Update progress data with API summary
-                setProgressData({
-                    overallProgress: lectures.length > 0 ? Math.round((lectures.reduce((acc, lec) => {
-                        const [watched, total] = lec.progress.split('/').map(s => parseInt(s) || 0);
-                        return acc + (watched / total) * 100;
-                    }, 0) / lectures.length)) : 0,
-                    totalLectures: lectures.length,
-                    watchedMinutes: lectures.reduce((acc, lec) => {
-                        const [watched] = lec.progress.split('/').map(s => parseInt(s) || 0);
-                        return acc + watched;
-                    }, 0),
-                    totalMinutes: lectures.reduce((acc, lec) => {
-                        const [, total] = lec.progress.split('/').map(s => parseInt(s) || 0);
-                        return acc + total;
-                    }, 0),
-                    completion: lectures.length,
-                });
-
                 // Format the watched lectures data
                 const formattedLectures = lectures.map(lecture => {
-                    const [watched, total] = lecture.progress.split('/').map(s => parseInt(s) || 0);
+                    const progressText = String(lecture.progress || '0/0 Min');
+                    const match = progressText.match(/(\d+)\s*\/\s*(\d+)/);
+                    const watched = match ? Number(match[1]) || 0 : 0;
+                    const total = match ? Number(match[2]) || 0 : 0;
                     const progressPercentage = total > 0 ? Math.round((watched / total) * 100) : 0;
                     
                     return {
-                        id: lecture.lecture_title,
-                        title: lecture.lecture_title,
-                        subject: lecture.subject,
-                        chapter: lecture.chapter,
+                        id: lecture.lecture_title || `${lecture.subject || 'lecture'}-${lecture.watched_date || ''}`,
+                        title: lecture.lecture_title || '-',
+                        subject: lecture.subject || '-',
+                        chapter: lecture.chapter || '-',
                         progress: `${progressPercentage}%`,
-                        date: lecture.watched_date,
+                        progressText,
+                        date: lecture.watched_date || '-',
                         watchDuration: watched,
                         totalDuration: total,
-                        summary: lecture.summary,
+                        summary: lecture.summary || '-',
                     };
                 });
 
@@ -336,8 +371,11 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                     setStudent({
                         name: `${stateFirstName || foundStudent.roster_first_name || ''} ${stateLastName || foundStudent.roster_last_name || ''}`.replace(/\s+/g, ' ').trim() || foundStudent.enrollment_number || 'Unknown',
                         enrollment: foundStudent.enrollment_number,
-                        class: `${foundStudent.std || ''} - Division ${foundStudent.roster_division || ''}`
+                        class: `${foundStudent.std || ''} - Division ${foundStudent.roster_division || ''}`,
+                        std: foundStudent.std,
                     });
+
+                    fetchLectureWatchRatio(foundStudent.enrollment_number, foundStudent.std);
                 } else {
                     handleerror('Student not found');
                     navigate('/Student/StudentsList');
@@ -614,7 +652,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                                     ></div>
                                                                 </div>
                                                                 <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-zinc-500'}`}>
-                                                                    {lec.watchDuration}/{lec.totalDuration} Min
+                                                                    {lec.progressText || `${lec.watchDuration}/${lec.totalDuration} Min`}
                                                                 </span>
                                                             </div>
                                                         </td>
