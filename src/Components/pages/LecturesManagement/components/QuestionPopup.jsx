@@ -1,16 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, SendHorizontal } from 'lucide-react';
 
 function QuestionPopup({ isOpen, onResponse, onClose }) {
     const [transcript, setTranscript] = useState('');
     const [timeLeft, setTimeLeft] = useState(15);
+    const [hasDetectedQuestion, setHasDetectedQuestion] = useState(false);
     const recognitionRef = useRef(null);
     const timerRef = useRef(null);
+
+    // ✅ Helper: Send the question text to chatbot
+    const sendQuestionToChat = () => {
+        if (transcript && transcript.trim()) {
+            // Stop recognition and timer first
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch (e) { }
+            }
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+            // ✅ Send the actual question text
+            onResponse(transcript.trim());
+        }
+    };
 
     useEffect(() => {
         if (!isOpen) {
             setTranscript('');
             setTimeLeft(15);
+            setHasDetectedQuestion(false);
             if (recognitionRef.current) {
                 try {
                     recognitionRef.current.stop();
@@ -42,10 +59,30 @@ function QuestionPopup({ isOpen, onResponse, onClose }) {
                     const yesKeywords = ["yes", "ha", "haan", "haa", "yeah", "yep", "hmm"];
                     const noKeywords = ["no", "nahi", "na", "next", "nope"];
 
-                    if (yesKeywords.some(kw => text.includes(kw))) {
+                    // Check if it's just a Yes/No response
+                    const isYesResponse = yesKeywords.some(kw => text === kw || text.startsWith(kw + " ") || text.endsWith(" " + kw));
+                    const isNoResponse = noKeywords.some(kw => text === kw || text.startsWith(kw + " ") || text.endsWith(" " + kw));
+
+                    if (isYesResponse && text.length < 10) {
+                        // Short "yes" type response - open chatbot
                         onResponse('YES');
-                    } else if (noKeywords.some(kw => text.includes(kw))) {
+                    } else if (isNoResponse && text.length < 10) {
+                        // Short "no" type response - continue lecture
                         onResponse('NO');
+                    } else if (text.length > 2) {
+                        // ✅ FIX: User is asking an actual question (relaxed length check)
+                        setHasDetectedQuestion(true);
+
+                        // Auto-send after 2 seconds of silence
+                        setTimeout(() => {
+                            if (recognitionRef.current) {
+                                try { recognitionRef.current.stop(); } catch (e) { }
+                            }
+                            if (timerRef.current) {
+                                clearInterval(timerRef.current);
+                            }
+                            onResponse(text);
+                        }, 1500);
                     }
                 }
             };
@@ -100,7 +137,7 @@ function QuestionPopup({ isOpen, onResponse, onClose }) {
 
                 <div className="mb-6">
                     <div className="flex items-center justify-center mb-4">
-                        <div className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center animate-pulse">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center animate-pulse ${hasDetectedQuestion ? 'bg-green-500' : 'bg-red-500'}`}>
                             <div className="w-4 h-4 rounded-full bg-white"></div>
                         </div>
                     </div>
@@ -108,11 +145,23 @@ function QuestionPopup({ isOpen, onResponse, onClose }) {
                     {transcript && (
                         <div className="p-4 bg-gray-100 rounded-lg mb-4">
                             <p className="text-gray-800 text-center">{transcript}</p>
+                            {/* ✅ Manual Send Button */}
+                            {/* {hasDetectedQuestion && (
+                                <button
+                                    onClick={sendQuestionToChat}
+                                    className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors"
+                                >
+                                    <span>Send Question</span>
+                                    <SendHorizontal size={18} />
+                                </button>
+                            )} */}
                         </div>
                     )}
 
                     <p className="text-center text-gray-600 text-sm">
-                        Say "Yes" or "No" • Time remaining: {timeLeft}s
+                        {hasDetectedQuestion
+                            ? 'Sending your question...'
+                            : `Say "Yes" or "No" or ask your question • Time: ${timeLeft}s`}
                     </p>
                 </div>
 
