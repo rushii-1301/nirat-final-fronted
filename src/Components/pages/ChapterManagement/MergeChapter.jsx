@@ -203,7 +203,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
         {/* Header */}
         <div className="sticky top-0 z-20">
           <Header
-            title="Add Chapter Management"
+            title="Add Topics Management"
             isDark={isDark}
             toggleTheme={toggleTheme}
           />
@@ -278,9 +278,9 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                     }`}
                 >
                   <div className="mb-2">
-                    <h2 className="text-lg sm:text-xl font-semibold">Merge Chapter</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold">Merge Topics</h2>
                     <p className="mt-1 text-xs sm:text-sm text-gray-400">
-                      Select Chapters From Multiple Chapters To Merge Into A Complete Lecture
+                      Select Topics From Multiple Topics To Merge Into A Complete Lecture
                     </p>
                   </div>
 
@@ -304,7 +304,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                               {book.title}
                             </h3>
                             <p className="mt-1 text-[11px] sm:text-xs text-gray-400">
-                              {book.chapters.length} chapters
+                              {book.chapters.length} Topics
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -447,7 +447,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                   <div className="mb-4">
                     <h2 className="text-base sm:text-lg font-semibold">Merged Lecture</h2>
                     <p className="mt-1 text-xs sm:text-sm text-gray-400">
-                      {confirmedChapters.length} chapter(s) selected
+                      {confirmedChapters.length} Topic(s) selected
                     </p>
                   </div>
 
@@ -459,12 +459,12 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                       className={`text-xs sm:text-sm ${isDark ? "text-gray-300" : "text-[#585a88]"
                         }`}
                     >
-                      Select chapters from different chapters to create a comprehensive lecture
+                      Select Topics from different Topics to create a comprehensive lecture
                     </p>
                   </div>
 
                   <div className="mb-5 space-y-2">
-                    <p className="text-xs sm:text-sm text-gray-400">Selected Chapters:</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Selected Topics:</p>
                     {confirmedChapters.length === 0 ? (
                       <div
                         className={`rounded-lg border px-3 py-2 text-xs sm:text-sm ${isDark
@@ -472,7 +472,7 @@ function MergeChapter({ theme = "dark", isDark: isDarkProp, toggleTheme, sidebar
                           : "border-[#e4e2f6] bg-white text-[#7a7cb0]"
                           }`}
                       >
-                        No chapters selected yet
+                        No Topics selected yet
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-[35vh] overflow-y-scroll no-scrollbar">

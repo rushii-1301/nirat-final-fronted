@@ -1,16 +1,16 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { io } from "socket.io-client";
 import { useLocation, useNavigate } from "react-router-dom";
 import { X, ChevronLeft, Pause, Play, MessageCircle, Mic, MicOff, SendHorizontal, Download } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets.js";
-// import Avatar from "./components/Avatar";
 import Chatbot from "./components/Chatbot";
 import QuestionPopup from "./components/QuestionPopup";
 import AudioManager from "./components/AudioManager";
 import TypingEffect from "./components/TypingEffect";
+import useRecorder from "./components/useRecorder";
 
-// :white_check_mark: FIX 1: Move Local Image Loading OUTSIDE the component
+// ✅ FIX 1: Move Local Image Loading OUTSIDE the component
 const localSlideImages = import.meta.glob('../../../assets/Slide*.*', { eager: true });
 const localImagesMap = {};
 
@@ -28,8 +28,7 @@ const STATES = {
     SLIDE_PLAYING: 'SLIDE_PLAYING',
     SLIDE_PAUSED: 'SLIDE_PAUSED',
     QUESTION_WAIT: 'QUESTION_WAIT',
-    CHATBOT_ACTIVE: 'CHATBOT_ACTIVE',
-    RECORDING_ACTIVE: 'RECORDING_ACTIVE'
+    CHATBOT_ACTIVE: 'CHATBOT_ACTIVE'
 };
 
 function LectureVideo({ theme, isDark }) {
@@ -42,6 +41,7 @@ function LectureVideo({ theme, isDark }) {
     const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [pageError, setPageError] = useState(null);
+    const [lectureId, setLectureId] = useState(null);
 
     // Audio State
     const [audioContext, setAudioContext] = useState(null);
@@ -60,15 +60,26 @@ function LectureVideo({ theme, isDark }) {
     const [messages, setMessages] = useState([{ id: 1, text: "Hi, Welcome To Class", sender: "system" }]);
     const socketRef = useRef(null);
 
-    // Recording State
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordedBlob, setRecordedBlob] = useState(null);
-    const mediaRecorderRef = useRef(null);
-    const recordedChunksRef = useRef([]);
+    // Recording Hook
+    const {
+        isRecording,
+        isPaused: isRecordingPaused,
+        hasRecordingData,
+        isConverting,
+        startRecording,
+        pauseRecording,
+        resumeRecording,
+        stopRecording,
+        downloadRecording,
+        cleanup: cleanupRecording
+    } = useRecorder(audioContext);
 
     // Question Popup State
     const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
     const popupTimeoutRef = useRef(null);
+
+    // Track if recording has ever been started (for download button visibility)
+    const [recordingEverStarted, setRecordingEverStarted] = useState(false);
 
     // Initialize Audio Context
     useEffect(() => {
@@ -83,20 +94,30 @@ function LectureVideo({ theme, isDark }) {
                 ctx.close();
             }
             if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
+            cleanupRecording();
         };
     }, []);
+
+    // Get lectureId from URL params or location.state
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const idFromUrl = urlParams.get('lectureId');
+        const idFromState = location.state?.lectureId;
+
+        const resolvedId = idFromUrl || idFromState;
+        setLectureId(resolvedId);
+    }, [location.state?.lectureId]);
 
     // Fetch Lecture Data
     useEffect(() => {
         const fetchLectureData = async () => {
-            setIsLoading(true);
-            const lectureId = location.state?.lectureId;
-
             if (!lectureId) {
                 setPageError("Missing Lecture Information");
                 setIsLoading(false);
                 return;
             }
+
+            setIsLoading(true);
 
             try {
                 const token = localStorage.getItem("access_token") || localStorage.getItem("token");
@@ -132,8 +153,10 @@ function LectureVideo({ theme, isDark }) {
             }
         };
 
-        fetchLectureData();
-    }, [location.state?.lectureId]);
+        if (lectureId) {
+            fetchLectureData();
+        }
+    }, [lectureId]);
 
     // Progress Tracking Loop
     useEffect(() => {
@@ -199,13 +222,15 @@ function LectureVideo({ theme, isDark }) {
         };
     }, []);
 
-    // Stop Recording
-    const stopRecording = useCallback(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-        }
-    }, []);
+    // Helper functions for recorder
+    const getSlideData = useCallback(() => lectureData[currentSlideIndex], [lectureData, currentSlideIndex]);
+    const getLogoSrc = useCallback(() => '/inai-logo-light.png', []);
+    const getSlideImageSrc = useCallback(() => {
+        const slide = lectureData[currentSlideIndex];
+        return localImagesMap[currentSlideIndex + 1] || slide?.content_url || null;
+    }, [lectureData, currentSlideIndex]);
+    const getVideoElement = useCallback(() => videoRef.current, []);
+    const getProgress = useCallback(() => playbackProgress, [playbackProgress]);
 
     // Play Slide
     const playSlide = useCallback(async (index) => {
@@ -221,6 +246,11 @@ function LectureVideo({ theme, isDark }) {
         setCurrentState(STATES.SLIDE_PLAYING);
         setPlaybackProgress(0);
         setSlideDuration(0);
+
+        // Resume recording if it was paused
+        if (isRecording && isRecordingPaused) {
+            resumeRecording(getSlideData, getLogoSrc, getSlideImageSrc, getVideoElement, getProgress);
+        }
 
         const slide = lectureData[index];
         if (audioManagerRef.current) {
@@ -241,35 +271,12 @@ function LectureVideo({ theme, isDark }) {
 
             setSlideDuration(duration || 0);
         }
-    }, [lectureData, audioContext, isRecording, stopRecording, currentState]);
+    }, [lectureData, audioContext, isRecording, isRecordingPaused, stopRecording, resumeRecording, getSlideData, getLogoSrc, getSlideImageSrc, getVideoElement, getProgress]);
 
-
-    // ---------------------------------------------------------
-    // :white_check_mark: NEW HELPER FUNCTION: Handle Send Message (Unified Logic)
-    // ---------------------------------------------------------
-    const handleSendMessage = useCallback((text) => {
-        if (!text || typeof text !== 'string' || !text.trim()) return;
-
-        // 1. UI update: Add user message
-        setMessages(prev => [...prev, { id: Date.now(), text, sender: "user" }]);
-
-        // 2. Send to Backend via Socket
-        if (socketRef.current?.connected) {
-            socketRef.current.emit("lecture:chat", {
-                lecture_id: location.state?.lectureId?.toString(),
-                question: text
-            });
-        }
-    }, [location.state?.lectureId]);
-
-
-    // ---------------------------------------------------------
-    // :white_check_mark: UPDATED LOGIC: Handle Question Response
-    // ---------------------------------------------------------
+    // Handle Question Response
     const handleQuestionResponse = useCallback((response) => {
         setIsQuestionPopupOpen(false);
 
-        // Agar user ne 'NO' select kiya ya close kiya
         if (response === 'NO') {
             if (currentState === STATES.SLIDE_PAUSED) {
                 audioManagerRef.current?.resumeSlideAudio();
@@ -283,84 +290,185 @@ function LectureVideo({ theme, isDark }) {
                 }
             }
         } else {
-            // :white_check_mark: SCENARIO: User sends a question (response holds the text or 'YES')
             setCurrentState(STATES.CHATBOT_ACTIVE);
             setIsChatOpen(true);
             if (audioManagerRef.current) {
                 audioManagerRef.current.pauseSlideAudio();
             }
+            // Pause recording when chatbot opens
+            if (isRecording && !isRecordingPaused) {
+                pauseRecording();
+            }
 
-            // Agar response ek proper question text hai (sirf 'YES' nahi), toh use chat me bhejo
-            // Using the common handleSendMessage function
             if (response && response !== 'YES' && typeof response === 'string') {
-                handleSendMessage(response);
-            }
-        }
-    }, [currentState, currentSlideIndex, lectureData.length, playSlide, isRecording, stopRecording, handleSendMessage]);
+                const questionText = response;
+                setMessages(prev => [...prev, { id: Date.now(), text: questionText, sender: "user" }]);
 
-    // Start Recording
-    const startRecording = useCallback(async () => {
-        try {
-            const canvas = document.getElementById('lecture-canvas');
-            if (!canvas) {
-                handleerror("Canvas element not found");
-                return;
-            }
-            const canvasStream = canvas.captureStream(30);
-
-            const audioDestination = audioContext.createMediaStreamDestination();
-            if (currentAudioSource) {
-                currentAudioSource.connect(audioDestination);
-            }
-
-            const combinedStream = new MediaStream([
-                ...canvasStream.getVideoTracks(),
-                ...audioDestination.stream.getAudioTracks()
-            ]);
-
-            const recorder = new MediaRecorder(combinedStream, {
-                mimeType: 'video/webm;codecs=vp9,opus',
-                videoBitsPerSecond: 2500000
-            });
-
-            recorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    recordedChunksRef.current.push(e.data);
+                if (socketRef.current?.connected) {
+                    socketRef.current.emit("lecture:chat", {
+                        lecture_id: lectureId?.toString(),
+                        question: questionText
+                    });
                 }
-            };
-
-            recorder.onstop = () => {
-                const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-                setRecordedBlob(blob);
-                recordedChunksRef.current = [];
-            };
-
-            recorder.start(1000);
-            mediaRecorderRef.current = recorder;
-            setIsRecording(true);
-            setCurrentState(STATES.RECORDING_ACTIVE);
-
-            playSlide(0);
-        } catch (error) {
-            console.error("Recording failed:", error);
-            handleerror("Failed to start recording");
+            }
         }
-    }, [audioContext, currentAudioSource, playSlide]);
+    }, [currentState, currentSlideIndex, lectureData.length, playSlide, isRecording, isRecordingPaused, stopRecording, pauseRecording, lectureId]);
 
-    // Download Recording
-    const downloadRecording = useCallback(() => {
-        if (!recordedBlob) return;
+    // Handle Play/Pause Button
+    const handlePlayPause = useCallback(async () => {
+        if (currentState === STATES.SLIDE_PLAYING) {
+            // PAUSE
+            audioManagerRef.current?.pauseSlideAudio();
+            setCurrentState(STATES.SLIDE_PAUSED);
 
-        const url = URL.createObjectURL(recordedBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `lecture-${Date.now()}.webm`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        handlesuccess("Recording downloaded!");
-    }, [recordedBlob]);
+            // Pause recording
+            if (isRecording && !isRecordingPaused) {
+                pauseRecording();
+            }
+        } else if (currentState === STATES.SLIDE_PAUSED) {
+            // RESUME
+            audioManagerRef.current?.resumeSlideAudio();
+            setCurrentState(STATES.SLIDE_PLAYING);
+
+            // Resume recording
+            if (isRecording && isRecordingPaused) {
+                resumeRecording(getSlideData, getLogoSrc, getSlideImageSrc, getVideoElement, getProgress);
+            }
+
+            setIsQuestionPopupOpen(false);
+        } else if (currentState === STATES.IDLE || currentState === STATES.QUESTION_WAIT) {
+            // START or NEXT SLIDE
+            if (!isRecording && currentSlideIndex === 0 && playbackProgress === 0) {
+                // First play - start recording
+                setRecordingEverStarted(true);
+                const success = await startRecording(
+                    getSlideData,
+                    getLogoSrc,
+                    getSlideImageSrc,
+                    getVideoElement,
+                    getProgress,
+                    audioManagerRef
+                );
+                if (success) {
+                    playSlide(0);
+                }
+            } else if (playbackProgress >= 1 && currentSlideIndex < lectureData.length - 1) {
+                playSlide(currentSlideIndex + 1);
+            } else {
+                playSlide(currentSlideIndex);
+            }
+        }
+    }, [currentState, isRecording, isRecordingPaused, currentSlideIndex, playbackProgress, lectureData.length,
+        pauseRecording, resumeRecording, startRecording, playSlide,
+        getSlideData, getLogoSrc, getSlideImageSrc, getVideoElement, getProgress]);
+
+    // Handle Chat Open
+    const handleChatOpen = useCallback(() => {
+        setIsChatOpen(true);
+
+        // Pause lecture audio
+        if (currentState === STATES.SLIDE_PLAYING) {
+            audioManagerRef.current?.pauseSlideAudio();
+            setCurrentState(STATES.CHATBOT_ACTIVE);
+        }
+
+        // Pause recording
+        if (isRecording && !isRecordingPaused) {
+            pauseRecording();
+        }
+    }, [currentState, isRecording, isRecordingPaused, pauseRecording]);
+
+    // Handle Chat Close
+    const handleChatClose = useCallback(() => {
+        setIsChatOpen(false);
+        // Keep lecture paused - user must manually resume
+        if (currentState === STATES.CHATBOT_ACTIVE) {
+            setCurrentState(STATES.SLIDE_PAUSED);
+        }
+        // Recording stays paused until lecture resumes
+    }, [currentState]);
+
+    // Handle Download
+    const handleDownload = useCallback(async () => {
+        if (!hasRecordingData) {
+            handleerror("No recording data available");
+            return;
+        }
+
+        if (isConverting) {
+            handleerror("Already preparing download, please wait...");
+            return;
+        }
+
+        handlesuccess("Preparing recording for download...");
+        const success = await downloadRecording();
+        if (success) {
+            handlesuccess("Recording downloaded successfully!");
+        } else {
+            handleerror("Failed to download recording");
+        }
+    }, [hasRecordingData, downloadRecording, isConverting]);
+
+    // Download button state
+    const downloadButtonState = useMemo(() => {
+        // Button is always visible after recording starts, but enabled/disabled based on state
+        if (!recordingEverStarted && !hasRecordingData) {
+            return {
+                visible: false,
+                enabled: false,
+                color: 'bg-gray-300',
+                textColor: 'text-gray-500',
+                cursor: 'cursor-not-allowed',
+                tooltip: 'No recording'
+            };
+        }
+
+        // Converting to MP4
+        if (isConverting) {
+            return {
+                visible: true,
+                enabled: false,
+                color: 'bg-yellow-500',
+                textColor: 'text-white',
+                cursor: 'cursor-wait',
+                tooltip: 'Converting to MP4...'
+            };
+        }
+
+        // Recording active (not paused) - show but disable
+        if (isRecording && !isRecordingPaused) {
+            return {
+                visible: true,
+                enabled: false,
+                color: 'bg-gray-400',
+                textColor: 'text-gray-200',
+                cursor: 'cursor-not-allowed',
+                tooltip: 'Recording in progress...'
+            };
+        }
+
+        // Paused with data - enabled
+        if (hasRecordingData) {
+            return {
+                visible: true,
+                enabled: true,
+                color: 'bg-green-500 hover:bg-green-600',
+                textColor: 'text-white',
+                cursor: 'cursor-pointer',
+                tooltip: 'Download Recording'
+            };
+        }
+
+        // Default disabled state
+        return {
+            visible: true,
+            enabled: false,
+            color: 'bg-gray-300',
+            textColor: 'text-gray-500',
+            cursor: 'cursor-not-allowed',
+            tooltip: 'Waiting...'
+        };
+    }, [recordingEverStarted, isRecording, isRecordingPaused, hasRecordingData, isConverting]);
 
     const currentSlide = lectureData[currentSlideIndex];
 
@@ -402,7 +510,9 @@ function LectureVideo({ theme, isDark }) {
                 onAudioSourceChange={setCurrentAudioSource}
             />
 
-            {/* Main Content */}
+            {/* ============================================ */}
+            {/* MAIN LECTURE CONTENT - RECORDABLE AREA      */}
+            {/* ============================================ */}
             <div className="absolute inset-0 flex flex-col items-center justify-between px-8 py-6">
                 {/* Left: Avatar & Logo */}
                 <div className="flex flex-col items-center justify-center gap-8">
@@ -497,54 +607,50 @@ function LectureVideo({ theme, isDark }) {
                 </div>
             </div>
 
-            {/* Controls */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50">
+            {/* ============================================ */}
+            {/* CONTROLS - NEVER RECORDED                   */}
+            {/* ============================================ */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-50">
+                {/* Play/Pause Button */}
                 <button
-                    onClick={() => {
-                        // Case 1: Agar chal raha hai to pause karo
-                        if (currentState === STATES.SLIDE_PLAYING) {
-                            audioManagerRef.current?.pauseSlideAudio();
-                            setCurrentState(STATES.SLIDE_PAUSED);
-                            setIsQuestionPopupOpen(true);
-                        }
-                        else {
-                            // Case 2 (FIXED): Agar Paused hai YA Chatbot Active hai, to wahin se RESUME karo
-                            if (currentState === STATES.SLIDE_PAUSED || currentState === STATES.CHATBOT_ACTIVE) {
-                                audioManagerRef.current?.resumeSlideAudio();
-                                setCurrentState(STATES.SLIDE_PLAYING);
-                                setIsQuestionPopupOpen(false);
-                            }
-                            // Case 3: Agar slide khatam ho gayi hai aur next slide hai
-                            else if (playbackProgress >= 1 && currentSlideIndex < lectureData.length - 1) {
-                                playSlide(currentSlideIndex + 1);
-                            }
-                            // Case 4: Agar bilkul shuru se chalana hai (Restart)
-                            else {
-                                playSlide(currentSlideIndex);
-                            }
-                        }
-                    }}
-                    disabled={(currentState === STATES.IDLE && lectureData.length === 0) || (currentState === STATES.SLIDE_PLAYING && slideDuration === 0)}
-                    className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-800 border-2 border-gray-900 hover:bg-gray-700 disabled:opacity-50"
+                    onClick={handlePlayPause}
+                    disabled={lectureData.length === 0}
+                    className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-800 border-2 border-gray-900 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
-                    {currentState === STATES.SLIDE_PLAYING ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white ml-1" />}
+                    {currentState === STATES.SLIDE_PLAYING ? (
+                        <Pause className="w-6 h-6 text-white" />
+                    ) : (
+                        <Play className="w-6 h-6 text-white ml-1" />
+                    )}
                 </button>
 
+                {/* Chat Button */}
                 <button
-                    onClick={() => setIsChatOpen(!isChatOpen)}
-                    className={`w-16 h-16 flex items-center justify-center rounded-full border-2 ${isChatOpen ? 'bg-gray-800 border-gray-900' : 'bg-white border-gray-800'}`}
+                    onClick={isChatOpen ? handleChatClose : handleChatOpen}
+                    disabled={lectureData.length === 0}
+                    className={`w-16 h-16 flex items-center justify-center rounded-full border-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isChatOpen ? 'bg-gray-800 border-gray-900' : 'bg-white border-gray-800'}`}
                 >
                     <MessageCircle className={`w-6 h-6 ${isChatOpen ? 'text-white' : 'text-gray-800'}`} />
                 </button>
 
-                {!isRecording && currentState === STATES.IDLE && (
-                    <button onClick={startRecording} className="px-6 py-3 bg-red-500 text-white rounded-full font-semibold hover:bg-red-600">
-                        Start Recording
+                {/* Download Button - Next to Chat */}
+                {downloadButtonState.visible && (
+                    <button
+                        onClick={handleDownload}
+                        disabled={!downloadButtonState.enabled || isConverting}
+                        className={`w-16 h-16 flex items-center justify-center rounded-full border-2 border-gray-300 transition-all ${downloadButtonState.color} ${downloadButtonState.cursor}`}
+                        title={downloadButtonState.tooltip}
+                    >
+                        {isConverting ? (
+                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <Download className={`w-6 h-6 ${downloadButtonState.textColor}`} />
+                        )}
                     </button>
                 )}
             </div>
 
-            {/* Progress */}
+            {/* Progress Bar - NEVER RECORDED */}
             {lectureData.length > 0 && (
                 <div className="absolute bottom-26 left-0 right-0 px-6 z-20">
                     <div className="max-w-2xl mx-auto">
@@ -559,27 +665,37 @@ function LectureVideo({ theme, isDark }) {
                 </div>
             )}
 
-            {/* Question Popup */}
+            {/* Recording Indicator */}
+            {isRecording && (
+                <div className="absolute top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 bg-red-500 rounded-full shadow-lg">
+                    <div className={`w-3 h-3 rounded-full bg-white ${isRecordingPaused ? '' : 'animate-pulse'}`} />
+                    <span className="text-white text-sm font-semibold">
+                        {isRecordingPaused ? 'REC PAUSED' : 'REC'}
+                    </span>
+                </div>
+            )}
+
+            {/* Question Popup - NEVER RECORDED */}
             <QuestionPopup
                 isOpen={isQuestionPopupOpen}
                 onResponse={handleQuestionResponse}
                 onClose={() => handleQuestionResponse('NO')}
             />
 
-            {/* Chatbot */}
+            {/* Chatbot - NEVER RECORDED */}
             {isChatOpen && (
                 <Chatbot
                     messages={messages}
-                    onSendMessage={handleSendMessage}
-                    onClose={() => {
-                        setIsChatOpen(false);
-
-                        // FIX: Agar chat active thi, to turant resume karo bina restart kiye
-                        if (currentState === STATES.CHATBOT_ACTIVE) {
-                            audioManagerRef.current?.resumeSlideAudio();
-                            setCurrentState(STATES.SLIDE_PLAYING);
+                    onSendMessage={(text) => {
+                        setMessages(prev => [...prev, { id: Date.now(), text, sender: "user" }]);
+                        if (socketRef.current?.connected) {
+                            socketRef.current.emit("lecture:chat", {
+                                lecture_id: lectureId?.toString(),
+                                question: text
+                            });
                         }
                     }}
+                    onClose={handleChatClose}
                 />
             )}
         </div>
