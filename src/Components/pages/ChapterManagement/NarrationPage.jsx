@@ -134,7 +134,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                     if (prev < 85) return prev + 1;
                     if (prev < 90) return prev + 0.5;
                     if (prev < 92) return prev + 0.2;
-                    if (prev < 95) return prev + 0.1;
+                    if (prev < 99) return prev + 0.15;
                     return prev; // Stop at 90% until API responds
                 });
             }, 1200);
@@ -192,13 +192,16 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
         // Simulate progress while waiting for API
         const progressInterval = setInterval(() => {
             setLoadingProgress((prev) => {
+                // Progress slows down as it approaches 90%
                 if (prev < 30) return prev + 3;
                 if (prev < 60) return prev + 2;
                 if (prev < 85) return prev + 1;
                 if (prev < 90) return prev + 0.5;
-                return prev;
+                if (prev < 92) return prev + 0.2;
+                if (prev < 99) return prev + 0.15;
+                return prev; // Stop at 90% until API responds
             });
-        }, 400);
+        }, 1200);
 
         try {
             const token = localStorage.getItem('access_token');
@@ -262,22 +265,76 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
         typeset();
     }, [isMathJaxReady, mathSignature, isDark, theme]);
 
-    // Add global style for MathJax overflow handling
+    // Add global style for MathJax overflow handling and error hiding
     useEffect(() => {
         const style = document.createElement('style');
+        style.id = 'mathjax-custom-styles';
         style.innerHTML = `
             mjx-container {
                 overflow: visible !important;
                 white-space: normal !important;
                 max-width: 100%;
+                display: inline-block !important;
+                vertical-align: middle !important;
             }
             .mjx-chtml {
                 outline: none !important;
             }
+            /* Hide ALL MathJax error colors - completely remove red text */
+            mjx-merror,
+            mjx-merror *,
+            mjx-container mjx-merror,
+            mjx-container mjx-merror *,
+            .MathJax mjx-merror,
+            .MathJax mjx-merror * {
+                color: inherit !important;
+                background: transparent !important;
+                background-color: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .MathJax_Error,
+            .MathJax_Error * {
+                color: inherit !important;
+                background: transparent !important;
+                background-color: transparent !important;
+            }
+            mjx-container[jax="CHTML"] mjx-merror,
+            mjx-container[jax="CHTML"] mjx-merror *,
+            mjx-container[jax="SVG"] mjx-merror,
+            mjx-container[jax="SVG"] mjx-merror * {
+                color: inherit !important;
+                fill: currentColor !important;
+            }
+            /* Override any inline red color styles */
+            [style*="color: red"],
+            [style*="color:red"],
+            [style*="color: #d00"],
+            [style*="color:#d00"],
+            [style*="color: #cc0000"],
+            [style*="color:#cc0000"] {
+                color: inherit !important;
+            }
+            /* Ensure fractions display properly */
+            mjx-mfrac {
+                display: inline-block !important;
+                vertical-align: middle !important;
+            }
+            mjx-frac {
+                display: inline-block !important;
+            }
         `;
+        // Remove existing style if present
+        const existingStyle = document.getElementById('mathjax-custom-styles');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
         document.head.appendChild(style);
         return () => {
-            document.head.removeChild(style);
+            const styleToRemove = document.getElementById('mathjax-custom-styles');
+            if (styleToRemove) {
+                styleToRemove.remove();
+            }
         };
     }, []);
 
@@ -329,7 +386,7 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                     strokeWidth="10"
                                     fill="none"
                                     strokeDasharray={`${2 * Math.PI * 70}`}
-                                    strokeDashoffset={`${2 * Math.PI * 70 * (1 - loadingProgress / 100)}`}
+                                    strokeDashoffset={`${2 * Math.PI * 70 * (1 - loadingProgress / 102)}`}
                                     strokeLinecap="round"
                                     className="transition-all duration-300 ease-out"
                                 />
@@ -480,42 +537,47 @@ function NarrationPage({ theme = 'dark', isDark: isDarkProp, toggleTheme, sideba
                                             const processContent = (text) => {
                                                 if (!text) return "";
 
-                                                // 1. Unescape source: Handle double-escaped dollars/backslashes if necessary
-                                                let s = text.replace(/\\\\/g, '\\').replace(/\\\$/g, '$');
+                                                let s = text;
 
-                                                // 2. Tokenize blocks
-                                                const tokens = [];
-                                                // Matches: $$..$$, \[..\], \(..\), and $..$
-                                                s = s.replace(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|(\$)[\s\S]*?(\$))/g, (match) => {
-                                                    let content = match;
-                                                    // Extract inner content
-                                                    if (match.startsWith('$$')) content = match.slice(2, -2);
-                                                    else if (match.startsWith('\\[')) content = match.slice(2, -2);
-                                                    else if (match.startsWith('\\(')) content = match.slice(2, -2);
-                                                    else if (match.startsWith('$')) content = match.slice(1, -1);
+                                                // Step 1: Unescape double-escaped characters
+                                                s = s.replace(/\\\\\\\\/g, '\\\\');
+                                                s = s.replace(/\\\\\$/g, '');
 
-                                                    // Check for Indic characters
-                                                    const hasIndic = /[\u0900-\u0DFF]/.test(content);
+                                                // Step 2: Fix common LaTeX issues that cause errors
+                                                // Fix unbalanced braces in \frac - ensure proper format
+                                                s = s.replace(/\\frac\s*([^{])/g, '\\frac{$1}');
 
-                                                    // STRICT RULE: If it contains Indic characters, it is NOT MathJax compatible.
-                                                    // Strip delimiters and also remove backslashes (fixes "\det" -> "det") to ensure clean text.
-                                                    if (hasIndic) {
+                                                // Fix pipe characters for determinants/matrices - convert to \vert
+                                                s = s.replace(/\|([^|]+)\|/g, '\\lvert $1 \\rvert');
+
+                                                // Fix issues with subscripts without braces
+                                                s = s.replace(/_([a-zA-Z0-9])([a-zA-Z0-9])/g, '_{$1$2}');
+
+                                                // Step 3: Convert $$ ... $$ to \[ ... \] for display math (MathJax compatible)
+                                                s = s.replace(/\$\$([\s\S]*?)\$\$/g, (match, content) => {
+                                                    // Check for Indic/Hindi characters - don't render as math
+                                                    if (/[\u0900-\u0DFF]/.test(content)) {
                                                         return content.replace(/\\/g, '');
                                                     }
-
-                                                    // Otherwise, preserve as a valid math token
-                                                    tokens.push(match);
-                                                    return `__MATH_TOKEN_${tokens.length - 1}__`;
+                                                    return `\\[${content}\\]`;
                                                 });
 
-                                                // 3. Clean up artifacts in the remaining plain text
-                                                // Remove stray dollars
-                                                s = s.replace(/\$/g, '');
-                                                // Remove stray backslashes, but ignore newlines if they exist (though usually split before)
-                                                s = s.replace(/\\/g, '');
+                                                // Step 4: Convert $ ... $ to \( ... \) for inline math (MathJax compatible)
+                                                s = s.replace(/\$([^$]+?)\$/g, (match, content) => {
+                                                    // Check for Indic/Hindi characters - don't render as math
+                                                    if (/[\u0900-\u0DFF]/.test(content)) {
+                                                        return content.replace(/\\/g, '');
+                                                    }
+                                                    return `\\(${content}\\)`;
+                                                });
 
-                                                // 4. Restore math tokens
-                                                return s.replace(/__MATH_TOKEN_(\d+)__/g, (_, i) => tokens[i]);
+                                                // Step 5: Remove ALL remaining stray dollar signs
+                                                s = s.replace(/\$/g, '');
+
+                                                // Step 6: Clean up multiple spaces but preserve newlines
+                                                s = s.replace(/[ \t]+/g, ' ');
+
+                                                return s;
                                             };
 
                                             return (

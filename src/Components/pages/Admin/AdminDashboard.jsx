@@ -20,13 +20,15 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
         { name: "Total Credits", value: `0/0`, path: "" },
         { name: "Lectures After Limit", value: 0, path: "" },
         { name: "Active Subscription", value: 0, path: "" },
-        
+
     ]);
 
     const [chapterCount, setChapterCount] = useState(10);
     const [lectureCount, setLectureCount] = useState(10);
     const [studentCount, setStudentCount] = useState(10);
     const [progressFactor, setProgressFactor] = useState(0);
+    const [hoveredSegment, setHoveredSegment] = useState(null);
+    const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         const fetchDashboard = async () => {
@@ -57,7 +59,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 const totalCreditsDisplay = `${remainingCredits}/${totalCredits}`;
 
                 const activeSubsVal = payload.account_status?.days_until_expiry ?? 0;
-                
+
                 setCards([
                     { name: "Management", value: `${Number(managementVal)}` },
                     { name: "Total Credits", value: totalCreditsDisplay },
@@ -249,17 +251,108 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                 </div>
                             ) : (
                                 <div className="flex flex-col xl:flex-row items-center gap-8">
+                                    {/* Tooltip Component */}
+                                    {hoveredSegment && (
+                                        <div
+                                            className={`fixed z-50 pointer-events-none transition-all duration-200 ease-out`}
+                                            style={{
+                                                left: `${cursorPosition.x}px`,
+                                                top: `${cursorPosition.y}px`,
+                                                transform: 'translate(-50%, -120%)',
+                                            }}
+                                        >
+                                            <div
+                                                className={`
+                                                    px-4 py-3 rounded-xl shadow-xl backdrop-blur-md
+                                                    ${isDark
+                                                        ? 'bg-zinc-800/95 border border-zinc-700/50 text-white'
+                                                        : 'bg-white/95 border border-gray-200/80 text-zinc-900'
+                                                    }
+                                                    min-w-[140px]
+                                                `}
+                                                style={{
+                                                    animation: 'tooltipFadeIn 0.2s ease-out'
+                                                }}
+                                            >
+                                                {/* Tooltip Arrow */}
+                                                <div
+                                                    className={`absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0
+                                                        border-l-8 border-r-8 border-t-8
+                                                        border-l-transparent border-r-transparent
+                                                        ${isDark ? 'border-t-zinc-800/95' : 'border-t-white/95'}
+                                                    `}
+                                                />
+                                                {/* Color Indicator & Label */}
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div
+                                                        className="w-3 h-3 rounded-full shadow-sm"
+                                                        style={{ backgroundColor: hoveredSegment.color }}
+                                                    />
+                                                    <span className="text-sm font-medium opacity-80">
+                                                        {hoveredSegment.label}
+                                                    </span>
+                                                </div>
+                                                {/* Value */}
+                                                <div className="flex items-baseline justify-between gap-4">
+                                                    <span className="text-2xl font-bold">
+                                                        {hoveredSegment.value}
+                                                    </span>
+                                                    <span
+                                                        className={`text-sm font-semibold px-2 py-0.5 rounded-full
+                                                            ${isDark ? 'bg-zinc-700/80' : 'bg-gray-100'}
+                                                        `}
+                                                    >
+                                                        {hoveredSegment.percent.toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Tooltip Animation Styles */}
+                                    <style>{`
+                                        @keyframes tooltipFadeIn {
+                                            from {
+                                                opacity: 0;
+                                                transform: translateY(5px);
+                                            }
+                                            to {
+                                                opacity: 1;
+                                                transform: translateY(0);
+                                            }
+                                        }
+                                    `}</style>
+
                                     {/* ===== Circular Chart ===== */}
                                     <div className="relative w-full max-w-[300px] aspect-square mx-auto">
                                         <svg
                                             className="w-full h-full transform -rotate-90"
                                             viewBox="0 0 300 300"
                                             xmlns="http://www.w3.org/2000/svg"
+                                            onTouchEnd={() => setTimeout(() => setHoveredSegment(null), 1500)}
                                         >
                                             {normalizedSegments.map((segment) => {
                                                 const animatedDashOffset = segment.circumference - (segment.circumference * segment.percent * progressFactor) / 100;
+
+                                                // Event handlers for hover/touch
+                                                const handleMouseMove = (e) => {
+                                                    setCursorPosition({ x: e.clientX, y: e.clientY });
+                                                    setHoveredSegment(segment);
+                                                };
+
+                                                const handleTouchStart = (e) => {
+                                                    if (e.touches && e.touches[0]) {
+                                                        setCursorPosition({
+                                                            x: e.touches[0].clientX,
+                                                            y: e.touches[0].clientY
+                                                        });
+                                                        setHoveredSegment(segment);
+                                                    }
+                                                };
+
                                                 return (
                                                     <g key={segment.key}>
+                                                        {/* Track circle */}
                                                         <circle
                                                             cx="150"
                                                             cy="150"
@@ -268,6 +361,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                                             strokeWidth="13"
                                                             fill="none"
                                                         />
+                                                        {/* Colored segment */}
                                                         <circle
                                                             cx="150"
                                                             cy="150"
@@ -279,7 +373,16 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                                             strokeDasharray={segment.circumference}
                                                             strokeDashoffset={animatedDashOffset}
                                                             transform={`rotate(${segment.rotation} 150 150)`}
-                                                            style={{ transition: "stroke-dashoffset 1.1s ease, transform 1.1s ease" }}
+                                                            className="cursor-pointer transition-all duration-200"
+                                                            style={{
+                                                                transition: "stroke-dashoffset 1.1s ease, transform 1.1s ease, stroke-width 0.2s ease",
+                                                                opacity: hoveredSegment && hoveredSegment.key !== segment.key ? 0.5 : 1,
+                                                                strokeWidth: hoveredSegment?.key === segment.key ? 13 : 13
+                                                            }}
+                                                            onMouseMove={handleMouseMove}
+                                                            onMouseEnter={handleMouseMove}
+                                                            onMouseLeave={() => setHoveredSegment(null)}
+                                                            onTouchStart={handleTouchStart}
                                                         />
                                                     </g>
                                                 );
@@ -287,7 +390,7 @@ function AdminDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                         </svg>
 
                                         {/* Center Text */}
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                                             <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold">
                                                 {/* {chartTotal || 0} */}
                                             </h2>

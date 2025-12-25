@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useLocation, useNavigate } from "react-router-dom";
-import { X, ChevronLeft, Pause, Play, MessageCircle, Mic, MicOff, SendHorizontal, Download } from "lucide-react";
+import { ChevronLeft, Pause, Play, MessageCircle, Loader2 } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets.js";
-// import Avatar from "./components/Avatar";
 import Chatbot from "./components/Chatbot";
 import QuestionPopup from "./components/QuestionPopup";
 import AudioManager from "./components/AudioManager";
@@ -36,6 +35,29 @@ function LectureVideo({ theme, isDark }) {
     const location = useLocation();
     const navigate = useNavigate();
 
+    // Get URL search params
+    const searchParams = new URLSearchParams(location.search);
+
+    // Helper function to get parameter from location.state OR URL search params
+    const getParam = (key, defaultValue = null) => {
+        // First try location.state
+        if (location.state && location.state[key] !== undefined) {
+            return location.state[key];
+        }
+        // Then try URL search params
+        const urlParam = searchParams.get(key);
+        if (urlParam !== null) {
+            return urlParam;
+        }
+        // Return default value
+        return defaultValue;
+    };
+
+    // Get lecture parameters from state or URL params
+    const lectureId = getParam('lectureId');
+    const stdParam = getParam('std', '5');
+    const divisionParam = getParam('division', 'A');
+
     // State Management
     const [currentState, setCurrentState] = useState(STATES.IDLE);
     const [lectureData, setLectureData] = useState([]);
@@ -62,9 +84,14 @@ function LectureVideo({ theme, isDark }) {
 
     // Recording State
     const [isRecording, setIsRecording] = useState(false);
-    const [recordedBlob, setRecordedBlob] = useState(null);
+    const [hasRecordingStarted, setHasRecordingStarted] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const mediaRecorderRef = useRef(null);
     const recordedChunksRef = useRef([]);
+    const audioDestinationRef = useRef(null);
+    const canvasRef = useRef(null);
+    const recordingContainerRef = useRef(null);
+    const frameCaptureIntervalRef = useRef(null);
 
     // Question Popup State
     const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
@@ -75,6 +102,11 @@ function LectureVideo({ theme, isDark }) {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 256;
+
+        // Create audio destination for recording (system audio only, no mic)
+        const audioDestination = ctx.createMediaStreamDestination();
+        audioDestinationRef.current = audioDestination;
+
         setAudioContext(ctx);
         setAnalyserNode(analyser);
 
@@ -90,8 +122,8 @@ function LectureVideo({ theme, isDark }) {
     useEffect(() => {
         const fetchLectureData = async () => {
             setIsLoading(true);
-            const lectureId = location.state?.lectureId;
 
+            // lectureId is already available from getParam helper at component level
             if (!lectureId) {
                 setPageError("Missing Lecture Information");
                 setIsLoading(false);
@@ -133,7 +165,7 @@ function LectureVideo({ theme, isDark }) {
         };
 
         fetchLectureData();
-    }, [location.state?.lectureId]);
+    }, [lectureId]);
 
     // Progress Tracking Loop
     useEffect(() => {
@@ -199,17 +231,245 @@ function LectureVideo({ theme, isDark }) {
         };
     }, []);
 
+    // Upload recording to API
+    const uploadRecording = useCallback(async (blob, filename) => {
+        try {
+            setIsUploading(true);
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+
+            // lectureId, stdParam, divisionParam are from getParam helper at component level
+
+            const formData = new FormData();
+            formData.append('file', blob, filename);
+            formData.append('std', stdParam);
+            formData.append('division', divisionParam);
+
+            const response = await axios.post(
+                `${BACKEND_API_URL}/lectures/${lectureId}/share-recording`,
+                formData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            handlesuccess("Recording uploaded successfully!");
+            console.log("Upload response:", response.data);
+        } catch (error) {
+            console.error("Upload failed:", error);
+            handleerror("Failed to upload recording. File saved locally.");
+        } finally {
+            setIsUploading(false);
+        }
+    }, [lectureId, stdParam, divisionParam]);
+
+    // Download and Upload Recording
+    const downloadAndUploadRecording = useCallback(async (blob, isMP4 = false) => {
+        // Use correct file extension based on actual format
+        // Most browsers (Chrome, Firefox) use WebM; Safari may use MP4
+        const extension = isMP4 ? 'mp4' : 'webm';
+        const filename = `lecture-${Date.now()}.${extension}`;
+
+        // Auto download - COMMENTED OUT FOR NOW
+        // const url = URL.createObjectURL(blob);
+        // const link = document.createElement('a');
+        // link.href = url;
+        // link.download = filename;
+        // document.body.appendChild(link);
+        // link.click();
+        // document.body.removeChild(link);
+        // URL.revokeObjectURL(url);
+        // handlesuccess(`Recording downloaded as ${extension.toUpperCase()}!`);
+
+        // Upload to API only
+        await uploadRecording(blob, filename);
+    }, [uploadRecording]);
+
     // Stop Recording
     const stopRecording = useCallback(() => {
+        // Clear frame capture interval
+        if (frameCaptureIntervalRef.current) {
+            clearInterval(frameCaptureIntervalRef.current);
+            frameCaptureIntervalRef.current = null;
+        }
+
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
         }
     }, []);
 
-    // Play Slide
+    // Start Recording - Uses Screen Capture API to record the browser tab with system audio only
+    const startRecording = useCallback(async () => {
+        try {
+            // Request screen capture - will capture the current browser tab
+            // Using displaySurface: 'browser' to prefer capturing the current tab
+            // Using systemAudio: 'include' to capture system audio (the lecture audio)
+            // cursor: 'never' to hide the mouse cursor in recording
+            const displayMediaOptions = {
+                video: {
+                    displaySurface: 'browser',
+                    cursor: 'never', // Hide mouse cursor in recording
+                    width: { ideal: 1280, max: 1280 },  // 720p width
+                    height: { ideal: 720, max: 720 },   // 720p height
+                    frameRate: { ideal: 30, max: 30 }
+                },
+                audio: false, // We'll use our own audio from AudioContext
+                preferCurrentTab: true, // Prefer capturing the current tab
+                selfBrowserSurface: 'include', // Include this tab in the options
+                surfaceSwitching: 'exclude', // Don't allow switching
+                monitorTypeSurfaces: 'exclude' // Exclude entire screen options
+            };
+
+            let screenStream;
+            try {
+                screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+            } catch (err) {
+                console.error("Screen capture not available:", err);
+                handleerror("Screen recording requires permission. Please allow screen sharing.");
+                return false;
+            }
+
+            // Get video track from screen capture
+            const videoTrack = screenStream.getVideoTracks()[0];
+            if (!videoTrack) {
+                handleerror("Could not get video track from screen capture");
+                return false;
+            }
+
+            // Set up track ended handler (user clicks "Stop sharing")
+            videoTrack.onended = () => {
+                console.log("Screen sharing stopped by user");
+                stopRecording();
+            };
+
+            // Get audio from the audio context destination (lecture audio only, no mic)
+            if (!audioDestinationRef.current && audioContext) {
+                audioDestinationRef.current = audioContext.createMediaStreamDestination();
+            }
+
+            // Combine video from screen capture and audio from our AudioContext
+            const tracks = [videoTrack];
+            if (audioDestinationRef.current?.stream?.getAudioTracks().length > 0) {
+                tracks.push(...audioDestinationRef.current.stream.getAudioTracks());
+            }
+            const combinedStream = new MediaStream(tracks);
+
+            // Determine best supported mime type
+            // VP8 is more compatible than VP9 for screen recording
+            let mimeType = '';
+            let isMP4 = false;
+
+            // Try WebM with VP8 first (most compatible for screen recording)
+            const webmTypes = [
+                'video/webm;codecs=vp8,opus',  // VP8 is more stable than VP9
+                'video/webm;codecs=vp8',
+                'video/webm'
+            ];
+
+            for (const type of webmTypes) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    mimeType = type;
+                    console.log('Using WebM format:', type);
+                    break;
+                }
+            }
+
+            // Try MP4 as fallback (Safari)
+            if (!mimeType) {
+                const mp4Types = [
+                    'video/mp4;codecs=h264,aac',
+                    'video/mp4;codecs=avc1',
+                    'video/mp4'
+                ];
+
+                for (const type of mp4Types) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        mimeType = type;
+                        isMP4 = true;
+                        console.log('Using MP4 format:', type);
+                        break;
+                    }
+                }
+            }
+
+            if (!mimeType) {
+                // Use default - let browser decide
+                mimeType = '';
+                console.log('Using default browser format');
+            }
+
+            // Create recorder with simple settings for stability
+            const recorderOptions = {
+                videoBitsPerSecond: 2500000 // 2.5 Mbps for 720p
+            };
+
+            // Only add mimeType if we found a supported one
+            if (mimeType) {
+                recorderOptions.mimeType = mimeType;
+            }
+
+            const recorder = new MediaRecorder(combinedStream, recorderOptions);
+
+            recordedChunksRef.current = [];
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    recordedChunksRef.current.push(e.data);
+                }
+            };
+
+            recorder.onstop = async () => {
+                // Stop all tracks from the screen capture
+                screenStream.getTracks().forEach(track => track.stop());
+
+                // Get actual mime type from recorder or use webm as default
+                const actualMimeType = recorder.mimeType || 'video/webm';
+                const isActuallyMP4 = actualMimeType.includes('mp4');
+
+                // Create blob with the actual recorded mime type
+                const blob = new Blob(recordedChunksRef.current, { type: actualMimeType });
+                recordedChunksRef.current = [];
+
+                console.log('Recording stopped. Format:', actualMimeType, 'Size:', blob.size);
+
+                // Auto download and upload with correct extension
+                if (blob.size > 0) {
+                    await downloadAndUploadRecording(blob, isActuallyMP4);
+                }
+            };
+
+            recorder.start(100); // Collect data every 100ms for stability
+            mediaRecorderRef.current = recorder;
+            setIsRecording(true);
+            setHasRecordingStarted(true);
+
+            console.log('Recording started successfully with screen capture');
+            return true;
+        } catch (error) {
+            console.error("Recording start failed:", error);
+            handleerror("Failed to start recording: " + error.message);
+            return false;
+        }
+    }, [audioContext, downloadAndUploadRecording, stopRecording]);
+
+    // Play Slide - Auto-starts recording on first play
     const playSlide = useCallback(async (index) => {
         if (!lectureData[index] || !audioContext) return;
+
+        // Auto-start recording on first play if not already started
+        // If user denies permission, DO NOT start the lecture
+        if (!hasRecordingStarted && index === 0) {
+            const recordingStarted = await startRecording();
+            if (!recordingStarted) {
+                // User denied screen sharing permission - don't start lecture
+                handleerror("Screen sharing permission is required to start the lecture");
+                return; // Stop here, don't play the slide
+            }
+        }
 
         if (popupTimeoutRef.current) {
             clearTimeout(popupTimeoutRef.current);
@@ -224,6 +484,15 @@ function LectureVideo({ theme, isDark }) {
 
         const slide = lectureData[index];
         if (audioManagerRef.current) {
+            // Connect audio to recording destination if recording
+            if (audioDestinationRef.current && currentAudioSource) {
+                try {
+                    currentAudioSource.connect(audioDestinationRef.current);
+                } catch (e) {
+                    // Already connected or source ended
+                }
+            }
+
             const { duration } = await audioManagerRef.current.playSlideAudio(slide.audio_url, () => {
                 if (progressFrameRef.current) cancelAnimationFrame(progressFrameRef.current);
                 setPlaybackProgress(1);
@@ -234,19 +503,20 @@ function LectureVideo({ theme, isDark }) {
                         setIsQuestionPopupOpen(true);
                     }, 1500);
                 } else {
+                    // Last slide finished - stop recording
                     setCurrentState(STATES.IDLE);
-                    if (isRecording) stopRecording();
+                    if (isRecording) {
+                        stopRecording();
+                    }
                 }
             }) || { duration: 0 };
 
             setSlideDuration(duration || 0);
         }
-    }, [lectureData, audioContext, isRecording, stopRecording, currentState]);
+    }, [lectureData, audioContext, isRecording, stopRecording, hasRecordingStarted, startRecording, currentAudioSource]);
 
 
-    // ---------------------------------------------------------
-    // :white_check_mark: NEW HELPER FUNCTION: Handle Send Message (Unified Logic)
-    // ---------------------------------------------------------
+    // Handle Send Message (Unified Logic)
     const handleSendMessage = useCallback((text) => {
         if (!text || typeof text !== 'string' || !text.trim()) return;
 
@@ -256,20 +526,18 @@ function LectureVideo({ theme, isDark }) {
         // 2. Send to Backend via Socket
         if (socketRef.current?.connected) {
             socketRef.current.emit("lecture:chat", {
-                lecture_id: location.state?.lectureId?.toString(),
+                lecture_id: lectureId?.toString(),
                 question: text
             });
         }
-    }, [location.state?.lectureId]);
+    }, [lectureId]);
 
 
-    // ---------------------------------------------------------
-    // :white_check_mark: UPDATED LOGIC: Handle Question Response
-    // ---------------------------------------------------------
+    // Handle Question Response
     const handleQuestionResponse = useCallback((response) => {
         setIsQuestionPopupOpen(false);
 
-        // Agar user ne 'NO' select kiya ya close kiya
+        // User selected 'NO' or closed
         if (response === 'NO') {
             if (currentState === STATES.SLIDE_PAUSED) {
                 audioManagerRef.current?.resumeSlideAudio();
@@ -283,84 +551,27 @@ function LectureVideo({ theme, isDark }) {
                 }
             }
         } else {
-            // :white_check_mark: SCENARIO: User sends a question (response holds the text or 'YES')
+            // User sends a question
             setCurrentState(STATES.CHATBOT_ACTIVE);
             setIsChatOpen(true);
             if (audioManagerRef.current) {
                 audioManagerRef.current.pauseSlideAudio();
             }
 
-            // Agar response ek proper question text hai (sirf 'YES' nahi), toh use chat me bhejo
-            // Using the common handleSendMessage function
+            // If response is a proper question text, send to chat
             if (response && response !== 'YES' && typeof response === 'string') {
                 handleSendMessage(response);
             }
         }
     }, [currentState, currentSlideIndex, lectureData.length, playSlide, isRecording, stopRecording, handleSendMessage]);
 
-    // Start Recording
-    const startRecording = useCallback(async () => {
-        try {
-            const canvas = document.getElementById('lecture-canvas');
-            if (!canvas) {
-                handleerror("Canvas element not found");
-                return;
-            }
-            const canvasStream = canvas.captureStream(30);
-
-            const audioDestination = audioContext.createMediaStreamDestination();
-            if (currentAudioSource) {
-                currentAudioSource.connect(audioDestination);
-            }
-
-            const combinedStream = new MediaStream([
-                ...canvasStream.getVideoTracks(),
-                ...audioDestination.stream.getAudioTracks()
-            ]);
-
-            const recorder = new MediaRecorder(combinedStream, {
-                mimeType: 'video/webm;codecs=vp9,opus',
-                videoBitsPerSecond: 2500000
-            });
-
-            recorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    recordedChunksRef.current.push(e.data);
-                }
-            };
-
-            recorder.onstop = () => {
-                const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-                setRecordedBlob(blob);
-                recordedChunksRef.current = [];
-            };
-
-            recorder.start(1000);
-            mediaRecorderRef.current = recorder;
-            setIsRecording(true);
-            setCurrentState(STATES.RECORDING_ACTIVE);
-
-            playSlide(0);
-        } catch (error) {
-            console.error("Recording failed:", error);
-            handleerror("Failed to start recording");
+    // Handle back button - stops recording and navigates back
+    const handleBack = useCallback(() => {
+        if (isRecording) {
+            stopRecording();
         }
-    }, [audioContext, currentAudioSource, playSlide]);
-
-    // Download Recording
-    const downloadRecording = useCallback(() => {
-        if (!recordedBlob) return;
-
-        const url = URL.createObjectURL(recordedBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `lecture-${Date.now()}.webm`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        handlesuccess("Recording downloaded!");
-    }, [recordedBlob]);
+        navigate(-1);
+    }, [isRecording, stopRecording, navigate]);
 
     const currentSlide = lectureData[currentSlideIndex];
 
@@ -392,24 +603,68 @@ function LectureVideo({ theme, isDark }) {
     }
 
     return (
-        <div className="fixed inset-0 bg-white overflow-hidden">
+        <div
+            className="fixed inset-0 bg-white overflow-hidden"
+        // style={{ cursor: isRecording ? 'none' : 'auto' }}
+        >
 
             {/* Audio Manager */}
             <AudioManager
                 ref={audioManagerRef}
                 audioContext={audioContext}
                 analyserNode={analyserNode}
-                onAudioSourceChange={setCurrentAudioSource}
+                onAudioSourceChange={(source) => {
+                    setCurrentAudioSource(source);
+                    // Connect audio source to recording destination for system audio capture
+                    if (audioDestinationRef.current && source) {
+                        try {
+                            source.connect(audioDestinationRef.current);
+                        } catch (e) {
+                            // Already connected
+                        }
+                    }
+                }}
             />
 
-            {/* Main Content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-between px-8 py-6">
-                {/* Left: Avatar & Logo */}
+            {/* Back Button - Stops recording and goes back */}
+            {/* <button
+                onClick={handleBack}
+                className="absolute top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-full font-semibold hover:bg-gray-700 transition-colors recording-ignore"
+            >
+                <ChevronLeft className="w-5 h-5" />
+                <span>Back</span>
+            </button> */}
+
+            {/* Recording Indicator */}
+            {/* {isRecording && (
+                <div className="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-semibold animate-pulse recording-ignore">
+                    <div className="w-3 h-3 bg-white rounded-full animate-ping" />
+                    <span>Recording...</span>
+                </div>
+            )} */}
+
+            {/* Uploading Indicator */}
+            {isUploading && (
+                <div className="absolute inset-0 z-100 bg-black/50 flex items-center justify-center recording-ignore">
+                    <div className="bg-white rounded-xl p-8 flex flex-col items-center gap-4 shadow-2xl">
+                        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                        <p className="text-gray-800 font-semibold text-lg">Uploading recording...</p>
+                        <p className="text-gray-500 text-sm">Please wait while we upload your lecture</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Main Content - This is what gets recorded */}
+            <div
+                ref={recordingContainerRef}
+                className="absolute inset-0 flex flex-col items-center justify-between px-8 py-6"
+            >
+                {/* Logo */}
                 <div className="flex flex-col items-center justify-center gap-8">
                     <img src="/inai-logo-light.png" alt="INAI" className="w-32 h-auto" />
                 </div>
 
-                {/* Right: Whiteboard */}
+                {/* Whiteboard */}
                 <div
                     className="w-full h-full flex flex-1 items-center justify-center relative"
                     onClick={(e) => e.stopPropagation()}
@@ -497,28 +752,28 @@ function LectureVideo({ theme, isDark }) {
                 </div>
             </div>
 
-            {/* Controls */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50">
+            {/* Controls - marked as recording-ignore so they don't appear in recording */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50 recording-ignore">
                 <button
                     onClick={() => {
-                        // Case 1: Agar chal raha hai to pause karo
+                        // Case 1: If playing, pause
                         if (currentState === STATES.SLIDE_PLAYING) {
                             audioManagerRef.current?.pauseSlideAudio();
                             setCurrentState(STATES.SLIDE_PAUSED);
                             setIsQuestionPopupOpen(true);
                         }
                         else {
-                            // Case 2 (FIXED): Agar Paused hai YA Chatbot Active hai, to wahin se RESUME karo
+                            // Case 2: If paused or chatbot active, resume
                             if (currentState === STATES.SLIDE_PAUSED || currentState === STATES.CHATBOT_ACTIVE) {
                                 audioManagerRef.current?.resumeSlideAudio();
                                 setCurrentState(STATES.SLIDE_PLAYING);
                                 setIsQuestionPopupOpen(false);
                             }
-                            // Case 3: Agar slide khatam ho gayi hai aur next slide hai
+                            // Case 3: If slide finished and next slide exists
                             else if (playbackProgress >= 1 && currentSlideIndex < lectureData.length - 1) {
                                 playSlide(currentSlideIndex + 1);
                             }
-                            // Case 4: Agar bilkul shuru se chalana hai (Restart)
+                            // Case 4: Start from beginning (this triggers auto-recording on first play)
                             else {
                                 playSlide(currentSlideIndex);
                             }
@@ -536,12 +791,6 @@ function LectureVideo({ theme, isDark }) {
                 >
                     <MessageCircle className={`w-6 h-6 ${isChatOpen ? 'text-white' : 'text-gray-800'}`} />
                 </button>
-
-                {!isRecording && currentState === STATES.IDLE && (
-                    <button onClick={startRecording} className="px-6 py-3 bg-red-500 text-white rounded-full font-semibold hover:bg-red-600">
-                        Start Recording
-                    </button>
-                )}
             </div>
 
             {/* Progress */}

@@ -22,15 +22,17 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
     const innerCirc = 2 * Math.PI * innerRadius;
 
     // Example percentages (replace with real data when available)
-    const [playedPercent, setPlayedPercent] = useState(65); // outer
-    const [sharedPercent, setSharedPercent] = useState(35); // inner
+    const [playedPercent, setPlayedPercent] = useState(65); // outer - default 65%
+    const [sharedPercent, setSharedPercent] = useState(35); // inner - default 35%
 
     const [totalStudent, setTotalStudent] = useState(0);
     const [totalWatchedLecture, setTotalWatchedLecture] = useState(0);
     const [totalPaid, setTotalPaid] = useState(0);
 
-    const [progressFactor, setProgressFactor] = useState();
+    const [progressFactor, setProgressFactor] = useState(0); // Initialize to 0, not undefined
     const [loading, setLoading] = useState(true);
+    const [hoveredSegment, setHoveredSegment] = useState(null);
+    const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         const token = localStorage.getItem("access_token");
@@ -82,8 +84,14 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                 setTotalStudent(Number(total_students_val));
                 setTotalWatchedLecture(Number(total_lectures_val));
                 setTotalPaid(Number(total_paid_val));
-                setPlayedPercent(Number(progressPercent));
-                setSharedPercent(Number(completionPercent));
+
+                // Only update chart percentages if we have actual data, otherwise keep defaults
+                if (Number(progressPercent) > 0) {
+                    setPlayedPercent(Number(progressPercent));
+                }
+                if (Number(completionPercent) > 0) {
+                    setSharedPercent(Number(completionPercent));
+                }
             } catch (error) {
                 console.error("Failed to fetch student dashboard", error);
                 handleerror("Failed to load student dashboard");
@@ -107,6 +115,30 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
     const outerOffset = outerCirc - (outerCirc * playedPercent * progressFactor) / 100;
     const innerOffset = innerCirc - (innerCirc * sharedPercent * progressFactor) / 100;
     const innerRotation = (playedPercent / 100) * 360; // start inner after outer arc
+
+    // Chart segments for hover tooltip
+    const chartSegments = [
+        {
+            key: 'outer',
+            label: 'Student Progress',
+            percent: playedPercent,
+            radius: outerRadius,
+            circumference: outerCirc,
+            offset: outerOffset,
+            rotation: 0,
+            color: isDark ? '#9BDCF2' : '#C3EBFA'
+        },
+        {
+            key: 'inner',
+            label: 'Student Active',
+            percent: sharedPercent,
+            radius: innerRadius,
+            circumference: innerCirc,
+            offset: innerOffset,
+            rotation: innerRotation,
+            color: isDark ? '#F7D64A' : '#FEE55A'
+        }
+    ];
 
     const lectureCardClass = isDark
         ? "bg-[#0F1014] border-[#1e1f25] text-white"
@@ -218,37 +250,130 @@ function StudentDashboard({ theme, isDark, toggleTheme, sidebardata }) {
                                     </div>
                                 ) : (
                                     <div className="w-full">
+                                        {/* Tooltip Component */}
+                                        {hoveredSegment && (
+                                            <div
+                                                className={`fixed z-50 pointer-events-none transition-all duration-200 ease-out`}
+                                                style={{
+                                                    left: `${cursorPosition.x}px`,
+                                                    top: `${cursorPosition.y}px`,
+                                                    transform: 'translate(-50%, -120%)',
+                                                }}
+                                            >
+                                                <div
+                                                    className={`
+                                                        px-4 py-3 rounded-xl shadow-xl backdrop-blur-md
+                                                        ${isDark
+                                                            ? 'bg-zinc-800/95 border border-zinc-700/50 text-white'
+                                                            : 'bg-white/95 border border-gray-200/80 text-zinc-900'
+                                                        }
+                                                        min-w-[140px]
+                                                    `}
+                                                    style={{
+                                                        animation: 'tooltipFadeIn 0.2s ease-out'
+                                                    }}
+                                                >
+                                                    {/* Tooltip Arrow */}
+                                                    <div
+                                                        className={`absolute left-1/2 -translate-x-1/2 -bottom-2 w-0 h-0
+                                                            border-l-8 border-r-8 border-t-8
+                                                            border-l-transparent border-r-transparent
+                                                            ${isDark ? 'border-t-zinc-800/95' : 'border-t-white/95'}
+                                                        `}
+                                                    />
+                                                    {/* Color Indicator & Label */}
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div
+                                                            className="w-3 h-3 rounded-full shadow-sm"
+                                                            style={{ backgroundColor: hoveredSegment.color }}
+                                                        />
+                                                        <span className="text-sm font-medium opacity-80">
+                                                            {hoveredSegment.label}
+                                                        </span>
+                                                    </div>
+                                                    {/* Value */}
+                                                    <div className="flex items-baseline justify-between gap-4">
+                                                        <span
+                                                            className={`text-sm font-semibold px-2 py-0.5 rounded-full
+                                                                ${isDark ? 'bg-zinc-700/80' : 'bg-gray-100'}
+                                                            `}
+                                                        >
+                                                            {hoveredSegment.percent.toFixed(1)}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Tooltip Animation Styles */}
+                                        <style>{`
+                                            @keyframes tooltipFadeIn {
+                                                from {
+                                                    opacity: 0;
+                                                    transform: translateY(5px);
+                                                }
+                                                to {
+                                                    opacity: 1;
+                                                    transform: translateY(0);
+                                                }
+                                            }
+                                        `}</style>
+
                                         <div className="relative w-full max-w-[300px] aspect-square mx-auto">
-                                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                                            <svg
+                                                className="w-full h-full transform -rotate-90"
+                                                viewBox="0 0 300 300"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                onTouchEnd={() => setTimeout(() => setHoveredSegment(null), 1500)}
+                                            >
+                                                {/* Track circles */}
                                                 <circle cx="150" cy="150" r={outerRadius} stroke={isDark ? '#3f3f46' : '#e4e4e7'} strokeWidth="14" fill="none" />
                                                 <circle cx="150" cy="150" r={innerRadius} stroke={isDark ? '#3f3f46' : '#e4e4e7'} strokeWidth="14" fill="none" />
 
-                                                <circle
-                                                    cx="150"
-                                                    cy="150"
-                                                    r={outerRadius}
-                                                    stroke={isDark ? '#9BDCF2' : '#C3EBFA'}
-                                                    strokeWidth="14"
-                                                    strokeLinecap="round"
-                                                    fill="none"
-                                                    strokeDasharray={outerCirc}
-                                                    strokeDashoffset={outerOffset}
-                                                    style={{ transition: 'stroke-dashoffset 1s ease' }}
-                                                />
+                                                {/* Colored segments with hover events */}
+                                                {chartSegments.map((segment) => {
+                                                    // Event handlers for hover/touch
+                                                    const handleMouseMove = (e) => {
+                                                        setCursorPosition({ x: e.clientX, y: e.clientY });
+                                                        setHoveredSegment(segment);
+                                                    };
 
-                                                <circle
-                                                    cx="150"
-                                                    cy="150"
-                                                    r={innerRadius}
-                                                    stroke={isDark ? '#F7D64A' : '#FEE55A'}
-                                                    strokeWidth="14"
-                                                    strokeLinecap="round"
-                                                    fill="none"
-                                                    strokeDasharray={innerCirc}
-                                                    strokeDashoffset={innerOffset}
-                                                    style={{ transition: 'stroke-dashoffset 1s ease' }}
-                                                    transform={`rotate(${innerRotation} 150 150)`}
-                                                />
+                                                    const handleTouchStart = (e) => {
+                                                        if (e.touches && e.touches[0]) {
+                                                            setCursorPosition({
+                                                                x: e.touches[0].clientX,
+                                                                y: e.touches[0].clientY
+                                                            });
+                                                            setHoveredSegment(segment);
+                                                        }
+                                                    };
+
+                                                    return (
+                                                        <circle
+                                                            key={segment.key}
+                                                            cx="150"
+                                                            cy="150"
+                                                            r={segment.radius}
+                                                            stroke={segment.color}
+                                                            strokeWidth="14"
+                                                            strokeLinecap="round"
+                                                            fill="none"
+                                                            strokeDasharray={segment.circumference}
+                                                            strokeDashoffset={segment.offset}
+                                                            transform={`rotate(${segment.rotation} 150 150)`}
+                                                            className="cursor-pointer transition-all duration-200"
+                                                            style={{
+                                                                transition: 'stroke-dashoffset 1s ease, stroke-width 0.2s ease',
+                                                                opacity: hoveredSegment && hoveredSegment.key !== segment.key ? 0.5 : 1,
+                                                                strokeWidth: hoveredSegment?.key === segment.key ? 14 : 14
+                                                            }}
+                                                            onMouseMove={handleMouseMove}
+                                                            onMouseEnter={handleMouseMove}
+                                                            onMouseLeave={() => setHoveredSegment(null)}
+                                                            onTouchStart={handleTouchStart}
+                                                        />
+                                                    );
+                                                })}
                                             </svg>
                                         </div>
 

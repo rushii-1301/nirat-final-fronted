@@ -74,8 +74,8 @@ const LectureCard = ({ lecture, isDark, onShare }) => {
                     /> */}
                 </div>
                 <p className={`${isDark ? 'text-white' : 'text-black'} text-xs`}>
-                    <span className="font-inter font-bold text-[17px] leading-[100%] tracking-normal capitalize">Subject:- </span>
-                    <span className="font-inter font-medium text-[15px] leading-[100%] tracking-normal capitalize">  {lecture.subject || 'General'}</span>
+                    <span className="font-inter font-bold text-[17px] leading-[100%] tracking-normal capitalize">Language:- </span>
+                    <span className="font-inter font-medium text-[15px] leading-[100%] tracking-normal capitalize">  {lecture.language || 'General'}</span>
                 </p>
             </div>
         </div>
@@ -175,7 +175,7 @@ function Playedleacher({ theme, isDark, toggleTheme, sidebardata }) {
 
         return lectureData.filter((lecture) => {
             const title = (lecture.title || "").toLowerCase();
-            const subject = (lecture.subject || "").toLowerCase();
+            const subject = (lecture.language || "").toLowerCase();
 
             return title.includes(query) || subject.includes(query);
         });
