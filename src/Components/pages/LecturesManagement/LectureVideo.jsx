@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, Pause, Play, MessageCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, Pause, Play, MessageCircle, Loader2, Download } from "lucide-react";
 import axios from "axios";
 import { BACKEND_API_URL, handleerror, handlesuccess } from "../../../utils/assets.js";
+import fixWebmDuration from "fix-webm-duration";
+// import Avatar from "./components/Avatar";
 import Chatbot from "./components/Chatbot";
 import QuestionPopup from "./components/QuestionPopup";
 import AudioManager from "./components/AudioManager";
 import TypingEffect from "./components/TypingEffect";
+import MathTypingEffect from "./components/MathTypingEffect";
 
-// :white_check_mark: FIX 1: Move Local Image Loading OUTSIDE the component
+// ✅ FIX 1: Move Local Image Loading OUTSIDE the component
 const localSlideImages = import.meta.glob('../../../assets/Slide*.*', { eager: true });
 const localImagesMap = {};
 
@@ -34,29 +37,6 @@ const STATES = {
 function LectureVideo({ theme, isDark }) {
     const location = useLocation();
     const navigate = useNavigate();
-
-    // Get URL search params
-    const searchParams = new URLSearchParams(location.search);
-
-    // Helper function to get parameter from location.state OR URL search params
-    const getParam = (key, defaultValue = null) => {
-        // First try location.state
-        if (location.state && location.state[key] !== undefined) {
-            return location.state[key];
-        }
-        // Then try URL search params
-        const urlParam = searchParams.get(key);
-        if (urlParam !== null) {
-            return urlParam;
-        }
-        // Return default value
-        return defaultValue;
-    };
-
-    // Get lecture parameters from state or URL params
-    const lectureId = getParam('lectureId');
-    const stdParam = getParam('std', '5');
-    const divisionParam = getParam('division', 'A');
 
     // State Management
     const [currentState, setCurrentState] = useState(STATES.IDLE);
@@ -86,12 +66,12 @@ function LectureVideo({ theme, isDark }) {
     const [isRecording, setIsRecording] = useState(false);
     const [hasRecordingStarted, setHasRecordingStarted] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [recordedBlob, setRecordedBlob] = useState(null);
     const mediaRecorderRef = useRef(null);
     const recordedChunksRef = useRef([]);
     const audioDestinationRef = useRef(null);
-    const canvasRef = useRef(null);
-    const recordingContainerRef = useRef(null);
-    const frameCaptureIntervalRef = useRef(null);
+    const screenStreamRef = useRef(null);
+    const recordingStartTimeRef = useRef(null);
 
     // Question Popup State
     const [isQuestionPopupOpen, setIsQuestionPopupOpen] = useState(false);
@@ -122,8 +102,8 @@ function LectureVideo({ theme, isDark }) {
     useEffect(() => {
         const fetchLectureData = async () => {
             setIsLoading(true);
+            const lectureId = location.state?.lectureId;
 
-            // lectureId is already available from getParam helper at component level
             if (!lectureId) {
                 setPageError("Missing Lecture Information");
                 setIsLoading(false);
@@ -165,29 +145,34 @@ function LectureVideo({ theme, isDark }) {
         };
 
         fetchLectureData();
-    }, [lectureId]);
+    }, [location.state?.lectureId]);
 
     // Progress Tracking Loop
     useEffect(() => {
         let animationFrameId;
 
+        // ✅ Is function ko apne LectureVideo.js me replace kar do
+
         const animateProgress = () => {
-            if (currentState === STATES.SLIDE_PLAYING && slideDuration > 0 && audioManagerRef.current && lectureData[currentSlideIndex]) {
+            // 1. Safety Checks: State PLAYING hona chahiye aur Audio Manager ready hona chahiye
+            if (currentState === STATES.SLIDE_PLAYING && slideDuration > 0 && audioManagerRef.current) {
+
+                // 2. Audio ka current time nikalo (AudioManager se)
                 const elapsed = audioManagerRef.current.getSlideElapsed();
 
-                const slide = lectureData[currentSlideIndex];
-                const titleLen = slide.title?.length || 0;
-                const bulletsLen = slide.bullets.reduce((acc, b) => acc + b.length, 0);
-                const narrationLen = slide.narration?.length || 0;
-                const totalChars = titleLen + bulletsLen + narrationLen;
+                // 3. Calculation: (Kitna time chala / Total time kitna hai)
+                // Math.min use kiya taaki progress kabhi 1 (100%) se upar na jaye
+                const prog = Math.min(elapsed / slideDuration, 1);
 
-                const typingDuration = Math.max(2, totalChars * 0.04);
-                const prog = Math.min(elapsed / typingDuration, 1);
+                // 4. Progress State update karo (Isse UI me typing effect chalega)
                 setPlaybackProgress(prog);
 
+                // 5. Check karo audio abhi baaki hai ya nahi
                 if (elapsed < slideDuration) {
+                    // Agar audio bacha hai, to animation loop continue rakho
                     animationFrameId = requestAnimationFrame(animateProgress);
                 } else {
+                    // Agar audio duration complete ho gayi, to progress 100% set kardo
                     setPlaybackProgress(1);
                 }
             }
@@ -231,13 +216,18 @@ function LectureVideo({ theme, isDark }) {
         };
     }, []);
 
+    // =========================================
+    // RECORDING FUNCTIONS (OLD FLOW - SCREEN CAPTURE)
+    // =========================================
+
     // Upload recording to API
     const uploadRecording = useCallback(async (blob, filename) => {
         try {
             setIsUploading(true);
             const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-
-            // lectureId, stdParam, divisionParam are from getParam helper at component level
+            const lectureId = location.state?.lectureId;
+            const stdParam = location.state?.std || '5';
+            const divisionParam = location.state?.division || 'A';
 
             const formData = new FormData();
             formData.append('file', blob, filename);
@@ -264,17 +254,22 @@ function LectureVideo({ theme, isDark }) {
         } finally {
             setIsUploading(false);
         }
-    }, [lectureId, stdParam, divisionParam]);
+    }, [location.state?.lectureId, location.state?.std, location.state?.division]);
 
     // Download and Upload Recording
     const downloadAndUploadRecording = useCallback(async (blob, isMP4 = false) => {
-        // Use correct file extension based on actual format
-        // Most browsers (Chrome, Firefox) use WebM; Safari may use MP4
         const extension = isMP4 ? 'mp4' : 'webm';
+        const mimeType = isMP4 ? 'video/mp4' : 'video/webm';
         const filename = `lecture-${Date.now()}.${extension}`;
 
-        // Auto download - COMMENTED OUT FOR NOW
-        // const url = URL.createObjectURL(blob);
+        // Create a new blob with clean MIME type (without codecs) for API compatibility
+        const cleanBlob = new Blob([blob], { type: mimeType });
+
+        // Save blob for manual download option
+        setRecordedBlob(cleanBlob);
+
+        // Auto download - COMMENTED OUT
+        // const url = URL.createObjectURL(cleanBlob);
         // const link = document.createElement('a');
         // link.href = url;
         // link.download = filename;
@@ -284,21 +279,32 @@ function LectureVideo({ theme, isDark }) {
         // URL.revokeObjectURL(url);
         // handlesuccess(`Recording downloaded as ${extension.toUpperCase()}!`);
 
-        // Upload to API only
-        await uploadRecording(blob, filename);
+        // Upload to API (background, no blocking UI)
+        await uploadRecording(cleanBlob, filename);
     }, [uploadRecording]);
 
     // Stop Recording
     const stopRecording = useCallback(() => {
-        // Clear frame capture interval
-        if (frameCaptureIntervalRef.current) {
-            clearInterval(frameCaptureIntervalRef.current);
-            frameCaptureIntervalRef.current = null;
-        }
-
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
+        }
+
+        // Stop screen stream tracks
+        if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(track => track.stop());
+            screenStreamRef.current = null;
+        }
+
+        // Reset lecture to beginning (slide 0) after recording stops
+        setCurrentSlideIndex(0);
+        setPlaybackProgress(0);
+        setCurrentState(STATES.IDLE);
+        setHasRecordingStarted(false);
+
+        // Stop any playing audio
+        if (audioManagerRef.current) {
+            audioManagerRef.current.pauseSlideAudio();
         }
     }, []);
 
@@ -306,9 +312,6 @@ function LectureVideo({ theme, isDark }) {
     const startRecording = useCallback(async () => {
         try {
             // Request screen capture - will capture the current browser tab
-            // Using displaySurface: 'browser' to prefer capturing the current tab
-            // Using systemAudio: 'include' to capture system audio (the lecture audio)
-            // cursor: 'never' to hide the mouse cursor in recording
             const displayMediaOptions = {
                 video: {
                     displaySurface: 'browser',
@@ -327,9 +330,10 @@ function LectureVideo({ theme, isDark }) {
             let screenStream;
             try {
                 screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+                screenStreamRef.current = screenStream;
             } catch (err) {
                 console.error("Screen capture not available:", err);
-                handleerror("Screen recording requires permission. Please allow screen sharing.");
+                handleerror("Screen sharing permission is required to start the lecture");
                 return false;
             }
 
@@ -359,13 +363,15 @@ function LectureVideo({ theme, isDark }) {
             const combinedStream = new MediaStream(tracks);
 
             // Determine best supported mime type
-            // VP8 is more compatible than VP9 for screen recording
+            // Use WebM format (Chrome/Firefox) - it has proper duration with fix-webm-duration library
+            // MP4 not used because browser records Opus audio which is incompatible with MP4 container
             let mimeType = '';
             let isMP4 = false;
 
-            // Try WebM with VP8 first (most compatible for screen recording)
+            // Use WebM format (most browsers support this well)
             const webmTypes = [
-                'video/webm;codecs=vp8,opus',  // VP8 is more stable than VP9
+                'video/webm;codecs=vp8,opus',
+                'video/webm;codecs=vp9,opus',
                 'video/webm;codecs=vp8',
                 'video/webm'
             ];
@@ -378,7 +384,7 @@ function LectureVideo({ theme, isDark }) {
                 }
             }
 
-            // Try MP4 as fallback (Safari)
+            // Fallback to MP4 only for Safari (which uses AAC audio, compatible with MP4)
             if (!mimeType) {
                 const mp4Types = [
                     'video/mp4;codecs=h264,aac',
@@ -390,24 +396,17 @@ function LectureVideo({ theme, isDark }) {
                     if (MediaRecorder.isTypeSupported(type)) {
                         mimeType = type;
                         isMP4 = true;
-                        console.log('Using MP4 format:', type);
+                        console.log('Using MP4 format (Safari):', type);
                         break;
                     }
                 }
             }
 
-            if (!mimeType) {
-                // Use default - let browser decide
-                mimeType = '';
-                console.log('Using default browser format');
-            }
-
-            // Create recorder with simple settings for stability
+            // Create recorder with settings for stability
             const recorderOptions = {
                 videoBitsPerSecond: 2500000 // 2.5 Mbps for 720p
             };
 
-            // Only add mimeType if we found a supported one
             if (mimeType) {
                 recorderOptions.mimeType = mimeType;
             }
@@ -424,19 +423,36 @@ function LectureVideo({ theme, isDark }) {
 
             recorder.onstop = async () => {
                 // Stop all tracks from the screen capture
-                screenStream.getTracks().forEach(track => track.stop());
+                if (screenStreamRef.current) {
+                    screenStreamRef.current.getTracks().forEach(track => track.stop());
+                    screenStreamRef.current = null;
+                }
 
-                // Get actual mime type from recorder or use webm as default
-                const actualMimeType = recorder.mimeType || 'video/webm';
-                const isActuallyMP4 = actualMimeType.includes('mp4');
+                // Determine if it's MP4 based on recorder's mimeType
+                const recorderMimeType = recorder.mimeType || '';
+                const isActuallyMP4 = recorderMimeType.includes('mp4');
 
-                // Create blob with the actual recorded mime type
-                const blob = new Blob(recordedChunksRef.current, { type: actualMimeType });
+                // Create initial blob
+                let blob = new Blob(recordedChunksRef.current, { type: isActuallyMP4 ? 'video/mp4' : 'video/webm' });
                 recordedChunksRef.current = [];
 
-                console.log('Recording stopped. Format:', actualMimeType, 'Size:', blob.size);
+                console.log('Recording stopped. Format:', blob.type, 'Size:', blob.size);
 
-                // Auto download and upload with correct extension
+                // Fix WebM duration metadata (WebM files from MediaRecorder often have missing duration)
+                if (!isActuallyMP4 && blob.size > 0) {
+                    try {
+                        // Calculate approximate duration based on recording time
+                        const recordingDuration = Date.now() - recordingStartTimeRef.current;
+                        console.log('Fixing WebM duration:', recordingDuration, 'ms');
+                        blob = await fixWebmDuration(blob, recordingDuration, { logger: false });
+                        console.log('WebM duration fixed successfully');
+                    } catch (err) {
+                        console.warn('Could not fix WebM duration:', err);
+                        // Continue with original blob
+                    }
+                }
+
+                // Download and upload
                 if (blob.size > 0) {
                     await downloadAndUploadRecording(blob, isActuallyMP4);
                 }
@@ -444,6 +460,7 @@ function LectureVideo({ theme, isDark }) {
 
             recorder.start(100); // Collect data every 100ms for stability
             mediaRecorderRef.current = recorder;
+            recordingStartTimeRef.current = Date.now(); // Track recording start time for duration fix
             setIsRecording(true);
             setHasRecordingStarted(true);
 
@@ -461,13 +478,12 @@ function LectureVideo({ theme, isDark }) {
         if (!lectureData[index] || !audioContext) return;
 
         // Auto-start recording on first play if not already started
-        // If user denies permission, DO NOT start the lecture
         if (!hasRecordingStarted && index === 0) {
             const recordingStarted = await startRecording();
             if (!recordingStarted) {
                 // User denied screen sharing permission - don't start lecture
-                handleerror("Screen sharing permission is required to start the lecture");
-                return; // Stop here, don't play the slide
+                // handleerror("Screen sharing permission is required to start the lecture");
+                return;
             }
         }
 
@@ -516,7 +532,9 @@ function LectureVideo({ theme, isDark }) {
     }, [lectureData, audioContext, isRecording, stopRecording, hasRecordingStarted, startRecording, currentAudioSource]);
 
 
-    // Handle Send Message (Unified Logic)
+    // ---------------------------------------------------------
+    // ✅ NEW HELPER FUNCTION: Handle Send Message (Unified Logic)
+    // ---------------------------------------------------------
     const handleSendMessage = useCallback((text) => {
         if (!text || typeof text !== 'string' || !text.trim()) return;
 
@@ -526,18 +544,20 @@ function LectureVideo({ theme, isDark }) {
         // 2. Send to Backend via Socket
         if (socketRef.current?.connected) {
             socketRef.current.emit("lecture:chat", {
-                lecture_id: lectureId?.toString(),
+                lecture_id: location.state?.lectureId?.toString(),
                 question: text
             });
         }
-    }, [lectureId]);
+    }, [location.state?.lectureId]);
 
 
-    // Handle Question Response
+    // ---------------------------------------------------------
+    // ✅ UPDATED LOGIC: Handle Question Response
+    // ---------------------------------------------------------
     const handleQuestionResponse = useCallback((response) => {
         setIsQuestionPopupOpen(false);
 
-        // User selected 'NO' or closed
+        // Agar user ne 'NO' select kiya ya close kiya
         if (response === 'NO') {
             if (currentState === STATES.SLIDE_PAUSED) {
                 audioManagerRef.current?.resumeSlideAudio();
@@ -551,27 +571,35 @@ function LectureVideo({ theme, isDark }) {
                 }
             }
         } else {
-            // User sends a question
+            // ✅ SCENARIO: User sends a question (response holds the text or 'YES')
             setCurrentState(STATES.CHATBOT_ACTIVE);
             setIsChatOpen(true);
             if (audioManagerRef.current) {
                 audioManagerRef.current.pauseSlideAudio();
             }
 
-            // If response is a proper question text, send to chat
+            // Agar response ek proper question text hai (sirf 'YES' nahi), toh use chat me bhejo
+            // Using the common handleSendMessage function
             if (response && response !== 'YES' && typeof response === 'string') {
                 handleSendMessage(response);
             }
         }
     }, [currentState, currentSlideIndex, lectureData.length, playSlide, isRecording, stopRecording, handleSendMessage]);
 
-    // Handle back button - stops recording and navigates back
-    const handleBack = useCallback(() => {
-        if (isRecording) {
-            stopRecording();
-        }
-        navigate(-1);
-    }, [isRecording, stopRecording, navigate]);
+    // Download Recording (manual download option)
+    const downloadRecording = useCallback(() => {
+        if (!recordedBlob) return;
+
+        const url = URL.createObjectURL(recordedBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `lecture-${Date.now()}.webm`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        handlesuccess("Recording downloaded!");
+    }, [recordedBlob]);
 
     const currentSlide = lectureData[currentSlideIndex];
 
@@ -603,10 +631,7 @@ function LectureVideo({ theme, isDark }) {
     }
 
     return (
-        <div
-            className="fixed inset-0 bg-white overflow-hidden"
-        // style={{ cursor: isRecording ? 'none' : 'auto' }}
-        >
+        <div className="fixed inset-0 bg-white overflow-hidden">
 
             {/* Audio Manager */}
             <AudioManager
@@ -626,45 +651,33 @@ function LectureVideo({ theme, isDark }) {
                 }}
             />
 
-            {/* Back Button - Stops recording and goes back */}
-            {/* <button
-                onClick={handleBack}
-                className="absolute top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-full font-semibold hover:bg-gray-700 transition-colors recording-ignore"
-            >
-                <ChevronLeft className="w-5 h-5" />
-                <span>Back</span>
-            </button> */}
-
             {/* Recording Indicator */}
             {/* {isRecording && (
-                <div className="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-semibold animate-pulse recording-ignore">
+                <div className="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-full font-semibold animate-pulse">
                     <div className="w-3 h-3 bg-white rounded-full animate-ping" />
                     <span>Recording...</span>
                 </div>
             )} */}
 
-            {/* Uploading Indicator */}
-            {isUploading && (
-                <div className="absolute inset-0 z-100 bg-black/50 flex items-center justify-center recording-ignore">
+            {/* Uploading Indicator - HIDDEN (upload happens in background) */}
+            {/* {isUploading && (
+                <div className="absolute inset-0 z-100 bg-black/50 flex items-center justify-center">
                     <div className="bg-white rounded-xl p-8 flex flex-col items-center gap-4 shadow-2xl">
                         <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
                         <p className="text-gray-800 font-semibold text-lg">Uploading recording...</p>
                         <p className="text-gray-500 text-sm">Please wait while we upload your lecture</p>
                     </div>
                 </div>
-            )}
+            )} */}
 
-            {/* Main Content - This is what gets recorded */}
-            <div
-                ref={recordingContainerRef}
-                className="absolute inset-0 flex flex-col items-center justify-between px-8 py-6"
-            >
-                {/* Logo */}
+            {/* Main Content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-between px-8 py-6">
+                {/* Left: Avatar & Logo */}
                 <div className="flex flex-col items-center justify-center gap-8">
                     <img src="/inai-logo-light.png" alt="INAI" className="w-32 h-auto" />
                 </div>
 
-                {/* Whiteboard */}
+                {/* Right: Whiteboard */}
                 <div
                     className="w-full h-full flex flex-1 items-center justify-center relative"
                     onClick={(e) => e.stopPropagation()}
@@ -691,7 +704,7 @@ function LectureVideo({ theme, isDark }) {
                                                 return (
                                                     <li key={i} className="relative pl-6 text-gray-800 text-base">
                                                         <span className="absolute left-0 text-xl font-bold">•</span>
-                                                        <TypingEffect
+                                                        <MathTypingEffect
                                                             text={bullet}
                                                             progress={localProgress}
                                                             isTyping={currentState === STATES.SLIDE_PLAYING && localProgress < 1 && localProgress > 0}
@@ -702,7 +715,7 @@ function LectureVideo({ theme, isDark }) {
                                         </ul>
                                     ) : currentSlide.narration && (
                                         <div className="text-gray-800 text-base leading-relaxed">
-                                            <TypingEffect
+                                            <MathTypingEffect
                                                 text={currentSlide.narration}
                                                 progress={playbackProgress}
                                                 isTyping={currentState === STATES.SLIDE_PLAYING}
@@ -752,45 +765,69 @@ function LectureVideo({ theme, isDark }) {
                 </div>
             </div>
 
-            {/* Controls - marked as recording-ignore so they don't appear in recording */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50 recording-ignore">
+            {/* Controls */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-50">
                 <button
                     onClick={() => {
-                        // Case 1: If playing, pause
+                        // Case 1: Agar chal raha hai to pause karo
                         if (currentState === STATES.SLIDE_PLAYING) {
                             audioManagerRef.current?.pauseSlideAudio();
                             setCurrentState(STATES.SLIDE_PAUSED);
                             setIsQuestionPopupOpen(true);
                         }
                         else {
-                            // Case 2: If paused or chatbot active, resume
+                            // Case 2 (FIXED): Agar Paused hai YA Chatbot Active hai, to wahin se RESUME karo
                             if (currentState === STATES.SLIDE_PAUSED || currentState === STATES.CHATBOT_ACTIVE) {
                                 audioManagerRef.current?.resumeSlideAudio();
                                 setCurrentState(STATES.SLIDE_PLAYING);
                                 setIsQuestionPopupOpen(false);
                             }
-                            // Case 3: If slide finished and next slide exists
+                            // Case 3: Agar slide khatam ho gayi hai aur next slide hai
                             else if (playbackProgress >= 1 && currentSlideIndex < lectureData.length - 1) {
                                 playSlide(currentSlideIndex + 1);
                             }
-                            // Case 4: Start from beginning (this triggers auto-recording on first play)
+                            // Case 4: Agar bilkul shuru se chalana hai (Restart)
                             else {
                                 playSlide(currentSlideIndex);
                             }
                         }
                     }}
-                    disabled={(currentState === STATES.IDLE && lectureData.length === 0) || (currentState === STATES.SLIDE_PLAYING && slideDuration === 0)}
-                    className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-800 border-2 border-gray-900 hover:bg-gray-700 disabled:opacity-50"
+                    disabled={isChatOpen || (currentState === STATES.IDLE && lectureData.length === 0) || (currentState === STATES.SLIDE_PLAYING && slideDuration === 0)}
+                    className="w-16 h-16 flex items-center justify-center rounded-full bg-gray-800 border-2 border-gray-900 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {currentState === STATES.SLIDE_PLAYING ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white ml-1" />}
                 </button>
 
                 <button
-                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    onClick={() => {
+                        if (!isChatOpen) {
+                            // Chat Open kar rahe hain -> Pause if playing
+                            if (currentState === STATES.SLIDE_PLAYING || currentState === STATES.SLIDE_PAUSED) {
+                                audioManagerRef.current?.pauseSlideAudio();
+                                setCurrentState(STATES.CHATBOT_ACTIVE);
+                            }
+                            setIsChatOpen(true);
+                        } else {
+                            // Chat Close kar rahe hain -> Resume if it was active
+                            if (currentState === STATES.CHATBOT_ACTIVE) {
+                                audioManagerRef.current?.resumeSlideAudio();
+                                setCurrentState(STATES.SLIDE_PLAYING);
+                            }
+                            setIsChatOpen(false);
+                        }
+                    }}
                     className={`w-16 h-16 flex items-center justify-center rounded-full border-2 ${isChatOpen ? 'bg-gray-800 border-gray-900' : 'bg-white border-gray-800'}`}
                 >
                     <MessageCircle className={`w-6 h-6 ${isChatOpen ? 'text-white' : 'text-gray-800'}`} />
                 </button>
+
+                {/* Download Recording Button - Shows after recording is complete */}
+                {/* {recordedBlob && !isRecording && (
+                    <button onClick={downloadRecording} className="px-6 py-3 bg-green-500 text-white rounded-full font-semibold hover:bg-green-600 flex items-center gap-2">
+                        <Download className="w-5 h-5" />
+                        Download Recording
+                    </button>
+                )} */}
             </div>
 
             {/* Progress */}

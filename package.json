@@ -16,6 +16,7 @@
     "@tailwindcss/vite": "^4.1.16",
     "axios": "^1.13.2",
     "env": "^0.0.2",
+    "fix-webm-duration": "^1.0.6",
     "framer-motion": "^12.23.26",
     "html2canvas": "^1.4.1",
     "katex": "^0.16.27",
