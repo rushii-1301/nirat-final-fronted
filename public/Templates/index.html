@@ -698,10 +698,6 @@
         if (!VITE_GROQ_API_KEY) {
           console.warn("⚠️ Groq API key not provided. Transcription will fail.");
         }
-<<<<<<< HEAD
-
-=======
->>>>>>> raj_dev
 
         let words = [], wtimes = [], wdurations = [];
         let gestures = [];
@@ -798,7 +794,6 @@
           }
         }
 
-<<<<<<< HEAD
         // if (head.audioCtx.state === 'running') {
         //   try {
         //     await head.audioCtx.suspend();
@@ -807,8 +802,6 @@
         //     console.error('❌ Failed to suspend audio:', e);
         //   }
         // }
-=======
->>>>>>> raj_dev
 
         const ensureAudioContext = async () => {
           if (head.audioCtx.state !== 'running') {
@@ -1738,13 +1731,10 @@
 
       // 🟢 CHANGE: Humne audioDest hata diya hai
       const combined = new MediaStream([
-<<<<<<< HEAD
         ...videoStream.getVideoTracks(),
         // ...audioDest.stream.getAudioTracks()
-=======
         ...videoStream.getVideoTracks()
         // Audio tracks removed temporarily to fix lip-sync
->>>>>>> raj_dev
       ]);
 
       // Codecs logic same rahega
