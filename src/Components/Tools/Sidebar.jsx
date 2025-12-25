@@ -195,7 +195,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
 
       {/* ===== Sidebar ===== */}
       <aside
-        className={`${isDark ? 'bg-zinc-900 text-gray-200' : 'bg-white text-zinc-700'} flex flex-col justify-between fixed top-0 left-0 z-40 h-screen ${isMounted ? 'transition-all duration-300 ease-in-out' : ''}
+        className={`${isDark ? 'bg-zinc-900 text-gray-200' : 'bg-white text-zinc-700'} flex flex-col justify-between fixed top-0 left-0 z-50 h-screen ${isMounted ? 'transition-all duration-300 ease-in-out' : ''}
         ${isMobileMenu ? "translate-x-0 w-64 h-[89vh]" : "-translate-x-full"}
         md:translate-x-0 ${isSidebarOpen ? "md:w-64" : "md:w-15"} lg:w-72`}
         style={{ contain: 'layout style paint' }}
@@ -291,7 +291,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
       {/* ===== Mobile Overlay ===== */}
       {isMobileMenu && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setMobileMenu(false)}
         ></div>
       )}
@@ -299,7 +299,7 @@ const Sidebar = memo(function Sidebar({ isDark, sidebardata = [] }) {
       {/* ===== Tablet Overlay (md only) - show when sidebar expanded ===== */}
       {isTablet && isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 hidden md:block lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden md:block lg:hidden"
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}

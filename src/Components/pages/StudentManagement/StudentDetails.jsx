@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Header from "../../Tools/Header.jsx";
-import { Handbag, ArrowLeft } from "lucide-react";
+import { Handbag, ArrowLeft, MessageSquare, X, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BACKEND_API_URL, handleerror } from "../../../utils/assets.js";
 import axios from "axios";
@@ -145,6 +145,27 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
     const [selectedLecture, setSelectedLecture] = useState(null); // **NEW State for Lecture Summary modal**
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+    const [comments, setComments] = useState([
+        {
+            id: 1,
+            user: "Priya Patel",
+            time: "Last ago",
+            text: "Great explanation! This really helped me understand the concept clearly."
+        },
+        {
+            id: 2,
+            user: "Priya Patel",
+            time: "Last ago",
+            text: "Can you please explain the second part again? I didn't quite get it."
+        },
+        {
+            id: 3,
+            user: "Priya Patel",
+            time: "Last ago",
+            text: "Excellent content! Looking forward to more videos on this topic."
+        }
+    ]);
 
     // Lecture stats / ratio data (now driven by API summary)
     const defaultProgressData = {
@@ -413,6 +434,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
     const handleCloseModal = () => {
         setSelectedTransaction(null);
         setSelectedLecture(null);
+        setIsCommentsOpen(false);
         document.body.style.overflow = 'auto';
     };
 
@@ -421,8 +443,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
         document.body.style.overflow = 'hidden';
     };
 
-    const isModalOpen = selectedTransaction || selectedLecture;
-
+    const isModalOpen = selectedTransaction || selectedLecture || isCommentsOpen;
 
     return (
         <div
@@ -573,8 +594,8 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                             </div>
 
                             {/* Lecture List Table */}
-                            <div className={`border ${isDark ? 'border-zinc-800' : 'border-zinc-200'} rounded-xl overflow-hidden mb-6 ${isDark ? '' : 'bg-white shadow-sm'}`}>
-                                <div className={`${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} p-4 mb-3 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                            <div className={`overflow-hidden mb-6 ${isDark ? '' : 'bg-white'}`}>
+                                <div className={`${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} p-4 mb-3`}>
                                     <h2 className={`text-base md:text-[17px] font-semibold ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                                         List Of Watched Lecture
                                     </h2>
@@ -582,7 +603,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
 
                                 <div className="overflow-x-auto no-scrollbar">
                                     <table className="w-full text-[13px] md:text-sm text-left border-collapse" style={{ minWidth: 960 }}>
-                                        <thead className={`${isDark ? 'text-white border-zinc-800' : 'text-zinc-800 border-zinc-200'} border-b`}>
+                                        <thead className={`${isDark ? 'text-white' : 'text-zinc-800'}`}>
                                             <tr>
                                                 <th className="pb-3 px-6 font-medium whitespace-nowrap">
                                                     Lecture Title
@@ -602,12 +623,15 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                 <th className="pb-3 px-4 font-medium whitespace-nowrap">
                                                     Summary
                                                 </th>
+                                                <th className="pb-3 px-4 font-medium whitespace-nowrap">
+                                                    Comment
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className={`${isDark ? 'text-[#AAAAAA]' : 'text-zinc-900/80'}`}>
                                             {lecturesLoading ? (
                                                 <tr>
-                                                    <td colSpan="6" className="py-8 text-center">
+                                                    <td colSpan="7" className="py-8 text-center">
                                                         <div className="flex items-center justify-center">
                                                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-3"></div>
                                                             <span className="text-sm">Loading watched lectures...</span>
@@ -616,13 +640,13 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                 </tr>
                                             ) : lecturesError ? (
                                                 <tr>
-                                                    <td colSpan="6" className="py-8 text-center">
+                                                    <td colSpan="7" className="py-8 text-center">
                                                         <div className="text-sm text-red-500">{lecturesError}</div>
                                                     </td>
                                                 </tr>
                                             ) : lectures.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan="6" className="py-8 text-center">
+                                                    <td colSpan="7" className="py-8 text-center">
                                                         <div className="text-sm opacity-60">No watched lectures found</div>
                                                     </td>
                                                 </tr>
@@ -630,7 +654,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                 lectures.map((lec, i) => (
                                                     <tr
                                                         key={lec.id || i}
-                                                        className={`border-b ${isDark ? 'border-zinc-800/50 hover:bg-zinc-800/30' : 'border-zinc-200 hover:bg-zinc-50'} transition-colors`}
+                                                        className={`border-b ${isDark ? 'border-gray-700 hover:bg-zinc-800/30' : 'border-zinc-200 hover:bg-zinc-50'} transition-colors`}
                                                     >
                                                         <td className="py-3 md:py-4 px-6 whitespace-nowrap overflow-hidden text-ellipsis">
                                                             {lec.title}
@@ -662,10 +686,10 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                         <td className="py-3 md:py-4 px-4">
                                                             <button
                                                                 onClick={() => handleViewSummary(lec)}
-                                                                className={`flex items-center gap-1 cursor-pointer transition-colors pointer-events-auto ${isDark ? 'text-blue-500 hover:text-blue-400' : 'text-[#696CFF] hover:opacity-80'}`}
+                                                                className={`flex items-center gap-1 cursor-pointer transition-colors pointer-events-auto ${isDark ? 'text-white' : 'text-zinc-900'} hover:opacity-80`}
                                                             >
                                                                 <svg
-                                                                    className="w-4 h-4"
+                                                                    className="w-5 h-5"
                                                                     fill="none"
                                                                     stroke="currentColor"
                                                                     viewBox="0 0 24 24"
@@ -678,6 +702,26 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                                     />
                                                                 </svg>
                                                                 Summary
+                                                            </button>
+                                                        </td>
+                                                        <td className="py-2 mt-1 md:py-4 px-4 flex justify-end items-center">
+                                                            <button
+                                                                onClick={() => setIsCommentsOpen(true)}
+                                                                className={`cursor-pointer transition-colors pointer-events-auto ${isDark ? 'text-white' : 'text-zinc-900'} hover:opacity-80`}
+                                                            >
+                                                                <svg
+                                                                    className="w-5 h-5"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                                                    />
+                                                                </svg>
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -771,6 +815,66 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                 isDark={isDark}
                 onClose={handleCloseModal}
             />
+
+            {/* Comments Sidebar */}
+            <div className={`fixed top-0 right-0 h-full w-full sm:w-[480px] shadow-2xl transform transition-transform duration-300 z-[60] ${
+                isCommentsOpen ? 'translate-x-0' : 'translate-x-full'
+            } ${isDark ? 'bg-zinc-900 text-gray-100' : 'bg-white text-zinc-900'}`}>
+                <div className="flex flex-col h-full">
+                    {/* Header */}
+                    <div className={`flex items-center justify-between p-6 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                        <div>
+                            <h2 className="text-xl font-bold">Comment</h2>
+                            <p className="text-sm text-gray-400">Join The Discussion About This Video</p>
+                        </div>
+                        <button
+                            onClick={() => setIsCommentsOpen(false)}
+                            className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-100'}`}
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 6 6 18"></path>
+                                <path d="m6 6 12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Comments Count */}
+                    <div className={`px-6 py-2 ${isDark ? 'bg-zinc-900' : 'bg-white'}`}>
+                        <p className="font-semibold">{comments.length} Comment</p>
+                    </div>
+
+                    {/* Comments List */}
+                    <div className="flex-1 overflow-y-auto">
+                        {comments.map((comment) => (
+                            <div key={comment.id} className={`px-6 py-3 ${isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-zinc-50'} transition`}>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                                        {comment.user.charAt(0)}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="font-semibold text-sm">{comment.user}</h3>
+                                            <span className="text-xs text-gray-500">{comment.time}</span>
+                                        </div>
+                                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{comment.text}</p>
+                                    </div>
+                                    <button className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-200'}`}>
+                                        <Trash2 size={16} className="text-gray-500" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Backdrop */}
+            {isCommentsOpen && (
+                <div
+                    className="fixed inset-0 backdrop-blur-md bg-black/20 z-[50]"
+                    onClick={() => setIsCommentsOpen(false)}
+                ></div>
+            )}
         </div>
     );
 }

@@ -12,6 +12,15 @@ function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
     const inputText = isDark ? "text-gray-100" : "text-zinc-900";
     const subText = isDark ? "text-gray-400" : "text-zinc-500";
 
+    const normalizePhotoUrl = (photoPath) => {
+        if (!photoPath) return "";
+        if (/^https?:\/\//i.test(photoPath)) return photoPath;
+
+        const cleaned = String(photoPath).replace(/\\/g, "/");
+        if (cleaned.startsWith("/")) return `${BACKEND_API_URL}${cleaned}`;
+        return `${BACKEND_API_URL}/${cleaned}`;
+    };
+
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState({
         first_name: "",
@@ -25,6 +34,7 @@ function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
         mobile_number: "",
         parents_number: "",
         photo: "",
+        photo_path: "",
     });
 
     useEffect(() => {
@@ -52,17 +62,8 @@ function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
                 console.log('API Response:', data);
                 console.log('Photo path from API:', data.photo_path);
 
-                const photoUrl = data.photo_path ? `${BACKEND_API_URL}/${data.photo_path.replace(/\\/g, '/')}` : "";
+                const photoUrl = normalizePhotoUrl(data.photo_path);
                 console.log('Final photo URL:', photoUrl);
-                
-                // Test different URL patterns
-                const testUrls = photoUrl ? [
-                    photoUrl, // Original
-                    `${BACKEND_API_URL}/uploads/student-profiles/${data.photo_path.split('\\').pop()}`, // Extract filename
-                    `${BACKEND_API_URL}/uploads/student-profiles/${data.photo_path.split('\\').pop().replace('.png', '.png')}`, // Ensure extension
-                ] : [];
-                
-                console.log('Test URLs:', testUrls);
 
                 setProfile({
                     first_name: data.first_name || "",
@@ -75,7 +76,7 @@ function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
                     class_head: data.class_head || "",
                     mobile_number: data.mobile_number || "",
                     parents_number: data.parents_number || "",
-                    photo_path: data.photo_path || "",
+                    photo_path: photoUrl,
                 });
             } catch (error) {
                 console.error("Failed to fetch student profile:", error);
@@ -126,7 +127,7 @@ function PersonalInformation({ isDark, toggleTheme, sidebardata }) {
                                             {profile.photo_path ? (
                                                 <img
                                                     alt="avatar"
-                                                    src={profile.photo_path ? `${BACKEND_API_URL}${profile.photo_path}` : ""}
+                                                    src={profile.photo_path}
                                                     className="w-full h-full object-cover rounded-full"
 
                                                     onError={(e) => {
