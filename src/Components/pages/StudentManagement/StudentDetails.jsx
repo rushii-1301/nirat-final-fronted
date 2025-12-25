@@ -146,6 +146,9 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+    const [selectedVideoId, setSelectedVideoId] = useState(null);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [commentsError, setCommentsError] = useState(null);
     const [comments, setComments] = useState([
         {
             id: 1,
@@ -301,6 +304,64 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
         }
     };
 
+    const fetchComments = async (videoId) => {
+        if (!videoId && videoId !== 0) {
+            setComments([]);
+            return;
+        }
+
+        setCommentsLoading(true);
+        setCommentsError(null);
+
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                setCommentsError('No authentication token found');
+                setComments([]);
+                return;
+            }
+
+            const response = await axios.get(
+                `${BACKEND_API_URL}/student-management/comment?video_id=${encodeURIComponent(String(videoId))}`,
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const apiComments = response.data?.data?.comments;
+            if (response.data?.status === true && Array.isArray(apiComments)) {
+                const formatted = apiComments.map((c, idx) => {
+                    const rawPath = c?.photo_path ? String(c.photo_path) : '';
+                    const trimmed = rawPath.trim();
+                    const isAbsoluteUrl = /^https?:\/\//i.test(trimmed);
+                    const photoUrl = isAbsoluteUrl ? trimmed : null;
+
+                    return {
+                        id: idx,
+                        user: c?.student_name || 'Unknown',
+                        time: c?.commented_time_ago || '',
+                        text: c?.comment || '',
+                        photoUrl,
+                    };
+                });
+
+                setComments(formatted);
+            } else {
+                setComments([]);
+                setCommentsError(response.data?.message || 'Failed to fetch comments');
+            }
+        } catch (error) {
+            console.error('Failed to fetch comments:', error);
+            setComments([]);
+            setCommentsError(error.response?.data?.message || error.message || 'Failed to fetch comments');
+        } finally {
+            setCommentsLoading(false);
+        }
+    };
+
     const fetchWatchedLectures = async (enrollmentNumber) => {
         setLecturesLoading(true);
         setLecturesError(null);
@@ -323,28 +384,27 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                 }
             );
 
-            if (response.data?.status && response.data?.data?.lectures) {
-                const lectures = response.data.data.lectures;
+            const apiLectures = response.data?.data?.lectures ?? response.data?.lectures;
 
-                // Format the watched lectures data
-                const formattedLectures = lectures.map(lecture => {
-                    const progressText = String(lecture.progress || '0/0 Min');
+            if (response.data?.status && Array.isArray(apiLectures)) {
+                const formattedLectures = apiLectures.map((lecture) => {
+                    const progressText = String(lecture?.progress ?? '0/0 Min');
                     const match = progressText.match(/(\d+)\s*\/\s*(\d+)/);
                     const watched = match ? Number(match[1]) || 0 : 0;
                     const total = match ? Number(match[2]) || 0 : 0;
                     const progressPercentage = total > 0 ? Math.round((watched / total) * 100) : 0;
-                    
+
                     return {
-                        id: lecture.lecture_title || `${lecture.subject || 'lecture'}-${lecture.watched_date || ''}`,
-                        title: lecture.lecture_title || '-',
-                        subject: lecture.subject || '-',
-                        chapter: lecture.chapter || '-',
+                        id: lecture?.video_id ?? lecture?.lecture_title ?? `${lecture?.subject || 'lecture'}-${lecture?.watched_date || ''}`,
+                        title: lecture?.lecture_title || '-',
+                        subject: lecture?.subject || '-',
+                        chapter: lecture?.chapter || '-',
                         progress: `${progressPercentage}%`,
                         progressText,
-                        date: lecture.watched_date || '-',
+                        date: lecture?.watched_date || '-',
                         watchDuration: watched,
                         totalDuration: total,
-                        summary: lecture.summary || '-',
+                        summary: lecture?.summary || '-',
                     };
                 });
 
@@ -426,6 +486,12 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
         }
     }, [location.state?.enrollmentNumber, navigate]);
 
+    useEffect(() => {
+        if (!isCommentsOpen) return;
+        if (selectedVideoId == null) return;
+        fetchComments(selectedVideoId);
+    }, [isCommentsOpen, selectedVideoId]);
+
     const handleViewDetails = (transaction) => {
         setSelectedTransaction(transaction);
         document.body.style.overflow = 'hidden';
@@ -435,12 +501,27 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
         setSelectedTransaction(null);
         setSelectedLecture(null);
         setIsCommentsOpen(false);
+        setSelectedVideoId(null);
+        setCommentsError(null);
         document.body.style.overflow = 'auto';
     };
 
     const handleViewSummary = (lecture) => {
         setSelectedLecture(lecture);
         document.body.style.overflow = 'hidden';
+    };
+
+    const handleOpenComments = (lecture) => {
+        setSelectedVideoId(lecture?.id ?? lecture?.video_id ?? null);
+        setIsCommentsOpen(true);
+        document.body.style.overflow = 'hidden';
+    };
+
+    const handleCloseComments = () => {
+        setIsCommentsOpen(false);
+        setSelectedVideoId(null);
+        setCommentsError(null);
+        document.body.style.overflow = 'auto';
     };
 
     const isModalOpen = selectedTransaction || selectedLecture || isCommentsOpen;
@@ -706,7 +787,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                                                         </td>
                                                         <td className="py-2 mt-1 md:py-4 px-4 flex justify-end items-center">
                                                             <button
-                                                                onClick={() => setIsCommentsOpen(true)}
+                                                                onClick={() => handleOpenComments(lec)}
                                                                 className={`cursor-pointer transition-colors pointer-events-auto ${isDark ? 'text-white' : 'text-zinc-900'} hover:opacity-80`}
                                                             >
                                                                 <svg
@@ -817,7 +898,7 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             />
 
             {/* Comments Sidebar */}
-            <div className={`fixed top-0 right-0 h-full w-full sm:w-[480px] shadow-2xl transform transition-transform duration-300 z-[60] ${
+            <div className={`fixed top-0 right-0 h-full w-full sm:w-[480px] shadow-2xl transform transition-transform duration-300 z-60 ${
                 isCommentsOpen ? 'translate-x-0' : 'translate-x-full'
             } ${isDark ? 'bg-zinc-900 text-gray-100' : 'bg-white text-zinc-900'}`}>
                 <div className="flex flex-col h-full">
@@ -825,10 +906,10 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
                     <div className={`flex items-center justify-between p-6 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
                         <div>
                             <h2 className="text-xl font-bold">Comment</h2>
-                            <p className="text-sm text-gray-400">Join The Discussion About This Video</p>
+                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-zinc-500'}`}>Join The Discussion About This Video</p>
                         </div>
                         <button
-                            onClick={() => setIsCommentsOpen(false)}
+                            onClick={handleCloseComments}
                             className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-100'}`}
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -845,25 +926,44 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
 
                     {/* Comments List */}
                     <div className="flex-1 overflow-y-auto">
-                        {comments.map((comment) => (
-                            <div key={comment.id} className={`px-6 py-3 ${isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-zinc-50'} transition`}>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                                        {comment.user.charAt(0)}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-semibold text-sm">{comment.user}</h3>
-                                            <span className="text-xs text-gray-500">{comment.time}</span>
+                        {commentsLoading ? (
+                            <div className="px-6 py-8 text-sm opacity-70">Loading comments...</div>
+                        ) : commentsError ? (
+                            <div className="px-6 py-8 text-sm text-red-500">{commentsError}</div>
+                        ) : comments.length === 0 ? (
+                            <div className="px-6 py-8 text-sm opacity-70">No comments found</div>
+                        ) : (
+                            comments.map((comment) => (
+                                <div key={comment.id} className={`px-6 py-3 ${isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-zinc-50'} transition`}>
+                                    <div className="flex items-start gap-3">
+                                        {comment.photoUrl ? (
+                                            <img
+                                                src={comment.photoUrl}
+                                                alt={comment.user}
+                                                className="w-10 h-10 rounded-full object-cover shrink-0"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold shrink-0">
+                                                {String(comment.user || 'U').charAt(0)}
+                                            </div>
+                                        )}
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="font-semibold text-sm">{comment.user}</h3>
+                                                <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-zinc-500'}`}>{comment.time}</span>
+                                            </div>
+                                            <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{comment.text}</p>
                                         </div>
-                                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{comment.text}</p>
+                                        <button className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-200'}`}>
+                                            <Trash2 size={16} className={`${isDark ? 'text-gray-500' : 'text-zinc-500'}`} />
+                                        </button>
                                     </div>
-                                    <button className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-200'}`}>
-                                        <Trash2 size={16} className="text-gray-500" />
-                                    </button>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
@@ -871,12 +971,13 @@ function StudentDetails({ theme, isDark, toggleTheme, sidebardata }) {
             {/* Backdrop */}
             {isCommentsOpen && (
                 <div
-                    className="fixed inset-0 backdrop-blur-md bg-black/20 z-[50]"
-                    onClick={() => setIsCommentsOpen(false)}
+                    className="fixed inset-0 backdrop-blur-md bg-black/20 z-50"
+                    onClick={handleCloseComments}
                 ></div>
             )}
         </div>
     );
+
 }
 
 export default StudentDetails;

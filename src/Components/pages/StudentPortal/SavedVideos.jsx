@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Play, Trash2, Calendar, Clock } from "lucide-react";
 import Sidebar from "../../Tools/Sidebar.jsx";
 import Portalheader from "../../Tools/Portalheader.jsx";
+import { BACKEND_API_URL } from "../../../utils/assets.js";
 
 function SavedVideos({ isDark, toggleTheme, sidebardata }) {
     const navigate = useNavigate();
@@ -24,7 +25,7 @@ function SavedVideos({ isDark, toggleTheme, sidebardata }) {
                 return;
             }
 
-            const response = await axios.get('https://api.edinai.inaiverse.com/school-portal/videos/saved', {
+            const response = await axios.get(`${BACKEND_API_URL}/school-portal/videos/saved`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -69,7 +70,7 @@ function SavedVideos({ isDark, toggleTheme, sidebardata }) {
             }
 
             const response = await axios.post(
-                `https://api.edinai.inaiverse.com/school-portal/videos/${videoToDelete.id}/subscribe`,
+                `${BACKEND_API_URL}/school-portal/videos/${videoToDelete.id}/subscribe`,
                 {
                     subscribed: false,
                 },

@@ -314,7 +314,7 @@ function PlayedVideo({ theme, isDark, toggleTheme, sidebardata }) {
             const token = localStorage.getItem("access_token") || localStorage.getItem("token");
 
             const response = await axios.get(
-                `https://api.edinai.inaiverse.com/lectures/${lectureId}/qa`,
+                `${BACKEND_API_URL}/lectures/${lectureId}/qa`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
